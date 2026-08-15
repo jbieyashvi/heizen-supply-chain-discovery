@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Sparkle, ChevronDown, Info } from "lucide-react";
 import { SidePanel } from "./SidePanel";
 import { CurrencySelect } from "./CurrencySelect";
@@ -47,6 +47,18 @@ export function NewProjectPanel({
   const [currency, setCurrency] = useState("INR");
   const [contextOpen, setContextOpen] = useState(false);
   const [researchOpen, setResearchOpen] = useState(false);
+  const contextHeadRef = useRef<HTMLButtonElement>(null);
+  const researchHeadRef = useRef<HTMLButtonElement>(null);
+
+  // When a section opens, bring its heading into view (only if needed).
+  const revealOnOpen = (el: HTMLButtonElement | null) => {
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Let the section expand first, then scroll.
+    setTimeout(
+      () => el?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest" }),
+      70
+    );
+  };
 
   // Only name + client are required. Website is strongly recommended.
   const canCreate = Boolean(name.trim() && client.trim());
@@ -161,8 +173,15 @@ export function NewProjectPanel({
       {/* Progressive group: company context */}
       <section className="np-collapse">
         <button
+          ref={contextHeadRef}
           className="np-collapse__head"
-          onClick={() => setContextOpen((v) => !v)}
+          onClick={() =>
+            setContextOpen((v) => {
+              const next = !v;
+              if (next) revealOnOpen(contextHeadRef.current);
+              return next;
+            })
+          }
           aria-expanded={contextOpen}
         >
           <span>
@@ -247,8 +266,15 @@ export function NewProjectPanel({
       {/* Progressive group: research focus */}
       <section className="np-collapse">
         <button
+          ref={researchHeadRef}
           className="np-collapse__head"
-          onClick={() => setResearchOpen((v) => !v)}
+          onClick={() =>
+            setResearchOpen((v) => {
+              const next = !v;
+              if (next) revealOnOpen(researchHeadRef.current);
+              return next;
+            })
+          }
           aria-expanded={researchOpen}
         >
           <span>

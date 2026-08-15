@@ -1800,6 +1800,7 @@
   border-left: 1px solid var(--border-strong);
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* contain the scroll to the body */
   box-shadow: var(--shadow-pop);
   animation: slidein 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -1807,6 +1808,7 @@
   from { transform: translateX(24px); opacity: 0.6; }
 }
 .drawer__head {
+  flex: 0 0 auto; /* fixed at the top, never shrinks */
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1820,14 +1822,24 @@
   letter-spacing: -0.3px;
 }
 .drawer__body {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0; /* allow the flex child to shrink so its own scroll engages */
   overflow-y: auto;
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
+/* Content keeps its natural height and scrolls — never shrinks/clips. */
+.drawer__body > * {
+  flex-shrink: 0;
+}
+/* Clearance so the last field never sits flush under the sticky footer. */
+.drawer:has(.drawer__foot) .drawer__body {
+  padding-bottom: 28px;
+}
 .drawer__foot {
+  flex: 0 0 auto; /* sticky at the bottom, never shrinks */
   display: flex;
   align-items: center;
   justify-content: flex-end;
