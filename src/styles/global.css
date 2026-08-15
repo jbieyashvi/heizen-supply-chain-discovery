@@ -77,18 +77,18 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  /* Semantic surfaces */
-  --color-bg: #0f1113;
-  --color-sidebar: #121417;
-  --color-surface: #16181b; /* elevated surface: cards */
-  --color-surface-subtle: #1c1f22; /* inputs, secondary fills */
-  --color-surface-raised: #23272b; /* menus, popovers, chips */
-  --color-surface-hover: #202427;
+  /* Semantic surfaces — neutral cool charcoal (no warm undertone) */
+  --color-bg: #0f1315;
+  --color-sidebar: #14171a;
+  --color-surface: #171a1d; /* elevated surface: cards */
+  --color-surface-subtle: #1d2125; /* inputs, secondary fills */
+  --color-surface-raised: #23282c; /* menus, popovers, chips */
+  --color-surface-hover: #20262a;
 
-  /* Semantic text (AA on surfaces) */
-  --color-text: #edece7;
-  --color-text-secondary: #b1b5b1;
-  --color-text-muted: #8b9093;
+  /* Semantic text (AA on surfaces) — cool off-white */
+  --color-text: #e8eaec;
+  --color-text-secondary: #aeb4b8;
+  --color-text-muted: #868d92;
 
   /* Borders */
   --color-border-subtle: rgba(255, 255, 255, 0.07);
@@ -118,11 +118,11 @@
 
   /* Focus + overlay + scrollbar */
   --focus: var(--brand-400);
-  --color-overlay: rgba(8, 9, 10, 0.64);
+  --color-overlay: rgba(6, 9, 11, 0.64);
   --scroll-thumb: rgba(255, 255, 255, 0.14);
   --scroll-thumb-hover: rgba(255, 255, 255, 0.24);
-  --tooltip-bg: #05060a;
-  --tooltip-text: #edece7;
+  --tooltip-bg: #05070a;
+  --tooltip-text: #e8eaec;
 
   /* Atmospheric wash tints (brand-based, restrained) */
   --wash-1: rgba(92, 149, 168, 0.06);
@@ -134,38 +134,38 @@
 }
 
 /* =========================================================================
-   LIGHT THEME — warm off-white, polished, readable. AA-targeted.
+   LIGHT THEME — cool light greys + white surfaces, no warm undertones.
    ========================================================================= */
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --color-bg: #f6f4f0; /* warm off-white page */
-  --color-sidebar: #efece6;
+  --color-bg: #f5f7f8; /* cool very-light grey page */
+  --color-sidebar: #ffffff; /* white */
   --color-surface: #ffffff; /* cards */
-  --color-surface-subtle: #f1eee8; /* inputs, secondary fills */
+  --color-surface-subtle: #f0f3f4; /* inputs, secondary fills */
   --color-surface-raised: #ffffff; /* menus/popovers (with shadow) */
-  --color-surface-hover: #eeeae3;
+  --color-surface-hover: #eaeff1;
 
-  --color-text: #1e2426; /* dark charcoal */
-  --color-text-secondary: #4d5559;
-  --color-text-muted: #6b7176;
+  --color-text: #1b2529; /* dark cool charcoal */
+  --color-text-secondary: #566169; /* readable neutral grey */
+  --color-text-muted: #667079;
 
-  --color-border-subtle: rgba(24, 28, 27, 0.08);
-  --color-border: rgba(24, 28, 27, 0.14);
-  --color-border-strong: rgba(24, 28, 27, 0.24);
+  --color-border-subtle: #e7ecee;
+  --color-border: #dde4e7; /* cool neutral grey */
+  --color-border-strong: #c4ced2;
 
   --brand: var(--brand-500);
   --brand-solid: var(--brand-700);
   --brand-solid-hover: var(--brand-800);
   --brand-text: #35677a; /* darker brand for text/links on light (AA 5.7:1) */
-  --brand-subtle: rgba(92, 149, 168, 0.14);
+  --brand-subtle: rgba(92, 149, 168, 0.12); /* light tint for selected/active */
   --brand-line: rgba(92, 149, 168, 0.42);
   --brand-contrast: #ffffff;
 
   --success: #2f8a5b;
-  --success-subtle: rgba(47, 138, 91, 0.13);
+  --success-subtle: rgba(47, 138, 91, 0.12);
   --warning: #a9711a;
-  --warning-subtle: rgba(169, 113, 26, 0.14);
+  --warning-subtle: rgba(169, 113, 26, 0.13);
   --critical: #c0473c;
   --critical-subtle: rgba(192, 71, 60, 0.12);
   --info: #33689f;
@@ -174,18 +174,18 @@
   --violet-subtle: rgba(109, 92, 176, 0.12);
 
   --focus: var(--brand-700);
-  --color-overlay: rgba(30, 34, 33, 0.42);
-  --scroll-thumb: rgba(24, 28, 27, 0.2);
-  --scroll-thumb-hover: rgba(24, 28, 27, 0.32);
-  --tooltip-bg: #23292b;
-  --tooltip-text: #f6f4f0;
+  --color-overlay: rgba(20, 28, 33, 0.42);
+  --scroll-thumb: rgba(27, 37, 41, 0.22);
+  --scroll-thumb-hover: rgba(27, 37, 41, 0.34);
+  --tooltip-bg: #1f2a2f;
+  --tooltip-text: #f5f7f8;
 
   --wash-1: rgba(92, 149, 168, 0.05);
   --wash-2: rgba(51, 104, 159, 0.03);
 
-  --shadow-1: 0 1px 2px rgba(24, 28, 27, 0.08);
-  --shadow-2: 0 8px 22px rgba(24, 28, 27, 0.1);
-  --shadow-pop: 0 16px 40px rgba(24, 28, 27, 0.18);
+  --shadow-1: 0 1px 2px rgba(20, 30, 35, 0.07);
+  --shadow-2: 0 8px 22px rgba(20, 30, 35, 0.09);
+  --shadow-pop: 0 16px 40px rgba(20, 30, 35, 0.16);
 }
 
 /* =========================================================================
