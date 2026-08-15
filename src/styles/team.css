@@ -1,117 +1,311 @@
 /* =========================================================================
-   Team — workspace members list + workload detail drawer.
-   Reuses the search/toolbar styles from sources.css. Themed via tokens.
+   Team Management — Members + Workload tables (one white surface, compact
+   rows) and the profile/workload drawer. Themed via tokens.
    ========================================================================= */
 
-/* ---------- Avatar ---------- */
-.team-avatar {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  flex: none;
-  border-radius: 50%;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: var(--brand-text);
-  background: var(--brand-subtle);
-  box-shadow: 0 0 0 2px var(--color-border-strong);
+.tm-page {
+  max-width: 1200px;
 }
-.team-avatar.status-available {
-  box-shadow: 0 0 0 2px var(--success);
-}
-.team-avatar.status-in-call {
-  box-shadow: 0 0 0 2px var(--warning);
-}
-.team-avatar.status-research {
-  box-shadow: 0 0 0 2px var(--brand);
-}
-.team-avatar.status-away {
-  box-shadow: 0 0 0 2px var(--color-border-strong);
-}
-.team-avatar--lg {
-  width: 52px;
-  height: 52px;
-  font-size: 17px;
+.tm-tabs {
+  margin-bottom: 18px;
 }
 
-/* ---------- List rows ---------- */
-.team-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.team-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.6fr) 150px auto;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 16px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-1);
-  cursor: pointer;
-  transition: border-color 0.14s ease, box-shadow 0.14s ease;
-}
-.team-row:hover {
-  border-color: var(--brand-line);
-  box-shadow: var(--shadow-2);
-}
-.team-row__main {
+/* ---------- Toolbar ---------- */
+.tm-toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
-.team-row__id {
+.tm-search {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  flex: 1;
+  min-width: 220px;
+  max-width: 360px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
-.team-row__name {
-  font-size: 14.5px;
-  font-weight: 650;
-  letter-spacing: -0.2px;
+.tm-search svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  flex: none;
+}
+.tm-search input {
+  border: 0;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 13.5px;
   color: var(--text-1);
-  text-align: left;
+}
+.tm-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tm-select {
+  position: relative;
+  display: inline-flex;
+}
+.tm-select select {
+  appearance: none;
+  height: 38px;
+  padding: 0 30px 0 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 550;
   cursor: pointer;
 }
-.team-row__name:hover {
-  color: var(--brand-text);
+.tm-select::after {
+  content: "";
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-right: 1.6px solid var(--text-3);
+  border-bottom: 1.6px solid var(--text-3);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
 }
-.team-row__role {
-  font-size: 12.5px;
-  color: var(--text-2);
+
+/* ---------- Table (shared) ---------- */
+.tm-table {
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
 }
-.team-row__stats {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.tm-head {
+  display: grid;
+  align-items: center;
+  gap: 16px;
+  padding: 11px 18px;
+  border-bottom: 1px solid var(--color-border);
+}
+.tm-head span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+}
+.tm-actions-h {
+  text-align: right;
+}
+.tm-row {
+  display: grid;
+  align-items: center;
+  gap: 16px;
+  min-height: 70px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--border-subtle);
+}
+.tm-row:first-of-type {
+  border-top: none;
+}
+.tm-row--click {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.tm-row--click:hover {
+  background: var(--color-surface-subtle);
+}
+.tm-row.is-dim {
+  opacity: 0.6;
+}
+.tm-cell {
   min-width: 0;
 }
-.team-stat {
+
+/* Column templates */
+.tm-table--members .tm-head,
+.tm-table--members .tm-row {
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.7fr) minmax(0, 1fr) 128px 120px 44px;
+}
+.tm-table--workload .tm-head,
+.tm-table--workload .tm-row {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr) 150px;
+}
+
+/* Member cell */
+.tm-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand-text);
+  background: var(--brand-subtle);
+}
+.tm-member {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.tm-member__id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.tm-member__name {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 12.5px;
-  color: var(--text-2);
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
   min-width: 0;
 }
-.team-stat svg {
+.tm-namebtn {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tm-namebtn:hover {
+  color: var(--brand-text);
+}
+.tm-member__title {
+  font-size: 13px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tm-you {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--brand-text);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-line);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.tm-email {
+  font-size: 13px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tm-muted {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* Role select in-row */
+.tm-role {
+  position: relative;
+  display: block;
+}
+.tm-role select {
+  appearance: none;
+  width: 100%;
+  height: 32px;
+  padding: 0 26px 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--text-1);
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+}
+.tm-role select:disabled {
+  cursor: default;
+  color: var(--text-3);
+}
+.tm-role::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--text-3);
+  border-bottom: 1.5px solid var(--text-3);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+
+.tm-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.tm-menu .menu__pop {
+  z-index: 30;
+}
+
+/* Workload cells */
+.tm-wl {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  min-width: 0;
+}
+.tm-wl svg {
   width: 14px;
   height: 14px;
   flex: none;
   color: var(--text-3);
 }
-.team-row__action {
-  display: flex;
-  justify-content: flex-end;
+.tm-wl--call {
+  font-weight: 500;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tm-wl--call .tm-muted {
+  font-size: 13px;
 }
 
-/* ---------- Detail drawer ---------- */
+.tm-count {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.tm-empty {
+  padding: 32px 18px;
+  text-align: center;
+}
+
+/* ---------- Drawer (profile / workload) ---------- */
+.tm-avatar--lg {
+  width: 52px;
+  height: 52px;
+  font-size: 17px;
+}
+.tm-drawer-email {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-2);
+}
 .team-d {
   display: flex;
   flex-direction: column;
@@ -126,10 +320,14 @@
 .team-d__id {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   align-items: flex-start;
+  min-width: 0;
 }
 .team-d__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 16px;
   font-weight: 680;
   color: var(--text-1);
@@ -137,6 +335,12 @@
 .team-d__role {
   font-size: 13px;
   color: var(--text-2);
+}
+.team-d__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
 }
 .team-d__quick {
   display: flex;
@@ -205,8 +409,6 @@
   font-size: 12.5px;
   color: var(--text-3);
 }
-
-/* Assigned projects */
 .team-proj {
   display: flex;
   align-items: center;
@@ -238,8 +440,6 @@
   color: var(--text-2);
   white-space: nowrap;
 }
-
-/* Calls + jobs */
 .team-call,
 .team-job {
   display: flex;
@@ -268,8 +468,6 @@
   padding: 2px 9px;
   white-space: nowrap;
 }
-
-/* Recent activity */
 .team-activity {
   display: flex;
   flex-direction: column;
@@ -300,22 +498,41 @@
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 900px) {
-  .team-row {
-    grid-template-columns: 1fr auto;
-    row-gap: 12px;
+@media (max-width: 980px) {
+  .tm-table--members .tm-head,
+  .tm-table--members .tm-row {
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.6fr) 120px 116px 44px;
   }
-  .team-row__stats {
-    grid-column: 1 / -1;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px 16px;
+  .tm-joined-h,
+  .tm-joined {
+    display: none;
   }
-  .team-row__action {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+  .tm-table--workload .tm-head,
+  .tm-table--workload .tm-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 2.2fr) 140px;
   }
-  .team-d__quick {
-    flex-direction: column;
+  .tm-wl-proj-h,
+  .tm-wl-jobs-h,
+  .tm-wl--projects,
+  .tm-wl--jobs {
+    display: none;
+  }
+}
+@media (max-width: 680px) {
+  .tm-table--members .tm-head,
+  .tm-table--members .tm-row {
+    grid-template-columns: minmax(0, 1.6fr) 112px 108px 40px;
+  }
+  .tm-email-h,
+  .tm-email {
+    display: none;
+  }
+  .tm-table--workload .tm-head,
+  .tm-table--workload .tm-row {
+    grid-template-columns: minmax(0, 1.6fr) 130px;
+  }
+  .tm-wl-call-h,
+  .tm-wl--call {
+    display: none;
   }
 }
