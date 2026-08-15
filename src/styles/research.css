@@ -175,14 +175,36 @@
   gap: 28px;
 }
 
+/* The app shell clips horizontal overflow with `overflow-x: hidden`, which
+   forces `overflow-y: auto` and turns .app-main into a (non-scrolling) scroll
+   container — that silently breaks `position: sticky` for descendants. On the
+   Research screen only, switch to `overflow-x: clip`: it clips horizontally the
+   same way but does NOT establish a scroll container, so viewport-relative
+   sticky works. Scoped via :has() so no other page is affected. */
+.app-main:has(.page.research) {
+  overflow-x: clip;
+}
+
 /* On this page nav */
 .otp {
   position: sticky;
-  top: 20px;
+  top: 88px;
+  max-height: calc(100vh - 112px);
+  overflow-y: auto;
   order: 2;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* Thin, unobtrusive scrollbar only when the list overflows */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+.otp::-webkit-scrollbar {
+  width: 6px;
+}
+.otp::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 999px;
 }
 .otp__label {
   font-size: 10.5px;
@@ -212,7 +234,7 @@
 }
 .otp-select { display: none; }
 
-.brief-section { scroll-margin-top: 84px; }
+.brief-section { scroll-margin-top: 96px; }
 .brief-head { margin-bottom: 14px; }
 .brief-title { font-size: 16px; font-weight: 680; letter-spacing: -0.2px; }
 .brief-sub {
@@ -223,26 +245,44 @@
   line-height: 1.5;
 }
 
-/* Situation */
+/* Executive briefing (Situation) */
 .situation {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
   gap: 22px;
   padding: 22px;
   border-radius: var(--r-lg);
+  /* Subtle #5C95A8 accent on the top & left, soft line elsewhere */
   border: 1px solid var(--brand-line);
+  border-top-color: var(--brand);
+  border-left-color: var(--brand);
+  /* Dark theme is the base (matches :root default). A cool brand tint
+     fades into the card surface — calm, not saturated. */
   background: linear-gradient(
-    150deg,
-    color-mix(in srgb, var(--brand) 13%, var(--color-surface)),
-    var(--color-surface) 70%
+    135deg,
+    rgba(92, 149, 168, 0.2),
+    rgba(92, 149, 168, 0.05) 55%,
+    var(--color-surface) 100%
   );
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+:root[data-theme="light"] .situation {
+  background: linear-gradient(
+    135deg,
+    rgba(92, 149, 168, 0.18),
+    rgba(92, 149, 168, 0.05) 55%,
+    #ffffff 100%
+  );
+  box-shadow: 0 6px 20px rgba(92, 149, 168, 0.1);
 }
 .situation__headline {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: 720;
   letter-spacing: -0.5px;
   line-height: 1.2;
   margin: 8px 0 12px;
+  /* Strongest text token for clear contrast over the tint */
+  color: var(--text-1);
 }
 .situation__summary { font-size: 14px; line-height: 1.6; color: var(--text-1); }
 .situation__whynow {
@@ -975,16 +1015,66 @@
    ========================================================================= */
 @media (max-width: 1100px) {
   .brief { grid-template-columns: 1fr; }
-  .otp { display: none; }
-  .otp-select {
-    display: block;
+
+  /* Convert the vertical rail into a sticky horizontal tab bar */
+  .otp {
+    order: -1; /* above the content in the collapsed single column */
     position: sticky;
     top: 0;
     z-index: 15;
+    max-height: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
     padding: 8px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
     background: var(--color-bg);
+    border-bottom: 1px solid var(--border-subtle);
+    scrollbar-width: none;
   }
-  .otp-select select { width: 100%; }
+  .otp::-webkit-scrollbar {
+    display: none;
+  }
+  .otp__label {
+    display: none;
+  }
+  .otp ul {
+    flex-direction: row;
+    gap: 4px;
+  }
+  .otp__link {
+    white-space: nowrap;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    padding: 7px 12px;
+  }
+  .otp__link.is-active {
+    border-left-color: transparent;
+    border-bottom-color: var(--brand);
+    background: var(--brand-subtle);
+  }
+
+  /* The dropdown is replaced by the tab bar */
+  .otp-select {
+    display: none;
+  }
+
+  /* Headings clear the sticky tab bar when jumped to */
+  .brief-section {
+    scroll-margin-top: 64px;
+  }
+}
+/* Below 1024px the off-canvas mobile top bar appears (sticky, ~57px).
+   Sit the tab bar just under it, and clear both when jumping. */
+@media (max-width: 1023px) {
+  .otp {
+    top: 57px;
+  }
+  .brief-section {
+    scroll-margin-top: 116px;
+  }
 }
 @media (max-width: 1024px) {
   .opp-thesis,
