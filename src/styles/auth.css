@@ -1,0 +1,173 @@
+/* =========================================================================
+   Sign-in (prototype) — themed, accessible
+   ========================================================================= */
+.signin {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg);
+  padding: 32px 20px;
+}
+.signin__inner {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.signin__brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.signin__brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.signin__brand-name span {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+.signin__card {
+  width: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-xl);
+  padding: 28px 26px 22px;
+  box-shadow: var(--shadow-2);
+}
+.signin__title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.signin__copy {
+  margin: 6px 0 20px;
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.signin__card .field {
+  margin-bottom: 14px;
+}
+/* Leading mail icon inside the email field */
+.signin .input-affix__lead {
+  top: 50%;
+  transform: translateY(-50%);
+  left: 13px;
+  display: flex;
+  align-items: center;
+  color: var(--text-3);
+}
+.signin .input-affix__lead svg {
+  width: 16px;
+  height: 16px;
+}
+.signin .field-control.has-lead {
+  padding-left: 40px;
+  padding-right: 12px;
+}
+.signin__submit {
+  width: 100%;
+  justify-content: center;
+  height: 40px;
+  margin-top: 2px;
+}
+.signin__error {
+  font-size: 12.5px;
+  color: var(--critical);
+  margin: -6px 0 12px;
+}
+.signin__hint {
+  font-size: 12.5px;
+  color: var(--brand-text);
+  margin: -6px 0 12px;
+}
+.signin__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.signin__divider::before,
+.signin__divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+.signin__oauth {
+  width: 100%;
+  justify-content: center;
+  height: 40px;
+}
+.signin__link {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--brand-text);
+}
+.signin__link:hover {
+  text-decoration: underline;
+}
+.signin__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+.signin__row .signin__link {
+  width: auto;
+  margin-top: 0;
+}
+.signin__code {
+  font-size: 18px;
+  letter-spacing: 6px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.signin__proto {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 11.5px;
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.signin__proto svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--success);
+}
+.signin__terms {
+  font-size: 11.5px;
+  color: var(--text-3);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 320px;
+}
+.signin__terms a {
+  color: var(--brand-text);
+  text-decoration: underline;
+}
+.signin__theme {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+}

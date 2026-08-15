@@ -1,4 +1,5 @@
-import { NavLink, useParams } from "react-router-dom";
+import { useRef, useState } from "react";
+import { NavLink, useNavigate, useParams } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutGrid,
@@ -10,14 +11,17 @@ import {
   FileStack,
   ChevronLeft,
   Settings,
+  LogOut,
+  MoreVertical,
   PanelLeftClose,
   PanelLeftOpen,
   X,
 } from "lucide-react";
 import { CONSULTANT, projects } from "../data/mock";
-import { Tooltip } from "./Tooltip";
 import { ThemeToggle } from "./ThemeToggle";
 import { useSidebar } from "../hooks/useSidebar";
+import { useAuth } from "../hooks/useAuth";
+import { useClickOutside } from "../hooks/useClickOutside";
 
 const projectNav = [
   { to: "", label: "Overview", icon: LayoutGrid, end: true },
@@ -180,19 +184,56 @@ export function Sidebar() {
           <ThemeToggle />
         </div>
 
-        <div className="userchip">
-          <div className="avatar">{CONSULTANT.initials}</div>
-          <div className="userchip__text">
-            <span className="userchip__name truncate">{CONSULTANT.name}</span>
-            <span className="userchip__role truncate">{CONSULTANT.role}</span>
-          </div>
-          <Tooltip label="Settings — available in a later phase">
-            <button className="icon-btn userchip__settings" disabled aria-label="Settings">
-              <Settings />
-            </button>
-          </Tooltip>
-        </div>
+        <UserMenu />
       </div>
     </aside>
+  );
+}
+
+function UserMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  useClickOutside(ref, () => setOpen(false), open);
+
+  return (
+    <div className="userchip menu" ref={ref}>
+      <button
+        className="userchip__trigger"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Account menu"
+      >
+        <span className="avatar">{CONSULTANT.initials}</span>
+        <span className="userchip__text">
+          <span className="userchip__name truncate">{CONSULTANT.name}</span>
+          <span className="userchip__role truncate">{CONSULTANT.role}</span>
+        </span>
+        <MoreVertical className="userchip__more" aria-hidden />
+        <span className="nav-item__tip" role="tooltip">
+          {CONSULTANT.name}
+        </span>
+      </button>
+      {open && (
+        <div className="menu__pop userchip__menu" role="menu">
+          <button role="menuitem" disabled>
+            <Settings /> Settings (soon)
+          </button>
+          <div className="menu__sep" />
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              signOut();
+              navigate("/sign-in", { replace: true });
+            }}
+          >
+            <LogOut /> Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

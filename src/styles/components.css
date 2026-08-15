@@ -222,11 +222,33 @@
   color: var(--brand-text);
 }
 .userchip {
+  position: relative;
+}
+.userchip__trigger {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 8px;
+  width: 100%;
+  padding: 8px;
   border-radius: var(--r-md);
+  text-align: left;
+  transition: background 0.14s ease;
+}
+.userchip__trigger:hover {
+  background: var(--surface-2);
+}
+.userchip__more {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  flex: none;
+}
+.userchip__menu {
+  bottom: calc(100% + 8px);
+  top: auto;
+  left: 0;
+  right: 0;
+  min-width: 0;
 }
 .avatar {
   width: 32px;
@@ -334,8 +356,12 @@
 .app-shell[data-sidebar="collapsed"] .nav-project,
 .app-shell[data-sidebar="collapsed"] .theme-row__label,
 .app-shell[data-sidebar="collapsed"] .userchip__text,
-.app-shell[data-sidebar="collapsed"] .userchip__settings {
+.app-shell[data-sidebar="collapsed"] .userchip__more {
   display: none;
+}
+.app-shell[data-sidebar="collapsed"] .userchip__trigger {
+  justify-content: center;
+  padding: 4px 0;
 }
 /* Centred 40×40 icon tiles (no full-width backgrounds in the rail) */
 .app-shell[data-sidebar="collapsed"] .nav-item,
@@ -2203,23 +2229,55 @@ textarea.field-control {
 
 /* Compact laptop / tablet landscape */
 @media (max-width: 1024px) {
+  /* Keep the four summary metrics in one compact row where space permits */
   .summary-strip {
-    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 14px;
   }
-  .summary-cell:nth-child(2) {
-    border-left: none;
+  .summary-cell {
+    padding: 12px 12px;
+    gap: 2px 9px;
   }
-  .summary-cell:nth-child(3) {
-    border-top: 1px solid var(--border-subtle);
+  .summary-cell__icon {
+    width: 32px;
+    height: 32px;
   }
-  .summary-cell:nth-child(4) {
-    border-top: 1px solid var(--border-subtle);
+  .summary-cell__value {
+    font-size: 20px;
+  }
+  .summary-cell__label {
+    font-size: 11px;
+  }
+  /* Tighter vertical rhythm around search / filters / sort / count */
+  .toolbar {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .results-meta {
+    margin-bottom: 10px;
+  }
+  /* Slightly darker secondary metadata for readability */
+  .project-row__tertiary {
+    color: var(--text-2);
   }
   .opps {
     grid-template-columns: 1fr;
   }
   .proj-meta {
     font-size: 12.5px;
+  }
+}
+
+/* Summary metrics fall back to two rows only when four no longer fit */
+@media (max-width: 720px) {
+  .summary-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .summary-cell:nth-child(2) {
+    border-left: none;
+  }
+  .summary-cell:nth-child(3),
+  .summary-cell:nth-child(4) {
+    border-top: 1px solid var(--border-subtle);
   }
 }
 
