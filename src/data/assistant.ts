@@ -185,7 +185,7 @@ const EMAIL_OWNERS = [
   },
 ];
 
-const SIGNOFF = "Yashvi Rao\nHeizen · Discovery";
+const SIGNOFF = "Yashvi\nHeizen · Discovery";
 
 /**
  * Build an editable recap email from the call's confirmed problems,

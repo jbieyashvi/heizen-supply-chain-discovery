@@ -1,7 +1,7 @@
 import type { Project, ProjectDetail } from "./types";
 
 export const CONSULTANT = {
-  name: "Yashvi Rao",
+  name: "Yashvi",
   role: "Discovery Consultant",
   initials: "YR",
 };
@@ -12,7 +12,7 @@ export const projects: Project[] = [
     name: "Clio Snacks",
     client: "Clio Snacks Pvt. Ltd.",
     industry: "Food Manufacturing / CPG",
-    owner: "Yashvi Rao",
+    owner: "Yashvi",
     ownerInitials: "YR",
     isMine: true,
     stakeholder: { name: "Meera Iyer", role: "VP Operations" },
@@ -57,7 +57,7 @@ export const projects: Project[] = [
     name: "JSW Steel",
     client: "JSW Steel Ltd.",
     industry: "Metals & Mining",
-    owner: "Yashvi Rao",
+    owner: "Yashvi",
     ownerInitials: "YR",
     isMine: true,
     stakeholder: { name: "Anand Krishnan", role: "Director, Logistics" },
@@ -102,7 +102,7 @@ export const projects: Project[] = [
     name: "Vedanta Copper",
     client: "Vedanta Ltd. — Copper",
     industry: "Metals & Mining",
-    owner: "Yashvi Rao",
+    owner: "Yashvi",
     ownerInitials: "YR",
     isMine: true,
     stakeholder: { name: "—", role: "Not yet identified" },

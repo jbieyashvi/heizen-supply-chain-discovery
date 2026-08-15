@@ -104,7 +104,7 @@ export function SourcesPage() {
       name: `${method.type} (new)`,
       type: method.type,
       origin: method.origin,
-      addedBy: "Yashvi Rao",
+      addedBy: "Yashvi",
       date: now,
       status: "processing",
       progress: 4,
