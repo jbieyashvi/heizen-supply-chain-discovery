@@ -10,6 +10,16 @@
   min-height: 100vh;
   position: relative;
   z-index: 1;
+  transition: grid-template-columns 0.2s ease;
+}
+.app-shell[data-sidebar="expanded"] {
+  --sidebar-w: 220px;
+}
+.app-shell[data-sidebar="collapsed"] {
+  --sidebar-w: 68px;
+}
+.app-shell[data-sidebar="mobile"] {
+  grid-template-columns: 1fr;
 }
 .app-main {
   min-width: 0;
@@ -31,8 +41,15 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
+  justify-content: space-between;
+  gap: 8px;
   padding: 4px 8px var(--s-5);
+}
+.brand__id {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
 }
 .brand__mark {
   display: grid;
@@ -238,6 +255,170 @@
 .userchip__role {
   font-size: 11.5px;
   color: var(--text-3);
+}
+.userchip__settings {
+  flex: none;
+}
+
+/* ---------- Collapse toggle + nav labels/tips ---------- */
+.nav-item__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-item__tip {
+  display: none;
+}
+.sidebar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: var(--r-md);
+  color: var(--text-2);
+  font-weight: 550;
+  font-size: 13px;
+  border: 1px solid transparent;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.sidebar__toggle:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+.sidebar__toggle svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.sidebar__close {
+  flex: none;
+}
+
+/* ---------- Mobile top bar (off-canvas trigger) ---------- */
+.mobile-topbar {
+  display: none;
+}
+.mobile-topbar__brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.mobile-topbar__brand span {
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+/* =========================================================================
+   COLLAPSED ICON RAIL
+   ========================================================================= */
+.app-shell[data-sidebar="collapsed"] .sidebar {
+  padding-left: 0;
+  padding-right: 0;
+  align-items: stretch;
+}
+.app-shell[data-sidebar="collapsed"] .sidebar__nav {
+  overflow: visible; /* let tooltips escape the rail */
+}
+.app-shell[data-sidebar="collapsed"] .brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.app-shell[data-sidebar="collapsed"] .brand__text,
+.app-shell[data-sidebar="collapsed"] .nav-item__label,
+.app-shell[data-sidebar="collapsed"] .nav-group-label,
+.app-shell[data-sidebar="collapsed"] .nav-project,
+.app-shell[data-sidebar="collapsed"] .theme-row__label,
+.app-shell[data-sidebar="collapsed"] .userchip__text,
+.app-shell[data-sidebar="collapsed"] .userchip__settings {
+  display: none;
+}
+.app-shell[data-sidebar="collapsed"] .nav-item,
+.app-shell[data-sidebar="collapsed"] .sidebar__toggle {
+  position: relative;
+  justify-content: center;
+  gap: 0;
+  padding: 10px 0;
+}
+.app-shell[data-sidebar="collapsed"] .theme-row {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.app-shell[data-sidebar="collapsed"] .theme-toggle {
+  flex-direction: column;
+}
+.app-shell[data-sidebar="collapsed"] .userchip {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+/* Rail tooltips */
+.app-shell[data-sidebar="collapsed"] .nav-item__tip {
+  display: block;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  border: 1px solid var(--border-strong);
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-2);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+  z-index: 70;
+}
+.app-shell[data-sidebar="collapsed"] .nav-item:hover .nav-item__tip,
+.app-shell[data-sidebar="collapsed"] .nav-item:focus-visible .nav-item__tip,
+.app-shell[data-sidebar="collapsed"] .sidebar__toggle:hover .nav-item__tip,
+.app-shell[data-sidebar="collapsed"] .sidebar__toggle:focus-visible .nav-item__tip {
+  opacity: 1;
+}
+
+/* =========================================================================
+   OFF-CANVAS DRAWER (< 1024px)
+   ========================================================================= */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  z-index: 105;
+  animation: fade 0.16s ease;
+}
+.app-shell[data-sidebar="mobile"] .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 240px;
+  height: 100vh;
+  z-index: 110;
+  transform: translateX(-100%);
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: var(--shadow-pop);
+}
+.app-shell[data-sidebar="mobile"][data-mobile-open="true"] .sidebar {
+  transform: none;
+}
+.app-shell[data-sidebar="mobile"] .mobile-topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 10px 16px;
+  background: var(--color-sidebar);
+  border-bottom: 1px solid var(--border-subtle);
 }
 
 /* ---------- Page + header ---------- */
@@ -1973,9 +2154,6 @@ textarea.field-control {
   }
 }
 @media (max-width: 1080px) {
-  :root {
-    --sidebar-w: 212px;
-  }
   .project-row {
     grid-template-columns: 1fr;
   }
@@ -2054,9 +2232,6 @@ textarea.field-control {
 
 /* Small tablet / large phone */
 @media (max-width: 640px) {
-  :root {
-    --sidebar-w: 188px;
-  }
   .summary-strip {
     grid-template-columns: 1fr;
   }
