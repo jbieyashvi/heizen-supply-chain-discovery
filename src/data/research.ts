@@ -5,7 +5,7 @@ export interface EvidenceDetail {
   source: string;
   excerpt: string; // paraphrased, not heavily quoted
   sourceType: string;
-  date: string;
+  date: string; // consistent "D MMM YYYY"
   visibility: "public" | "client";
   supports: string;
   conflicts?: string;
@@ -158,7 +158,22 @@ export interface ResearchData {
 
 /* ================================================================
    Clio Snacks research content
+
+   Source timeline (prototype "today" = 15 Aug 2026):
+   - Included in the current Research (generated 12 Aug 2026):
+       10 Aug — Initial discovery call transcript (client)
+       11 Aug — NetSuite support summary (client)
+       12 Aug — Company website & public market context (public)
+   - Pending refresh (added after the brief was generated, NOT yet included):
+       13 Aug — Follow-up operations call transcript (client)
+       14 Aug — Vendor support addendum (client)
+   Every evidence panel references an INCLUDED source only.
    ================================================================ */
+
+const SRC_DISCOVERY = "Initial discovery call transcript — 10 Aug 2026";
+const SRC_NETSUITE = "NetSuite support summary — 11 Aug 2026";
+const SRC_PUBLIC = "Company website & public market context";
+
 export const clioResearch: ResearchData = {
   meta: {
     status: "Completed",
@@ -173,7 +188,7 @@ export const clioResearch: ResearchData = {
     situation:
       "Clio Snacks is scaling a high-volume refrigerated manufacturing operation while dealing with paper-based production completion, traceability pressure, and an approaching NetSuite support gap. Heizen's strongest opportunity is improving the handoffs between production, inventory, quality, and planning without replacing existing systems of record.",
     whyNow:
-      "A recent capacity expansion has increased daily volume faster than the plant's data workflows can keep up, and the NetSuite ACS support contract lapses in October — narrowing the window to stabilise operations before peak.",
+      "The NetSuite ACS support contract lapses in October — a firm, client-confirmed deadline — narrowing the window to stabilise operations before peak. Public context also points to a recent capacity expansion that would compound the cost of today's data delays (to be confirmed on the call).",
     signals: [
       {
         id: "sig-1",
@@ -184,16 +199,16 @@ export const clioResearch: ResearchData = {
           "Finished-goods availability is up to a day behind actual, distorting order promising and planning during peak demand.",
         relatedOpportunity: "Manufacturing execution visibility",
         detail: {
-          source: "Discovery call transcript — 13 Aug",
+          source: SRC_DISCOVERY,
           excerpt:
-            "The COO described shift supervisors completing work orders on paper and a clerk keying results into NetSuite the next morning, confirming a roughly one-day delay before inventory reflects production.",
-          sourceType: "Discovery call transcript",
-          date: "13 Aug 2026",
+            "On the initial discovery call the COO described shift supervisors completing work orders on paper and a clerk keying results into NetSuite the next morning, confirming a roughly one-day delay before inventory reflects production.",
+          sourceType: "Discovery call transcript (client-provided)",
+          date: "10 Aug 2026",
           visibility: "client",
           supports:
             "Confirms the inventory lag is caused by manual, batched data entry rather than a system limitation.",
           conflicts:
-            "Exact transaction-level cause (posting step vs. data entry) is not yet isolated.",
+            "The exact transaction-level cause (posting step vs. data entry) is not yet isolated.",
           relatedQuestions: [
             "How long after production does finished-goods inventory reflect in NetSuite today?",
           ],
@@ -208,11 +223,11 @@ export const clioResearch: ResearchData = {
           "Escalation SLAs and configuration support fall away just as FSMA and peak-season work intensify.",
         relatedOpportunity: "NetSuite operational support",
         detail: {
-          source: "Vendor support contract summary",
+          source: SRC_NETSUITE,
           excerpt:
-            "The shared contract summary shows the Advanced Customer Support term ending in October with no renewal line item, leaving configuration changes and escalations without a defined owner.",
-          sourceType: "Vendor contract (client-provided)",
-          date: "Uploaded 13 Aug 2026",
+            "The client-provided NetSuite support summary shows the Advanced Customer Support term ending in October with no renewal line item, leaving configuration changes and escalations without a defined owner.",
+          sourceType: "Vendor summary (client-provided)",
+          date: "11 Aug 2026",
           visibility: "client",
           supports:
             "Establishes a firm date for the support gap and its scope (config + escalations).",
@@ -231,14 +246,14 @@ export const clioResearch: ResearchData = {
           "Compliance work competes with operational improvements for the same limited internal engineering time.",
         relatedOpportunity: "Traceability & recall readiness",
         detail: {
-          source: "FDA FSMA 204 guidance · Clio careers page · GS1 brief",
+          source: SRC_PUBLIC,
           excerpt:
             "Public FSMA 204 timelines plus a recent Clio job posting for a traceability analyst suggest lot-level traceability is absorbing meaningful internal roadmap capacity — to be confirmed on the call.",
           sourceType: "Public-source inference",
-          date: "Accessed 12 Aug 2026",
+          date: "12 Aug 2026",
           visibility: "public",
           supports:
-            "Indicates traceability is an active internal priority and a likely capacity constraint.",
+            "Indicates traceability is a likely internal priority and capacity constraint.",
           conflicts:
             "No client confirmation yet of which SKUs are in scope or the internal effort involved.",
           relatedQuestions: [
@@ -493,17 +508,18 @@ export const clioResearch: ResearchData = {
             "Growth is outpacing the plant's data workflows, which is the root of most operational pain.",
           evidence: "public-inference",
           confidence: "high",
-          sourceCount: 3,
+          sourceCount: 1,
           relatedOpportunity: "Manufacturing execution visibility",
-          lastUpdated: "12 Aug",
+          lastUpdated: "12 Aug 2026",
           detail: {
-            source: "Company site · industry press · LinkedIn",
+            source: SRC_PUBLIC,
             excerpt:
               "Public sources describe a refrigerated snack line with a recent capacity expansion and hiring in operations and quality.",
             sourceType: "Public-source inference",
-            date: "Accessed 12 Aug 2026",
+            date: "12 Aug 2026",
             visibility: "public",
             supports: "Establishes scale and growth trajectory.",
+            conflicts: "Client confirmation of current throughput is still pending.",
             relatedQuestions: [
               "What operational data did buyers ask for during recent diligence?",
             ],
@@ -525,17 +541,17 @@ export const clioResearch: ResearchData = {
             "This is the direct cause of the 24-hour inventory lag and downstream planning drift.",
           evidence: "client-confirmed",
           confidence: "high",
-          sourceCount: 2,
+          sourceCount: 1,
           relatedOpportunity: "Manufacturing execution visibility",
           relatedQuestion:
             "How long after production does finished-goods inventory reflect in NetSuite today?",
-          lastUpdated: "13 Aug",
+          lastUpdated: "10 Aug 2026",
           detail: {
-            source: "Discovery call transcript — 13 Aug",
+            source: SRC_DISCOVERY,
             excerpt:
-              "The COO confirmed paper work orders completed at shift end and entered by a clerk the following morning.",
-            sourceType: "Discovery call transcript",
-            date: "13 Aug 2026",
+              "On the initial discovery call the COO confirmed paper work orders completed at shift end and entered by a clerk the following morning.",
+            sourceType: "Discovery call transcript (client-provided)",
+            date: "10 Aug 2026",
             visibility: "client",
             supports:
               "Confirms manual, batched data entry as the mechanism of the lag.",
@@ -555,21 +571,23 @@ export const clioResearch: ResearchData = {
       findings: [
         {
           id: "f-3",
-          finding: "Recent capacity expansion increased daily throughput",
+          finding: "Recent capacity expansion appears to have increased throughput",
           whyItMatters:
             "Higher volume magnifies the cost of every data delay and handoff gap.",
           evidence: "public-inference",
           confidence: "medium",
-          sourceCount: 2,
-          lastUpdated: "12 Aug",
+          sourceCount: 1,
+          lastUpdated: "12 Aug 2026",
           detail: {
-            source: "Industry press · company updates",
+            source: SRC_PUBLIC,
             excerpt:
-              "Coverage references a line expansion and increased production volume over the past year.",
+              "Public coverage references a line expansion and increased production volume over the past year.",
             sourceType: "Public-source inference",
-            date: "Accessed 12 Aug 2026",
+            date: "12 Aug 2026",
             visibility: "public",
             supports: "Explains why existing workflows are now strained.",
+            conflicts:
+              "Based on public information — current throughput not yet client-confirmed.",
             relatedQuestions: [],
             relatedOpportunities: ["Manufacturing execution visibility"],
           },
@@ -588,17 +606,17 @@ export const clioResearch: ResearchData = {
             "Distorts availability-to-promise and planning during peak demand.",
           evidence: "client-confirmed",
           confidence: "high",
-          sourceCount: 2,
+          sourceCount: 1,
           relatedOpportunity: "Manufacturing execution visibility",
           relatedQuestion:
             "How long after production does finished-goods inventory reflect in NetSuite today?",
-          lastUpdated: "13 Aug",
+          lastUpdated: "10 Aug 2026",
           detail: {
-            source: "Discovery call transcript — 13 Aug · Ops walkthrough notes",
+            source: SRC_DISCOVERY,
             excerpt:
-              "Two client sources corroborate a ~24-hour delay between production and inventory reflection.",
-            sourceType: "Client confirmed",
-            date: "13 Aug 2026",
+              "The initial discovery call established a ~24-hour delay between production and inventory reflection.",
+            sourceType: "Discovery call transcript (client-provided)",
+            date: "10 Aug 2026",
             visibility: "client",
             supports: "High-confidence operational pain with a clear cause.",
             relatedQuestions: [
@@ -614,17 +632,17 @@ export const clioResearch: ResearchData = {
             "Slows recall readiness and FSMA 204 reporting; no single lineage owner.",
           evidence: "public-inference",
           confidence: "medium",
-          sourceCount: 2,
+          sourceCount: 1,
           relatedOpportunity: "Traceability & recall readiness",
           relatedQuestion:
             "Which product lines fall under FSMA 204, and what is your current lot-tracking method?",
-          lastUpdated: "12 Aug",
+          lastUpdated: "12 Aug 2026",
           detail: {
-            source: "TraceGains overview · FSMA 204 guidance",
+            source: SRC_PUBLIC,
             excerpt:
-              "System footprint implies lot data spans TraceGains, NetSuite and the warehouse store, with no unified genealogy.",
+              "The system footprint implies lot data spans TraceGains, NetSuite and the warehouse store, with no unified genealogy.",
             sourceType: "Public-source inference",
-            date: "Accessed 12 Aug 2026",
+            date: "12 Aug 2026",
             visibility: "public",
             supports: "Points to a traceability consolidation opportunity.",
             conflicts: "System of record for lot genealogy unconfirmed.",
@@ -651,15 +669,16 @@ export const clioResearch: ResearchData = {
           confidence: "medium",
           sourceCount: 1,
           relatedOpportunity: "Manufacturing execution visibility",
-          lastUpdated: "12 Aug",
+          lastUpdated: "12 Aug 2026",
           detail: {
-            source: "Ops walkthrough notes",
+            source: SRC_PUBLIC,
             excerpt:
-              "Line automation appears isolated from ERP/WMS, requiring manual bridging.",
+              "Public system context suggests line automation is isolated from ERP/WMS, requiring manual bridging.",
             sourceType: "Public-source inference",
             date: "12 Aug 2026",
             visibility: "public",
-            supports: "Confirms a high-value integration gap.",
+            supports: "Indicates a high-value integration gap to confirm.",
+            conflicts: "Integration state not yet client-confirmed.",
             relatedQuestions: [],
             relatedOpportunities: ["Manufacturing execution visibility"],
           },
@@ -682,13 +701,13 @@ export const clioResearch: ResearchData = {
           relatedOpportunity: "NetSuite operational support",
           relatedQuestion:
             "What is your plan for NetSuite support once ACS lapses in October?",
-          lastUpdated: "13 Aug",
+          lastUpdated: "11 Aug 2026",
           detail: {
-            source: "Vendor support contract summary",
+            source: SRC_NETSUITE,
             excerpt:
-              "Contract summary shows the ACS term ending in October without a renewal line.",
-            sourceType: "Client document",
-            date: "Uploaded 13 Aug 2026",
+              "The client-provided support summary shows the ACS term ending in October without a renewal line.",
+            sourceType: "Vendor summary (client-provided)",
+            date: "11 Aug 2026",
             visibility: "client",
             supports: "Firm date and scope for the support gap.",
             relatedQuestions: [
@@ -712,13 +731,13 @@ export const clioResearch: ResearchData = {
           evidence: "client-confirmed",
           confidence: "high",
           sourceCount: 1,
-          lastUpdated: "13 Aug",
+          lastUpdated: "10 Aug 2026",
           detail: {
-            source: "Discovery call transcript — 13 Aug",
+            source: SRC_DISCOVERY,
             excerpt:
-              "The COO led the operational discussion and framed scaling as the priority.",
-            sourceType: "Client confirmed",
-            date: "13 Aug 2026",
+              "On the initial discovery call the COO led the operational discussion and framed scaling as the priority.",
+            sourceType: "Discovery call transcript (client-provided)",
+            date: "10 Aug 2026",
             visibility: "client",
             supports: "Identifies the champion and their framing.",
             relatedQuestions: [],
@@ -739,15 +758,15 @@ export const clioResearch: ResearchData = {
             "Regulatory timing competes with operational improvements for capacity.",
           evidence: "market-benchmark",
           confidence: "medium",
-          sourceCount: 2,
+          sourceCount: 1,
           relatedOpportunity: "Traceability & recall readiness",
-          lastUpdated: "12 Aug",
+          lastUpdated: "12 Aug 2026",
           detail: {
-            source: "FDA FSMA 204 guidance · GS1 industry brief",
+            source: SRC_PUBLIC,
             excerpt:
-              "Industry benchmarks show FSMA 204 absorbing 20–30% of mid-market food IT roadmaps.",
+              "Industry benchmarks captured during public research show FSMA 204 absorbing 20–30% of mid-market food IT roadmaps.",
             sourceType: "Market benchmark",
-            date: "Accessed 12 Aug 2026",
+            date: "12 Aug 2026",
             visibility: "public",
             supports: "Contextualises the capacity pressure.",
             conflicts: "Clio-specific effort not yet confirmed.",
@@ -762,27 +781,27 @@ export const clioResearch: ResearchData = {
     {
       id: "similar",
       title: "Similar Heizen work",
-      summary: "Prior work relevant as proof.",
+      summary: "Comparable market work relevant as proof.",
       findings: [
         {
           id: "f-10",
           finding:
-            "Heizen has closed paper-to-ERP inventory gaps for a similar F&B manufacturer",
+            "Comparable mid-market F&B manufacturers have closed similar paper-to-ERP posting gaps",
           whyItMatters:
-            "De-risks the primary opportunity with a demonstrated approach.",
-          evidence: "client-document",
-          confidence: "high",
+            "De-risks the primary opportunity with a demonstrated pattern.",
+          evidence: "market-benchmark",
+          confidence: "medium",
           sourceCount: 1,
           relatedOpportunity: "Manufacturing execution visibility",
-          lastUpdated: "12 Aug",
+          lastUpdated: "12 Aug 2026",
           detail: {
-            source: "Internal project record",
+            source: SRC_PUBLIC,
             excerpt:
-              "A prior mid-market F&B engagement closed a comparable posting lag with source-side capture.",
-            sourceType: "Client document",
-            date: "Internal",
-            visibility: "client",
-            supports: "Direct precedent for the proposed approach.",
+              "Comparable manufacturers have closed posting lags with source-side capture, per market pattern research.",
+            sourceType: "Market benchmark",
+            date: "12 Aug 2026",
+            visibility: "public",
+            supports: "Precedent for the proposed approach.",
             relatedQuestions: [],
             relatedOpportunities: ["Manufacturing execution visibility"],
           },
@@ -791,11 +810,46 @@ export const clioResearch: ResearchData = {
     },
   ],
   sources: [
+    /* --- Included in the current Research --- */
     {
       id: "src-1",
-      title: "Discovery call transcript — 13 Aug",
+      title: SRC_DISCOVERY,
       type: "Discovery transcript",
-      domainOrFile: "clio-discovery-2026-08-13.txt",
+      domainOrFile: "clio-discovery-2026-08-10.txt",
+      visibility: "client",
+      state: "processed",
+      signals: 5,
+      included: true,
+      pending: false,
+    },
+    {
+      id: "src-2",
+      title: SRC_NETSUITE,
+      type: "Vendor summary",
+      domainOrFile: "netsuite-support-summary.pdf",
+      visibility: "client",
+      state: "processed",
+      signals: 2,
+      included: true,
+      pending: false,
+    },
+    {
+      id: "src-3",
+      title: SRC_PUBLIC,
+      type: "Public web & context",
+      domainOrFile: "cliosnacks.com + public sources",
+      visibility: "public",
+      state: "processed",
+      signals: 4,
+      included: true,
+      pending: false,
+    },
+    /* --- Pending refresh (NOT included) --- */
+    {
+      id: "src-4",
+      title: "Follow-up operations call transcript — 13 Aug 2026",
+      type: "Discovery transcript",
+      domainOrFile: "clio-followup-2026-08-13.txt",
       visibility: "client",
       state: "processed",
       signals: 6,
@@ -803,73 +857,19 @@ export const clioResearch: ResearchData = {
       pending: true,
     },
     {
-      id: "src-2",
-      title: "Vendor support contract summary",
-      type: "Vendor contract",
-      domainOrFile: "netsuite-acs-summary.pdf",
+      id: "src-5",
+      title: "Vendor support addendum — 14 Aug 2026",
+      type: "Vendor addendum",
+      domainOrFile: "netsuite-support-addendum.pdf",
       visibility: "client",
       state: "processed",
       signals: 2,
       included: false,
       pending: true,
     },
-    {
-      id: "src-3",
-      title: "Company website",
-      type: "Public web",
-      domainOrFile: "cliosnacks.com",
-      visibility: "public",
-      state: "processed",
-      signals: 4,
-      included: true,
-      pending: false,
-    },
-    {
-      id: "src-4",
-      title: "FDA FSMA 204 final rule guidance",
-      type: "Regulatory",
-      domainOrFile: "fda.gov",
-      visibility: "public",
-      state: "processed",
-      signals: 3,
-      included: true,
-      pending: false,
-    },
-    {
-      id: "src-5",
-      title: "GS1 traceability industry brief",
-      type: "Industry brief",
-      domainOrFile: "gs1.org",
-      visibility: "public",
-      state: "processed",
-      signals: 2,
-      included: true,
-      pending: false,
-    },
+    /* --- Skipped --- */
     {
       id: "src-6",
-      title: "Clio careers page",
-      type: "Public web",
-      domainOrFile: "cliosnacks.com/careers",
-      visibility: "public",
-      state: "processed",
-      signals: 1,
-      included: true,
-      pending: false,
-    },
-    {
-      id: "src-7",
-      title: "Press release — regional distribution award",
-      type: "Public web",
-      domainOrFile: "prnewswire.com",
-      visibility: "public",
-      state: "processed",
-      signals: 0,
-      included: true,
-      pending: false,
-    },
-    {
-      id: "src-8",
       title: "Archived investor deck (2019)",
       type: "Public web",
       domainOrFile: "web.archive.org",
@@ -882,22 +882,22 @@ export const clioResearch: ResearchData = {
   ],
   pending: [
     {
-      id: "src-1",
-      title: "Discovery call transcript — 13 Aug",
+      id: "src-4",
+      title: "Follow-up operations call transcript — 13 Aug 2026",
       type: "Discovery transcript (client-provided)",
-      addedRelative: "Added 2h ago",
+      addedRelative: "Added 2 days ago",
       visibility: "client",
-      updated: ["4 questions updated", "2 opportunities strengthened"],
-      pending: "Research brief not yet regenerated",
+      updated: ["4 Discovery Questions updated", "2 Opportunities strengthened"],
+      pending: "Not included in the current Research brief",
     },
     {
-      id: "src-2",
-      title: "Vendor support contract summary",
-      type: "Vendor contract (client-provided)",
-      addedRelative: "Added 3h ago",
+      id: "src-5",
+      title: "Vendor support addendum — 14 Aug 2026",
+      type: "Vendor addendum (client-provided)",
+      addedRelative: "Added yesterday",
       visibility: "client",
-      updated: ["1 opportunity strengthened", "1 critical risk added"],
-      pending: "Research brief not yet regenerated",
+      updated: ["1 Opportunity strengthened"],
+      pending: "Not included in the current Research brief",
     },
   ],
 };

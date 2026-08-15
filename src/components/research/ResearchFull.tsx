@@ -37,6 +37,23 @@ const EVIDENCE_KEYS: EvidenceLevel[] = [
   "unverified",
 ];
 
+const EV_RANK: Record<EvidenceLevel, number> = {
+  "client-confirmed": 5,
+  "client-document": 4,
+  "public-inference": 3,
+  "market-benchmark": 2,
+  unverified: 1,
+};
+
+/** Strongest evidence level among a section's findings, for a header indicator. */
+function topEvidence(findings: Finding[]): EvidenceLevel | null {
+  if (findings.length === 0) return null;
+  return findings.reduce<EvidenceLevel>(
+    (best, f) => (EV_RANK[f.evidence] > EV_RANK[best] ? f.evidence : best),
+    findings[0].evidence
+  );
+}
+
 /* ---------- Finding ---------- */
 function FindingRow({
   f,
@@ -131,6 +148,10 @@ function SourceLedger({ sources }: { sources: Source[] }) {
   const [filter, setFilter] = useState<LedgerFilter>("all");
   const [query, setQuery] = useState("");
   const [showQuiet, setShowQuiet] = useState(false);
+  const [open, setOpen] = useState(false); // ledger details collapsed by default
+
+  const includedCount = sources.filter((s) => s.included).length;
+  const pendingCount = sources.filter((s) => s.pending).length;
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -149,17 +170,30 @@ function SourceLedger({ sources }: { sources: Source[] }) {
   const quietCount = sources.filter((s) => s.signals === 0).length;
 
   return (
-    <section id="ledger" className="ledger">
-      <header className="brief-head ledger__head">
-        <div>
+    <section id="ledger" className="ledger card">
+      <button
+        className="ledger__toggle-head"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <div className="ledger__id-head">
           <h3 className="brief-title">Source ledger</h3>
-          <p className="brief-sub">
-            Every source considered. Sources with no useful signals are hidden by
-            default.
-          </p>
+          <span className="fsection__summary">
+            {sources.length} sources · {includedCount} included · {pendingCount}{" "}
+            pending refresh
+          </span>
         </div>
-      </header>
+        <span className="fsection__meta">
+          {open ? "Hide details" : "Show details"}
+          <ChevronDown
+            className={`fsection__chev${open ? " is-open" : ""}`}
+            aria-hidden
+          />
+        </span>
+      </button>
 
+      {!open ? null : (
+      <>
       <div className="ledger__toolbar">
         <div className="searchbox searchbox--sm">
           <Search aria-hidden />
@@ -198,7 +232,9 @@ function SourceLedger({ sources }: { sources: Source[] }) {
               </span>
             </div>
             <span className="ledger__signals">
-              {s.signals > 0 ? `${s.signals} signals` : "No signals"}
+              {s.signals === 0
+                ? "No signals"
+                : `${s.signals} ${s.signals === 1 ? "signal" : "signals"}`}
             </span>
             <span className="ledger__state">
               {s.state === "failed" ? (
@@ -237,6 +273,8 @@ function SourceLedger({ sources }: { sources: Source[] }) {
           {quietCount === 1 ? "" : "s"} with no useful signals
         </button>
       )}
+      </>
+      )}
     </section>
   );
 }
@@ -255,7 +293,14 @@ export function ResearchFull({
   const [query, setQuery] = useState("");
   const [evFilter, setEvFilter] = useState<EvFilter>("all");
   const [confFilter, setConfFilter] = useState<ConfFilter>("all");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Default: only Company context + Supply-chain signals expanded.
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    data.full.forEach((s) => {
+      init[s.id] = !(s.id === "company" || s.id === "signals");
+    });
+    return init;
+  });
 
   const filtering = Boolean(query.trim()) || evFilter !== "all" || confFilter !== "all";
 
@@ -367,6 +412,7 @@ export function ResearchFull({
       <div className="full__sections">
         {filteredSections.map((sec) => {
           const isCollapsed = collapsed[sec.id] && !filtering;
+          const top = topEvidence(sec.findings);
           return (
             <section key={sec.id} id={`full-${sec.id}`} className="fsection card">
               <button
@@ -381,8 +427,15 @@ export function ResearchFull({
                   <span className="fsection__summary">{sec.summary}</span>
                 </div>
                 <span className="fsection__meta">
-                  {sec.findings.length}{" "}
-                  {sec.findings.length === 1 ? "finding" : "findings"}
+                  {top && (
+                    <Badge tone={evidenceMeta[top].tone} dot>
+                      {evidenceMeta[top].label}
+                    </Badge>
+                  )}
+                  <span className="fsection__count">
+                    {sec.findings.length}{" "}
+                    {sec.findings.length === 1 ? "finding" : "findings"}
+                  </span>
                   <ChevronDown
                     className={`fsection__chev${isCollapsed ? "" : " is-open"}`}
                     aria-hidden

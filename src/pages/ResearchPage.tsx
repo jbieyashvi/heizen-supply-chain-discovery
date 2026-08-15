@@ -287,6 +287,7 @@ export function ResearchPage() {
         <ResearchBrief
           data={data}
           projectId={projectId!}
+          meeting={project.meeting}
           openEvidence={setEvidence}
           onPreviewClientBrief={() => setClientPreview(true)}
         />
@@ -386,7 +387,8 @@ export function ResearchPage() {
           </li>
           <li>
             <FileText aria-hidden /> Two new sources will be included — the 13 Aug
-            discovery transcript and the vendor support contract summary.
+            follow-up operations call transcript and the 14 Aug vendor support
+            addendum.
           </li>
           <li>
             <CheckCircle2 aria-hidden /> Questions and Opportunities are already

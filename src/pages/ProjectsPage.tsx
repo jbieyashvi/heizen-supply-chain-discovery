@@ -62,8 +62,9 @@ function matchesFilter(p: Project, f: FilterId): boolean {
 const meetingOrder: Record<string, number> = {
   Tomorrow: 1,
   "In 3 days": 2,
-  "Next week": 3,
-  Completed: 4,
+  "In 5 days": 3,
+  "Next week": 4,
+  Completed: 5,
 };
 
 function sortProjects(list: Project[], s: SortId): Project[] {

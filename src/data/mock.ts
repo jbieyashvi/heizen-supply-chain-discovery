@@ -16,7 +16,7 @@ export const projects: Project[] = [
     ownerInitials: "YR",
     isMine: true,
     stakeholder: { name: "Meera Iyer", role: "VP Operations" },
-    meeting: { date: "Tue, 16 Aug", time: "10:30", relative: "Tomorrow" },
+    meeting: { date: "Tue, 18 Aug", time: "10:30", relative: "In 3 days" },
     callThisWeek: true,
     research: "complete",
     researchProgress: 100,
@@ -39,7 +39,7 @@ export const projects: Project[] = [
     ownerInitials: "DM",
     isMine: false,
     stakeholder: { name: "Rakesh Sharma", role: "Head of Supply Chain" },
-    meeting: { date: "Thu, 18 Aug", time: "15:00", relative: "In 3 days" },
+    meeting: { date: "Thu, 20 Aug", time: "15:00", relative: "In 5 days" },
     callThisWeek: true,
     research: "running",
     researchProgress: 60,
@@ -61,7 +61,7 @@ export const projects: Project[] = [
     ownerInitials: "YR",
     isMine: true,
     stakeholder: { name: "Anand Krishnan", role: "Director, Logistics" },
-    meeting: { date: "Fri, 22 Aug", time: "11:00", relative: "Next week" },
+    meeting: { date: "Fri, 21 Aug", time: "11:00", relative: "Next week" },
     callThisWeek: false,
     research: "complete",
     researchProgress: 100,
@@ -84,7 +84,7 @@ export const projects: Project[] = [
     ownerInitials: "PN",
     isMine: false,
     stakeholder: { name: "Sanjay Gupta", role: "Procurement Lead" },
-    meeting: { date: "Wed, 13 Aug", time: "14:00", relative: "Completed" },
+    meeting: { date: "Thu, 13 Aug", time: "14:00", relative: "Completed" },
     callThisWeek: false,
     research: "complete",
     researchProgress: 100,
@@ -127,7 +127,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
       title: "Research needs refresh",
       body: "Two new sources are excluded from the current brief. Questions and Opportunities are already updated.",
       detail:
-        "The current brief is usable for preparation, but excludes two recently added sources: a vendor contract summary and the 13 Aug discovery transcript. Refresh research to fold them into the written brief.",
+        "The current brief is usable for preparation, but excludes two recently added sources: the 13 Aug follow-up operations call transcript and the 14 Aug vendor support addendum. Refresh research to fold them into the written brief.",
     },
     readiness: [
       {
@@ -179,7 +179,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
         evidence: "client-confirmed",
         detail:
           "Line supervisors record production output on paper at shift end; data is keyed into NetSuite the following morning. Finished-goods inventory is therefore up to 24 hours behind actual, which distorts availability-to-promise during peak demand.",
-        sources: ["Discovery call transcript — 13 Aug", "Ops walkthrough notes"],
+        sources: ["Initial discovery call transcript — 10 Aug"],
         impact: "Inventory accuracy · Order promising",
       },
       {
@@ -188,7 +188,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
         evidence: "client-document",
         detail:
           "Clio's Advanced Customer Support (ACS) contract for NetSuite lapses in October and is not slated for renewal. Without it, escalation SLAs and configuration support fall away right as FSMA work peaks.",
-        sources: ["Vendor contract summary (shared by client)"],
+        sources: ["NetSuite support summary — 11 Aug (client-provided)"],
         impact: "Operational risk · Support continuity",
       },
       {
@@ -270,7 +270,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
       {
         id: "a-1",
         kind: "transcript",
-        text: "Meeting transcript processed — 13 Aug discovery call",
+        text: "Follow-up operations call transcript processed — 13 Aug",
         time: "2h ago",
       },
       {
@@ -288,7 +288,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
       {
         id: "a-4",
         kind: "source",
-        text: "One new source added — vendor contract summary",
+        text: "One new source added — vendor support addendum (14 Aug)",
         time: "3h ago",
       },
       {

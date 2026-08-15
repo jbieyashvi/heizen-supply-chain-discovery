@@ -253,7 +253,7 @@ function FullOverview({
               onClick={() =>
                 notify({
                   title: "Source changes",
-                  body: "2 new sources: vendor contract summary, 13 Aug discovery transcript.",
+                  body: "2 new sources: 13 Aug follow-up operations call transcript, 14 Aug vendor support addendum.",
                   tone: "info",
                 })
               }

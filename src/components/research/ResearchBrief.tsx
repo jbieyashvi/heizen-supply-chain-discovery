@@ -133,11 +133,13 @@ function ModuleCard({ mod }: { mod: Module }) {
 export function ResearchBrief({
   data,
   projectId,
+  meeting,
   openEvidence,
   onPreviewClientBrief,
 }: {
   data: ResearchData;
   projectId: string;
+  meeting: { date: string; time: string; relative: string } | null;
   openEvidence: (v: EvidenceView) => void;
   onPreviewClientBrief: () => void;
 }) {
@@ -173,7 +175,10 @@ export function ResearchBrief({
             <div className="situation__stat">
               <span className="situation__stat-label">Next meeting</span>
               <span className="situation__stat-value">
-                <CalendarClock aria-hidden /> Tomorrow · 16 Aug, 10:30
+                <CalendarClock aria-hidden />{" "}
+                {meeting
+                  ? `${meeting.relative} · ${meeting.date}, ${meeting.time}`
+                  : "Not scheduled"}
               </span>
             </div>
             <div className="situation__stat">
@@ -338,10 +343,10 @@ export function ResearchBrief({
                 </div>
                 <Badge tone="accent">{s.role}</Badge>
                 <p className="stake__why">{s.why}</p>
-                <p className="stake__focus">
-                  <span className="stake__focus-label">Focus</span>
-                  {s.focus}
-                </p>
+                <div className="stake__focus">
+                  <span className="stake__focus-label">Conversation focus</span>
+                  <span className="stake__focus-body">{s.focus}</span>
+                </div>
               </div>
             ))}
           </div>
