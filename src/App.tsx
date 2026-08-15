@@ -12,7 +12,7 @@ import { DiscoveryPage } from "./pages/DiscoveryPage";
 import { CallModePage } from "./pages/CallModePage";
 import { OpportunitiesPage } from "./pages/OpportunitiesPage";
 import { ProcessMapPage } from "./pages/ProcessMapPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { SourcesPage } from "./pages/SourcesPage";
 
 export default function App() {
   return (
@@ -61,7 +61,7 @@ export default function App() {
               />
               <Route
                 path="projects/:projectId/sources"
-                element={<PlaceholderPage section="Sources" />}
+                element={<SourcesPage />}
               />
               <Route path="*" element={<Navigate to="/projects" replace />} />
             </Route>
