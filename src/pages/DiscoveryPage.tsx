@@ -49,6 +49,11 @@ type View = "all" | "shortlisted" | "to-review" | "answered" | "skipped";
 
 const strengthLabel = { strong: "Strong", medium: "Medium", weak: "Weak" } as const;
 
+/** Grammatically correct possessive (names ending in "s" take just an apostrophe). */
+function possessive(name: string): string {
+  return /s$/i.test(name) ? `${name}'` : `${name}'s`;
+}
+
 function statusView(q: AugmentedQuestion): {
   view: Exclude<View, "all">;
   label: string;
@@ -74,6 +79,7 @@ function QuestionRow({
   q,
   onSelect,
   reorderable,
+  position,
   onUp,
   onDown,
   isFirst,
@@ -82,6 +88,7 @@ function QuestionRow({
   q: AugmentedQuestion;
   onSelect: (id: string) => void;
   reorderable: boolean;
+  position?: number;
   onUp: () => void;
   onDown: () => void;
   isFirst: boolean;
@@ -93,20 +100,27 @@ function QuestionRow({
 
   return (
     <article className="qrow">
-      <Tooltip
-        label={q.shortlisted ? "Remove from shortlist" : "Add to shortlist"}
-      >
-        <button
-          className={`qrow__star${q.shortlisted ? " is-on" : ""}`}
-          onClick={() => toggleShortlist(q.id)}
-          aria-pressed={q.shortlisted}
-          aria-label={
-            q.shortlisted ? "Remove from shortlist" : "Add to shortlist"
-          }
+      <div className="qrow__lead">
+        {position !== undefined && (
+          <span className="qrow__pos" aria-hidden>
+            {position}
+          </span>
+        )}
+        <Tooltip
+          label={q.shortlisted ? "Remove from shortlist" : "Add to shortlist"}
         >
-          {q.shortlisted ? <Star /> : <StarOff />}
-        </button>
-      </Tooltip>
+          <button
+            className={`qrow__star${q.shortlisted ? " is-on" : ""}`}
+            onClick={() => toggleShortlist(q.id)}
+            aria-pressed={q.shortlisted}
+            aria-label={
+              q.shortlisted ? "Remove from shortlist" : "Add to shortlist"
+            }
+          >
+            {q.shortlisted ? <Star /> : <StarOff />}
+          </button>
+        </Tooltip>
+      </div>
 
       <button className="qrow__main" onClick={() => onSelect(q.id)}>
         <span className="qrow__q">{q.question}</span>
@@ -399,7 +413,9 @@ export function DiscoveryPage() {
           { label: "Discovery Questions" },
         ]}
         title={<h1 className="page-title">Discovery Questions</h1>}
-        subtitle={`Prepare and prioritise questions for ${project.name}'s next call.`}
+        subtitle={`Prepare and prioritise questions for ${possessive(
+          project.name
+        )} next call.`}
         actions={
           <div className="row" style={{ gap: 8 }}>
             <button
@@ -572,6 +588,7 @@ export function DiscoveryPage() {
               q={q}
               onSelect={setSelected}
               reorderable={reorderable}
+              position={view === "shortlisted" ? i + 1 : undefined}
               onUp={() => moveUp(q.id)}
               onDown={() => moveDown(q.id)}
               isFirst={i === 0}

@@ -53,6 +53,18 @@ const emptyAnswer = (): Answer => ({
   followUps: [],
 });
 
+/** True when the consultant has entered any content for a question. */
+export function hasAnswerContent(a: Answer): boolean {
+  return Boolean(
+    a.text.trim() ||
+      a.keyFacts.trim() ||
+      a.note.trim() ||
+      a.completeness ||
+      a.strength ||
+      a.followUps.length
+  );
+}
+
 const priorityRank: Record<QPriority, number> = {
   critical: 0,
   high: 1,
@@ -72,6 +84,7 @@ interface DiscoveryCtx {
   moveDown: (id: string) => void;
   setSortMode: (m: SortMode) => void;
   saveAnswer: (id: string, patch: Partial<Answer>) => void;
+  resetAnswer: (id: string) => void;
   addFollowUp: (id: string, text: string) => string;
   setFollowUp: (id: string, fuId: string, patch: Partial<FollowUp>) => void;
   setCallStart: (id: string | null) => void;
@@ -191,6 +204,13 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const resetAnswer = useCallback((id: string) => {
+    setStates((s) => ({
+      ...s,
+      [id]: { ...s[id], outcome: null, answer: emptyAnswer() },
+    }));
+  }, []);
+
   const addFollowUp = useCallback(
     (id: string, text: string) => {
       const fuId = `fu-${id}-${fuSeq}`;
@@ -244,6 +264,7 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
     moveDown,
     setSortMode,
     saveAnswer,
+    resetAnswer,
     addFollowUp,
     setFollowUp,
     setCallStart,

@@ -15,7 +15,14 @@ export type QArea =
   | "procurement";
 
 /** Outcome captured during/after a call. null = not yet touched. */
-export type QOutcome = null | "answered" | "partial" | "skipped" | "not-relevant";
+export type QOutcome =
+  | null
+  | "answered"
+  | "partial"
+  | "not-answered"
+  | "in-progress"
+  | "skipped"
+  | "not-relevant";
 export type EvidenceStrength = "strong" | "medium" | "weak";
 export type Completeness = "answered" | "partial" | "not-answered";
 
@@ -116,7 +123,7 @@ export const discoveryMeta = {
 /* Recommended order narrative:
    current process → business impact → evidence → decision & next steps */
 export const RECOMMENDED_ORDER_NOTE =
-  "Moves from current process → business impact → evidence → decision and next steps.";
+  "Current process → business impact → evidence → decisions";
 
 export const clioQuestions: DiscoveryQuestion[] = [
   {

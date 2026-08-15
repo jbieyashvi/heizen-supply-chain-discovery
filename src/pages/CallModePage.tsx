@@ -12,6 +12,8 @@ import {
   Target,
   ChevronDown,
   CheckCircle2,
+  Circle,
+  XCircle,
   Clock3,
   PhoneOff,
   FlaskConical,
@@ -24,6 +26,7 @@ import { useToast } from "../components/Toast";
 import { QuestionNavigator } from "../components/discovery/QuestionNavigator";
 import {
   useDiscovery,
+  hasAnswerContent,
   type Answer,
   type AugmentedQuestion,
 } from "../hooks/useDiscovery";
@@ -64,6 +67,7 @@ export function CallModePage() {
     shortlisted,
     callStartId,
     saveAnswer,
+    resetAnswer,
     setOutcome,
     addFollowUp,
     setFollowUp,
@@ -81,10 +85,16 @@ export function CallModePage() {
   });
   const [navOpen, setNavOpen] = useState(false);
   const [guidanceOpen, setGuidanceOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [endOpen, setEndOpen] = useState(false);
   const [ended, setEnded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [elapsed, setElapsed] = useState(0);
+  const [dirty, setDirty] = useState(false);
+  const [saveHint, setSaveHint] = useState<null | "blank">(null);
+  const [pendingLeave, setPendingLeave] = useState<
+    { type: "exit" } | { type: "jump"; index: number } | null
+  >(null);
   const saveTimer = useRef<number | null>(null);
 
   // Elapsed timer (paused once the call ends)
@@ -98,6 +108,15 @@ export function CallModePage() {
   const safeIndex = Math.min(index, Math.max(0, total - 1));
   const current: AugmentedQuestion | undefined = shortlisted[safeIndex];
 
+  // Reset per-question UI state when the active question changes.
+  useEffect(() => {
+    setDirty(false);
+    setSaveHint(null);
+    setMoreOpen(shortlisted[safeIndex]?.answer.followUpRequired ?? false);
+    setGuidanceOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [safeIndex]);
+
   const touch = useCallback(() => {
     setSaveStatus("saving");
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
@@ -109,32 +128,111 @@ export function CallModePage() {
       if (!current) return;
       saveAnswer(current.id, { ...p, round: discoveryMeta.round });
       touch();
+      setDirty(true);
+      setSaveHint(null);
+      if (p.followUpRequired) setMoreOpen(true);
     },
     [current, saveAnswer, touch]
   );
 
+  const currentUnsaved =
+    !!current && dirty && hasAnswerContent(current.answer);
+
+  const commitDraft = useCallback(() => {
+    if (
+      current &&
+      dirty &&
+      hasAnswerContent(current.answer) &&
+      (current.outcome === null || current.outcome === "in-progress")
+    ) {
+      setOutcome(current.id, "in-progress");
+    }
+    setDirty(false);
+  }, [current, dirty, setOutcome]);
+
   const go = useCallback(
     (dir: -1 | 1) => {
-      setIndex((i) => {
-        const next = i + dir;
-        return Math.max(0, Math.min(total - 1, next));
-      });
-      setGuidanceOpen(false);
+      commitDraft();
+      setIndex((i) => Math.max(0, Math.min(total - 1, i + dir)));
     },
-    [total]
+    [total, commitDraft]
   );
 
   const saveAndNext = useCallback(() => {
-    if (current) {
-      const c = current.answer.completeness;
-      setOutcome(
-        current.id,
-        c === "answered" ? "answered" : c === "partial" ? "partial" : current.outcome
-      );
-      notify({ title: "Answer saved", body: "Draft saved locally.", tone: "info" });
+    if (!current) return;
+    const a = current.answer;
+    const hasText = Boolean(a.text.trim() || a.keyFacts.trim());
+    const c = a.completeness;
+
+    // Blank with no completeness — never silently mark answered.
+    if (!hasText && !c) {
+      setSaveHint("blank");
+      return;
     }
-    if (safeIndex < total - 1) go(1);
-  }, [current, safeIndex, total, setOutcome, notify, go]);
+
+    const outcome =
+      c === "answered"
+        ? "answered"
+        : c === "partial"
+        ? "partial"
+        : c === "not-answered"
+        ? "not-answered"
+        : "in-progress"; // text but completeness not chosen
+    setOutcome(current.id, outcome);
+    setDirty(false);
+    setSaveHint(null);
+    notify({
+      title:
+        outcome === "in-progress" ? "Saved as in progress" : "Answer saved",
+      body: "Draft saved locally.",
+      tone: "info",
+    });
+    if (safeIndex < total - 1) {
+      setIndex((i) => Math.min(total - 1, i + 1));
+    }
+  }, [current, safeIndex, total, setOutcome, notify]);
+
+  const markNotAnswered = useCallback(() => {
+    if (!current) return;
+    setOutcome(current.id, "not-answered");
+    setDirty(false);
+    setSaveHint(null);
+    if (safeIndex < total - 1) setIndex((i) => Math.min(total - 1, i + 1));
+  }, [current, safeIndex, total, setOutcome]);
+
+  const requestExit = useCallback(() => {
+    if (currentUnsaved) setPendingLeave({ type: "exit" });
+    else backToPrep();
+  }, [currentUnsaved, backToPrep]);
+
+  const requestJump = useCallback(
+    (i: number) => {
+      setNavOpen(false);
+      if (currentUnsaved) setPendingLeave({ type: "jump", index: i });
+      else {
+        commitDraft();
+        setIndex(i);
+      }
+    },
+    [currentUnsaved, commitDraft]
+  );
+
+  const resolveLeave = useCallback(
+    (mode: "save" | "discard") => {
+      if (!pendingLeave || !current) return;
+      if (mode === "save") {
+        if (hasAnswerContent(current.answer))
+          setOutcome(current.id, "in-progress");
+      } else {
+        resetAnswer(current.id);
+      }
+      setDirty(false);
+      if (pendingLeave.type === "exit") backToPrep();
+      else setIndex(pendingLeave.index);
+      setPendingLeave(null);
+    },
+    [pendingLeave, current, setOutcome, resetAnswer, backToPrep]
+  );
 
   // Keyboard shortcuts (ignored while typing)
   useEffect(() => {
@@ -146,7 +244,7 @@ export function CallModePage() {
           el.tagName === "TEXTAREA" ||
           el.tagName === "SELECT" ||
           (el as HTMLElement).isContentEditable);
-      if (typing || navOpen || endOpen || ended) return;
+      if (typing || navOpen || endOpen || ended || pendingLeave) return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         go(-1);
@@ -157,7 +255,7 @@ export function CallModePage() {
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [go, saveAndNext, navOpen, endOpen, ended]);
+  }, [go, saveAndNext, navOpen, endOpen, ended, pendingLeave]);
 
   const summary = useMemo(() => computeSummary(shortlisted), [shortlisted]);
 
@@ -223,9 +321,9 @@ export function CallModePage() {
           </button>
           <button
             className="icon-btn"
-            onClick={backToPrep}
-            aria-label="Exit Call Mode"
-            title="Exit Call Mode"
+            onClick={requestExit}
+            aria-label="Exit to preparation"
+            title="Exit to preparation"
           >
             <X />
           </button>
@@ -322,87 +420,138 @@ export function CallModePage() {
               />
             </label>
 
-            <div className="answer__row2">
-              <div className="answer__field">
-                <span className="answer__label">Evidence strength</span>
-                <div className="pillset" role="radiogroup" aria-label="Evidence strength">
-                  {STRENGTHS.map((s) => (
-                    <button
-                      key={s.id}
-                      role="radio"
-                      aria-checked={a.strength === s.id}
-                      className={`pill${a.strength === s.id ? " is-active" : ""}`}
-                      onClick={() => patch({ strength: s.id })}
-                      title={s.hint}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="answer__field">
-                <span className="answer__label">Answer completeness</span>
-                <div className="pillset" role="radiogroup" aria-label="Answer completeness">
-                  {COMPLETENESS.map((c) => (
-                    <button
-                      key={c.id}
-                      role="radio"
-                      aria-checked={a.completeness === c.id}
-                      className={`pill${a.completeness === c.id ? " is-active" : ""}`}
-                      onClick={() => patch({ completeness: c.id })}
-                    >
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
+            <div className="answer__field">
+              <span className="answer__label">Answer completeness</span>
+              <div className="pillset" role="radiogroup" aria-label="Answer completeness">
+                {COMPLETENESS.map((c) => (
+                  <button
+                    key={c.id}
+                    role="radio"
+                    aria-checked={a.completeness === c.id}
+                    className={`pill${a.completeness === c.id ? " is-active" : ""}`}
+                    onClick={() => patch({ completeness: c.id })}
+                  >
+                    {c.label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div className="answer__row2">
-              <label className="answer__toggle">
-                <input
-                  type="checkbox"
-                  checked={a.followUpRequired}
-                  onChange={(e) => patch({ followUpRequired: e.target.checked })}
-                />
-                <span>Follow-up required</span>
-              </label>
+            <div className="answer__field answer__field--compact">
+              <span className="answer__label answer__label--sub">
+                Evidence strength
+                <span className="answer__optional">optional</span>
+              </span>
+              <div className="pillset pillset--sm" role="radiogroup" aria-label="Evidence strength">
+                {STRENGTHS.map((s) => (
+                  <button
+                    key={s.id}
+                    role="radio"
+                    aria-checked={a.strength === s.id}
+                    className={`pill pill--sm${a.strength === s.id ? " is-active" : ""}`}
+                    onClick={() => patch({ strength: s.id })}
+                    title={s.hint}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              {(a.completeness === "answered" || a.completeness === "partial") &&
+                !a.strength && (
+                  <span className="answer__recommend">
+                    Recommended — noting evidence strength helps update the
+                    opportunity's confidence.
+                  </span>
+                )}
             </div>
 
-            <label className="answer__field">
-              <span className="answer__label">Private consultant note</span>
-              <textarea
-                className="field-control"
-                rows={2}
-                placeholder="Not shared with the client…"
-                value={a.note}
-                onChange={(e) => patch({ note: e.target.value })}
+            <label className="answer__toggle">
+              <input
+                type="checkbox"
+                checked={a.followUpRequired}
+                onChange={(e) => patch({ followUpRequired: e.target.checked })}
               />
+              <span>Follow-up required</span>
             </label>
 
-            {/* Follow-ups */}
-            <FollowUps
-              question={current}
-              onAddSuggested={(text) => {
-                addFollowUp(current.id, text);
-                touch();
-              }}
-              onAddCustom={(text) => {
-                addFollowUp(current.id, text);
-                touch();
-              }}
-              onMarkAsked={(fuId, asked) => {
-                setFollowUp(current.id, fuId, { asked });
-                touch();
-              }}
-              onAnswer={(fuId, text) => {
-                setFollowUp(current.id, fuId, { answer: text });
-                touch();
-              }}
-            />
+            {/* Add more detail — secondary capture */}
+            <div className="answer__more">
+              <button
+                className="answer__more-toggle"
+                aria-expanded={moreOpen}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                <ChevronDown className={moreOpen ? "is-open" : ""} aria-hidden />
+                Add more detail
+                <span className="answer__more-hint">
+                  Private note &amp; follow-ups
+                </span>
+              </button>
+              {moreOpen && (
+                <div className="answer__more-body">
+                  <label className="answer__field">
+                    <span className="answer__label">Private consultant note</span>
+                    <textarea
+                      className="field-control"
+                      rows={2}
+                      placeholder="Not shared with the client…"
+                      value={a.note}
+                      onChange={(e) => patch({ note: e.target.value })}
+                    />
+                  </label>
+                  <FollowUps
+                    question={current}
+                    onAddSuggested={(text) => {
+                      addFollowUp(current.id, text);
+                      touch();
+                      setDirty(true);
+                    }}
+                    onAddCustom={(text) => {
+                      addFollowUp(current.id, text);
+                      touch();
+                      setDirty(true);
+                    }}
+                    onMarkAsked={(fuId, asked) => {
+                      setFollowUp(current.id, fuId, { asked });
+                      touch();
+                    }}
+                    onAnswer={(fuId, text) => {
+                      setFollowUp(current.id, fuId, { answer: text });
+                      touch();
+                      setDirty(true);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Inline Save & next guidance (not a disruptive error) */}
+      {saveHint === "blank" && (
+        <div className="save-hint" role="status">
+          <span>
+            Nothing captured yet. Choose how to record this question:
+          </span>
+          <div className="save-hint__actions">
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                setOutcome(current.id, "skipped");
+                setSaveHint(null);
+                notify({ title: "Skipped for now", tone: "info" });
+                if (safeIndex < total - 1) setIndex((i) => Math.min(total - 1, i + 1));
+              }}
+            >
+              <SkipForward /> Skip for now
+            </button>
+            <button className="btn btn-sm" onClick={markNotAnswered}>
+              <XCircle /> Mark not answered
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Live controls */}
       <footer className="call-controls">
@@ -417,8 +566,10 @@ export function CallModePage() {
           className="btn btn-sm btn-ghost"
           onClick={() => {
             setOutcome(current.id, "skipped");
+            setSaveHint(null);
+            setDirty(false);
             notify({ title: "Skipped for now", tone: "info" });
-            if (safeIndex < total - 1) go(1);
+            if (safeIndex < total - 1) setIndex((i) => Math.min(total - 1, i + 1));
           }}
         >
           <SkipForward /> Skip for now
@@ -427,6 +578,8 @@ export function CallModePage() {
           className="btn btn-sm btn-ghost"
           onClick={() => {
             setOutcome(current.id, "not-relevant");
+            setSaveHint(null);
+            setDirty(false);
             notify({ title: "Marked not relevant", tone: "info" });
           }}
         >
@@ -445,35 +598,74 @@ export function CallModePage() {
         open={navOpen}
         onClose={() => setNavOpen(false)}
         currentId={current.id}
-        onJump={(i) => setIndex(i)}
+        onJump={requestJump}
       />
 
+      {/* End call confirmation */}
       <Modal
         open={endOpen}
         onClose={() => setEndOpen(false)}
-        title="End call?"
-        subtitle="You'll see a summary of what was captured"
+        title="End call and review summary?"
         footer={
           <>
             <button className="btn btn-ghost" onClick={() => setEndOpen(false)}>
-              Keep going
+              Continue call
             </button>
             <button
               className="btn btn-primary"
               onClick={() => {
+                commitDraft();
                 setEndOpen(false);
                 setEnded(true);
               }}
             >
-              <PhoneOff /> End call
+              <PhoneOff /> End call and review
+            </button>
+          </>
+        }
+      >
+        <ul className="confirm-list">
+          <li>
+            <CheckCircle2 aria-hidden /> Captured answers will be included in the
+            Call Summary.
+          </li>
+          <li>
+            <Circle aria-hidden /> Unvisited questions remain unanswered.
+          </li>
+          <li>
+            <ArrowRight aria-hidden /> You can return to preparation afterward.
+          </li>
+        </ul>
+        <p className="end-note">
+          {summary.answered} answered · {summary.partial} partially answered ·{" "}
+          {summary.notAnswered} not answered · {summary.skipped} skipped ·{" "}
+          {summary.notVisited} not visited.
+        </p>
+      </Modal>
+
+      {/* Exit-to-preparation with unsaved notes */}
+      <Modal
+        open={Boolean(pendingLeave)}
+        onClose={() => setPendingLeave(null)}
+        title="Unsaved notes"
+        subtitle="You have unsaved notes for the current question."
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={() => setPendingLeave(null)}>
+              Stay in Call Mode
+            </button>
+            <button className="btn" onClick={() => resolveLeave("discard")}>
+              Discard changes
+            </button>
+            <button className="btn btn-primary" onClick={() => resolveLeave("save")}>
+              Save draft &amp; continue
             </button>
           </>
         }
       >
         <p className="end-note">
-          {summary.answered} answered · {summary.partial} partially answered ·{" "}
-          {summary.skipped} skipped · {summary.notAsked} not asked. Responses are
-          stored locally in this prototype.
+          Your notes for “{current.question}” haven't been committed with Save
+          &amp; next. Choose how to continue.
         </p>
       </Modal>
     </div>
@@ -590,8 +782,9 @@ function FollowUps({
 interface Summary {
   answered: number;
   partial: number;
+  notAnswered: number;
   skipped: number;
-  notAsked: number;
+  notVisited: number;
   followUps: number;
   strong: number;
   medium: number;
@@ -603,8 +796,9 @@ interface Summary {
 function computeSummary(list: AugmentedQuestion[]): Summary {
   let answered = 0,
     partial = 0,
+    notAnswered = 0,
     skipped = 0,
-    notAsked = 0,
+    notVisited = 0,
     followUps = 0,
     strong = 0,
     medium = 0,
@@ -615,8 +809,10 @@ function computeSummary(list: AugmentedQuestion[]): Summary {
   list.forEach((q) => {
     if (q.outcome === "answered") answered++;
     else if (q.outcome === "partial") partial++;
+    else if (q.outcome === "not-answered" || q.outcome === "in-progress")
+      notAnswered++;
     else if (q.outcome === "skipped") skipped++;
-    else notAsked++;
+    else notVisited++;
     followUps += q.answer.followUps.length;
     if (q.answer.strength === "strong") strong++;
     else if (q.answer.strength === "medium") medium++;
@@ -635,8 +831,9 @@ function computeSummary(list: AugmentedQuestion[]): Summary {
   return {
     answered,
     partial,
+    notAnswered,
     skipped,
-    notAsked,
+    notVisited,
     followUps,
     strong,
     medium,
@@ -691,9 +888,10 @@ function CallSummaryView({
         <div className="summary-stats">
           <SummaryStat value={s.answered} label="Answered" tone="green" />
           <SummaryStat value={s.partial} label="Partially answered" tone="amber" />
+          <SummaryStat value={s.notAnswered} label="Not answered" tone="neutral" />
           <SummaryStat value={s.skipped} label="Skipped" tone="neutral" />
-          <SummaryStat value={s.notAsked} label="Not asked" tone="neutral" />
-          <SummaryStat value={s.followUps} label="New follow-ups" tone="accent" />
+          <SummaryStat value={s.notVisited} label="Not visited" tone="neutral" />
+          <SummaryStat value={s.followUps} label="Follow-ups created" tone="accent" />
         </div>
 
         <div className="summary-grid">
