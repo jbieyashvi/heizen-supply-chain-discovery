@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Layers,
@@ -8,6 +8,7 @@ import {
   Target,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   AlertTriangle,
   CheckCircle2,
   Circle,
@@ -21,6 +22,7 @@ import {
   GitCompare,
   Cpu,
   Layers3,
+  Clock3,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
@@ -42,6 +44,7 @@ import {
   type SubProcess,
   type Health,
   type EntityKind,
+  type Entity,
 } from "../data/processmap";
 
 type View = "processes" | "entities";
@@ -55,10 +58,10 @@ const healthBadgeTone: Record<Health, "neutral" | "accent" | "amber" | "red"> = 
   critical: "red",
 };
 
-/* Level-0 layout */
-const NODE_W = 190;
-const NODE_H = 150;
-const GAP = 54;
+/* Level-0 layout — larger nodes so labels + counts stay readable. */
+const NODE_W = 214;
+const NODE_H = 166;
+const GAP = 56;
 const FLOW = ["plan", "source", "make", "quality", "store", "deliver"];
 
 function isArea(n: NodeLike): n is ProcessArea {
@@ -72,6 +75,20 @@ function counts(n: NodeLike) {
   return { ev: n.evidence.length, q, opp: n.opportunities.length };
 }
 
+/* Never present Friction/Critical without evidence — fall back to Unknown and
+   flag it as a research inference. */
+function displayHealth(n: NodeLike): {
+  key: Health;
+  inferred: boolean;
+  raw: Health;
+} {
+  if (n.coverage === "not-explored")
+    return { key: "unknown", inferred: false, raw: "unknown" };
+  const inferred =
+    n.evidence.length === 0 && (n.health === "friction" || n.health === "critical");
+  return { key: inferred ? "unknown" : n.health, inferred, raw: n.health };
+}
+
 export function ProcessMapPage() {
   const { projectId } = useParams();
   const project = projects.find((p) => p.id === projectId);
@@ -82,6 +99,7 @@ export function ProcessMapPage() {
   const [view, setView] = useState<View>("processes");
   const [drillId, setDrillId] = useState<string | null>(null);
   const [openNode, setOpenNode] = useState<NodeLike | null>(null);
+  const [openEntity, setOpenEntity] = useState<Entity | null>(null);
 
   if (projectId !== "clio-snacks") {
     return (
@@ -130,23 +148,33 @@ export function ProcessMapPage() {
       {/* Summary */}
       <section className="card card-pad pmap-summary">
         <div className="pmap-sum-grid">
-          <PmapStat icon={<Layers3 aria-hidden />} value={pmapSummary.areas} label="Process areas" />
+          <div className="pmap-stat">
+            <span className="pmap-stat__icon">
+              <Layers3 aria-hidden />
+            </span>
+            <div className="pmap-stat__body">
+              <span className="pmap-stat__value">{pmapSummary.stages}</span>
+              <span className="pmap-stat__label">Process stages</span>
+              <span className="pmap-stat__sub">· {pmapSummary.enabling} enabling layer</span>
+            </div>
+          </div>
           <PmapStat icon={<CheckCircle2 aria-hidden />} value={pmapSummary.explored} label="Explored" tone="brand" />
           <PmapStat icon={<AlertTriangle aria-hidden />} value={pmapSummary.critical} label="Critical issues" tone="red" />
-          <PmapStat icon={<HelpCircle aria-hidden />} value={pmapSummary.openQuestions} label="Open questions" tone="amber" />
+          <PmapStat icon={<HelpCircle aria-hidden />} value={pmapSummary.openQuestions} label="Unique open questions" tone="amber" />
           <div className="pmap-updated">
-            <span className="pmap-updated__label">Last updated</span>
-            <span className="pmap-updated__value">
-              {pmapSummary.lastUpdated}
+            <span className="pmap-updated__label">
+              <Clock3 aria-hidden /> Map refreshed
             </span>
-            <span className="pmap-updated__src">
-              from the {pmapSummary.lastUpdatedSource}
+            <span className="pmap-updated__value">{pmapSummary.refreshed}</span>
+            <span className="pmap-updated__pending">
+              <AlertTriangle aria-hidden /> {pmapSummary.pendingSources} newer sources
+              awaiting inclusion
             </span>
           </div>
         </div>
       </section>
 
-      {/* View toggle */}
+      {/* View toggle + legend */}
       <div className="pmap-toolbar">
         <Segmented<View>
           value={view}
@@ -166,6 +194,7 @@ export function ProcessMapPage() {
             <span className="pmap-crumb-current">{drillArea.name}</span>
           </nav>
         )}
+        {view === "processes" && <PmapLegend />}
       </div>
 
       {view === "processes" ? (
@@ -175,7 +204,7 @@ export function ProcessMapPage() {
           onDrill={(id) => setDrillId(id)}
         />
       ) : (
-        <EntitiesView onAction={proto} />
+        <EntitiesView onAction={proto} onOpenEntity={setOpenEntity} />
       )}
 
       <NodeDetail
@@ -191,6 +220,12 @@ export function ProcessMapPage() {
               }
             : undefined
         }
+      />
+
+      <EntityDetail
+        entity={openEntity}
+        projectId={projectId!}
+        onClose={() => setOpenEntity(null)}
       />
     </div>
   );
@@ -221,6 +256,27 @@ function PmapStat({
   );
 }
 
+/* ---------- Legend ---------- */
+function PmapLegend() {
+  return (
+    <div className="pmap-legend" aria-label="Legend">
+      <span className="pmap-legend__group">
+        <span className="pmap-legend__label">Coverage</span>
+        <span className="pmap-legend__cov cov-not-explored">Not explored</span>
+        <span className="pmap-legend__cov cov-partial">Partial</span>
+        <span className="pmap-legend__cov cov-validated">Validated</span>
+      </span>
+      <span className="pmap-legend__group">
+        <span className="pmap-legend__label">Health</span>
+        <span className="pmap-legend__item"><i className="pmap-sw h-unknown" /> Unknown</span>
+        <span className="pmap-legend__item"><i className="pmap-sw h-healthy" /> Healthy</span>
+        <span className="pmap-legend__item"><i className="pmap-sw h-friction" /> Friction</span>
+        <span className="pmap-legend__item"><i className="pmap-sw h-critical" /> Critical</span>
+      </span>
+    </div>
+  );
+}
+
 /* ---------- Processes view (canvas) ---------- */
 function ProcessesView({
   drillArea,
@@ -244,7 +300,7 @@ function ProcessesView({
       const width = Math.max(NODE_W, subs.length * NODE_W + (subs.length - 1) * GAP);
       return { nodes, width, height: NODE_H, seq: nodes.map((n) => n) };
     }
-    // Level 0: 6 flow areas in a row + Data backbone below
+    // Level 0: 6 flow stages in a row + Data backbone below
     const flowAreas = FLOW.map((id) => clioProcessAreas.find((a) => a.id === id)!);
     const flow = flowAreas.map((a, i) => ({
       node: a,
@@ -255,17 +311,11 @@ function ProcessesView({
     }));
     const width = 6 * NODE_W + 5 * GAP;
     const data = clioProcessAreas.find((a) => a.crossCutting)!;
-    const dataNode = {
-      node: data,
-      x: 0,
-      y: NODE_H + 60,
-      w: width,
-      h: 96,
-    };
+    const dataNode = { node: data, x: 0, y: NODE_H + 64, w: width, h: 104 };
     return {
       nodes: [...flow, dataNode],
       width,
-      height: NODE_H + 60 + 96,
+      height: NODE_H + 64 + 104,
       seq: flow,
     };
   }, [drillArea]);
@@ -275,7 +325,7 @@ function ProcessesView({
     y: n.y,
     w: n.w,
     h: n.h,
-    tone: n.node.coverage === "not-explored" ? "unknown" : n.node.health,
+    tone: displayHealth(n.node).key,
   }));
 
   return (
@@ -286,21 +336,9 @@ function ProcessesView({
       fitKey={drillArea ? `sub-${drillArea.id}` : "level0"}
     >
       {/* Sequential connectors */}
-      <svg
-        className="pmap-edges"
-        width={layout.width}
-        height={layout.height}
-        aria-hidden
-      >
+      <svg className="pmap-edges" width={layout.width} height={layout.height} aria-hidden>
         <defs>
-          <marker
-            id="pm-arrow"
-            markerWidth="8"
-            markerHeight="8"
-            refX="6"
-            refY="4"
-            orient="auto"
-          >
+          <marker id="pm-arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
             <path d="M0,0 L8,4 L0,8 Z" className="pmap-arrowhead" />
           </marker>
         </defs>
@@ -362,77 +400,80 @@ function ProcessNode({
   onDrill?: () => void;
 }) {
   const c = counts(node);
-  const unexplored = node.coverage === "not-explored";
-  const healthKey = unexplored ? "unknown" : node.health;
+  const dh = displayHealth(node);
   return (
     <div
       data-node
-      className={`pmap-node h-${healthKey}${crossCutting ? " pmap-node--wide" : ""}`}
+      className={`pmap-node h-${dh.key}${crossCutting ? " pmap-node--wide" : ""}`}
       style={{ left: x, top: y, width: w, height: h }}
-      onClick={onOpen}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onOpen();
-        }
-      }}
     >
-      <div className="pmap-node__head">
-        <span className="pmap-node__name">
-          {crossCutting && <Cpu aria-hidden />}
-          {node.name}
+      {/* Whole card opens details — a single accessible button */}
+      <button
+        className="pmap-node__open"
+        aria-label={`Open ${node.name} details`}
+        onClick={onOpen}
+      />
+
+      <div className="pmap-node__content">
+        <div className="pmap-node__head">
+          <span className="pmap-node__name">
+            {crossCutting && <Cpu aria-hidden />}
+            {node.name}
+          </span>
+          <span className={`pmap-node__health${dh.inferred ? " is-inferred" : ""}`}>
+            <span className="pmap-node__dot" />
+            {dh.inferred ? `${healthMeta[dh.raw].label} · inferred` : healthMeta[dh.key].label}
+          </span>
+        </div>
+
+        <span className={`pmap-node__coverage cov-${node.coverage}`}>
+          {coverageMeta[node.coverage].label}
         </span>
-        <span className="pmap-node__health">
-          <span className="pmap-node__dot" />
-          {healthMeta[healthKey].label}
-        </span>
+
+        {crossCutting && <span className="pmap-node__cc">Underpins every stage</span>}
+
+        <div className="pmap-node__counts">
+          <span title="Evidence">
+            <FileText aria-hidden /> {c.ev}
+          </span>
+          <span title="Questions">
+            <HelpCircle aria-hidden /> {c.q}
+          </span>
+          <span title="Opportunities">
+            <Target aria-hidden /> {c.opp}
+          </span>
+        </div>
+
+        {onDrill && (
+          <button
+            className="pmap-node__drill"
+            aria-label={`Open Level 1 subprocesses for ${node.name}`}
+            onClick={onDrill}
+          >
+            <Layers aria-hidden /> Level 1
+          </button>
+        )}
       </div>
-
-      <span className={`pmap-node__coverage cov-${node.coverage}`}>
-        {coverageMeta[node.coverage].label}
-      </span>
-
-      {crossCutting && (
-        <span className="pmap-node__cc">Underpins every stage</span>
-      )}
-
-      <div className="pmap-node__counts">
-        <span title="Evidence">
-          <FileText aria-hidden /> {c.ev}
-        </span>
-        <span title="Questions">
-          <HelpCircle aria-hidden /> {c.q}
-        </span>
-        <span title="Opportunities">
-          <Target aria-hidden /> {c.opp}
-        </span>
-      </div>
-
-      {onDrill && (
-        <button
-          className="pmap-node__drill"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDrill();
-          }}
-        >
-          <Layers aria-hidden /> Level 1
-        </button>
-      )}
     </div>
   );
 }
 
 /* ---------- Entities view ---------- */
-function EntitiesView({ onAction }: { onAction: (l: string) => void }) {
-  const kindIcon: Record<EntityKind, React.ReactNode> = {
-    system: <Server aria-hidden />,
-    team: <Users aria-hidden />,
-    stakeholder: <User aria-hidden />,
-    document: <FileStack aria-hidden />,
-  };
+const kindIcon: Record<EntityKind, ReactNode> = {
+  system: <Server aria-hidden />,
+  team: <Users aria-hidden />,
+  stakeholder: <User aria-hidden />,
+  document: <FileStack aria-hidden />,
+};
+const isPending = (e: Entity) => Boolean(e.meta && /pending/i.test(e.meta));
+
+function EntitiesView({
+  onAction,
+  onOpenEntity,
+}: {
+  onAction: (l: string) => void;
+  onOpenEntity: (e: Entity) => void;
+}) {
   const total = Object.values(clioEntities).reduce((n, l) => n + l.length, 0);
 
   if (total === 0) {
@@ -468,19 +509,27 @@ function EntitiesView({ onAction }: { onAction: (l: string) => void }) {
           </div>
           <ul className="pmap-ent-list">
             {clioEntities[k.id].map((e) => (
-              <li className="pmap-ent" key={e.id}>
-                <div className="pmap-ent__main">
-                  <span className="pmap-ent__name">{e.name}</span>
-                  <span className="pmap-ent__role">{e.role}</span>
-                  {e.meta && <span className="pmap-ent__meta">{e.meta}</span>}
-                </div>
-                <div className="pmap-ent__rel">
-                  {e.related.map((r) => (
-                    <span className="pmap-ent__tag" key={r}>
-                      {r}
+              <li key={e.id}>
+                <button
+                  className={`pmap-ent${isPending(e) ? " is-pending" : ""}`}
+                  onClick={() => onOpenEntity(e)}
+                >
+                  <div className="pmap-ent__main">
+                    <span className="pmap-ent__name">
+                      {e.name}
+                      {isPending(e) && <span className="pmap-ent__pending">Pending</span>}
                     </span>
-                  ))}
-                </div>
+                    <span className="pmap-ent__role">{e.role}</span>
+                    {e.meta && <span className="pmap-ent__meta">{e.meta}</span>}
+                  </div>
+                  <div className="pmap-ent__rel">
+                    {e.related.map((r) => (
+                      <span className="pmap-ent__tag" key={r}>
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </button>
               </li>
             ))}
           </ul>
@@ -490,7 +539,35 @@ function EntitiesView({ onAction }: { onAction: (l: string) => void }) {
   );
 }
 
-/* ---------- Detail drawer ---------- */
+/* ---------- Collapsible list helper ---------- */
+function MoreList<T>({
+  items,
+  initial,
+  render,
+  noun,
+}: {
+  items: T[];
+  initial: number;
+  render: (item: T, i: number) => ReactNode;
+  noun: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const shown = open ? items : items.slice(0, initial);
+  const hidden = items.length - initial;
+  return (
+    <>
+      {shown.map(render)}
+      {hidden > 0 && (
+        <button className="pmap-more" onClick={() => setOpen((o) => !o)}>
+          <ChevronDown className={open ? "is-open" : ""} aria-hidden />
+          {open ? "Show less" : `Show ${hidden} more ${noun}`}
+        </button>
+      )}
+    </>
+  );
+}
+
+/* ---------- Node detail drawer ---------- */
 function NodeDetail({
   node,
   projectId,
@@ -505,21 +582,57 @@ function NodeDetail({
   onDrill?: () => void;
 }) {
   const unexplored = node?.coverage === "not-explored";
+  const dh = node ? displayHealth(node) : null;
+
+  const footer = node ? (
+    unexplored ? (
+      <div className="pmap-d__footactions">
+        <Link
+          to={`/projects/${projectId}/discovery`}
+          className="btn btn-primary btn-sm"
+          onClick={onClose}
+        >
+          <HelpCircle /> View suggested questions
+        </Link>
+        <button className="btn btn-sm" onClick={() => onAction("Add source")}>
+          <Plus /> Add source
+        </button>
+      </div>
+    ) : (
+      <div className="pmap-d__foot-next">
+        <span className="pmap-d__foot-label">
+          <Lightbulb aria-hidden /> Recommended next action
+        </span>
+        <p>{node.nextAction}</p>
+      </div>
+    )
+  ) : undefined;
+
   return (
     <SidePanel
       open={Boolean(node)}
       onClose={onClose}
       title={node?.name ?? "Process"}
       subtitle="Process detail"
+      footer={footer}
     >
-      {node && (
-        <div className="pmap-d">
+      {node && dh && (
+        <div className="pmap-d" key={node.id}>
           <div className="pmap-d__badges">
             <Badge tone="neutral">{coverageMeta[node.coverage].label}</Badge>
-            <Badge tone={healthBadgeTone[unexplored ? "unknown" : node.health]} dot>
-              {healthMeta[unexplored ? "unknown" : node.health].label}
+            <Badge tone={healthBadgeTone[dh.key]} dot>
+              {dh.inferred
+                ? `${healthMeta[dh.raw].label} · inferred`
+                : healthMeta[dh.key].label}
             </Badge>
           </div>
+
+          {dh.inferred && (
+            <p className="pmap-inference">
+              <AlertTriangle aria-hidden /> This “{healthMeta[dh.raw].label}” reading is a
+              research inference — no client evidence has confirmed it yet.
+            </p>
+          )}
 
           {unexplored ? (
             <div className="pmap-unexplored">
@@ -543,18 +656,6 @@ function NodeDetail({
                   </ul>
                 </div>
               )}
-              <div className="pmap-unexplored__actions">
-                <Link
-                  to={`/projects/${projectId}/discovery`}
-                  className="btn btn-primary btn-sm"
-                  onClick={onClose}
-                >
-                  <HelpCircle /> View suggested questions
-                </Link>
-                <button className="btn btn-sm" onClick={() => onAction("Add source")}>
-                  <Plus /> Add source
-                </button>
-              </div>
             </div>
           ) : (
             <>
@@ -607,17 +708,20 @@ function NodeDetail({
                     <span className="pmap-d__count">{node.evidence.length}</span>
                   </h3>
                   <ul className="pmap-ev">
-                    {node.evidence.map((e, i) => (
-                      <li className="pmap-ev__item" key={i}>
-                        <div className="pmap-ev__top">
-                          <span className="pmap-ev__finding">{e.finding}</span>
-                          <EvidenceBadge level={e.level} />
-                        </div>
-                        <span className="pmap-ev__src">
-                          {e.source}
-                        </span>
-                      </li>
-                    ))}
+                    <MoreList
+                      items={node.evidence}
+                      initial={1}
+                      noun="evidence"
+                      render={(e, i) => (
+                        <li className="pmap-ev__item" key={i}>
+                          <div className="pmap-ev__top">
+                            <span className="pmap-ev__finding">{e.finding}</span>
+                            <EvidenceBadge level={e.level} />
+                          </div>
+                          <span className="pmap-ev__src">{e.source}</span>
+                        </li>
+                      )}
+                    />
                   </ul>
                   <Link
                     to={`/projects/${projectId}/research`}
@@ -648,16 +752,21 @@ function NodeDetail({
                     <HelpCircle aria-hidden /> Related discovery questions
                   </h3>
                   <ul className="pmap-qa">
-                    {node.questions.map((q) => (
-                      <li key={q.id} className="pmap-qa__item">
-                        {q.answered ? (
-                          <CheckCircle2 className="pmap-qa__ic pmap-qa__ic--done" aria-hidden />
-                        ) : (
-                          <Circle className="pmap-qa__ic" aria-hidden />
-                        )}
-                        <span>{q.question}</span>
-                      </li>
-                    ))}
+                    <MoreList
+                      items={node.questions}
+                      initial={1}
+                      noun="questions"
+                      render={(q) => (
+                        <li key={q.id} className="pmap-qa__item">
+                          {q.answered ? (
+                            <CheckCircle2 className="pmap-qa__ic pmap-qa__ic--done" aria-hidden />
+                          ) : (
+                            <Circle className="pmap-qa__ic" aria-hidden />
+                          )}
+                          <span>{q.question}</span>
+                        </li>
+                      )}
+                    />
                   </ul>
                   <Link
                     to={`/projects/${projectId}/discovery`}
@@ -704,43 +813,215 @@ function NodeDetail({
 
               {/* Comparison — only when source-supported */}
               {isArea(node) && node.comparison && (
-                <section className="pmap-d__section pmap-compare">
-                  <h3 className="pmap-d__label">
-                    <GitCompare aria-hidden /> Compare with Heizen work
-                  </h3>
-                  <div className="pmap-compare__row">
-                    <span className="pmap-compare__k">Client workflow</span>
-                    <p>{node.comparison.clientWorkflow}</p>
-                  </div>
-                  <div className="pmap-compare__row">
-                    <span className="pmap-compare__k pmap-compare__k--brand">
-                      Similar Heizen workflow
-                    </span>
-                    <p>{node.comparison.heizenWorkflow}</p>
-                  </div>
-                  <div className="pmap-compare__grid">
-                    <div>
-                      <span className="pmap-compare__k">Key difference</span>
-                      <p>{node.comparison.keyDifference}</p>
-                    </div>
-                    <div>
-                      <span className="pmap-compare__k">Possible implication</span>
-                      <p>{node.comparison.implication}</p>
-                    </div>
-                  </div>
-                  <span className="pmap-compare__src">
-                    <FileText aria-hidden /> Supported by {node.comparison.source}
-                  </span>
-                </section>
+                <ComparisonBlock comparison={node.comparison} />
               )}
-
-              <section className="pmap-d__section pmap-d__next">
-                <h3 className="pmap-d__label">
-                  <Lightbulb aria-hidden /> Recommended next action
-                </h3>
-                <p className="pmap-d__text">{node.nextAction}</p>
-              </section>
             </>
+          )}
+        </div>
+      )}
+    </SidePanel>
+  );
+}
+
+/* Comparison collapses detail after the first two rows. */
+function ComparisonBlock({
+  comparison,
+}: {
+  comparison: NonNullable<ProcessArea["comparison"]>;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className="pmap-d__section pmap-compare">
+      <h3 className="pmap-d__label">
+        <GitCompare aria-hidden /> Compare with Heizen work
+      </h3>
+      <div className="pmap-compare__row">
+        <span className="pmap-compare__k">Client workflow</span>
+        <p>{comparison.clientWorkflow}</p>
+      </div>
+      <div className="pmap-compare__row">
+        <span className="pmap-compare__k pmap-compare__k--brand">
+          Similar Heizen workflow
+        </span>
+        <p>{comparison.heizenWorkflow}</p>
+      </div>
+      {open && (
+        <>
+          <div className="pmap-compare__grid">
+            <div>
+              <span className="pmap-compare__k">Key difference</span>
+              <p>{comparison.keyDifference}</p>
+            </div>
+            <div>
+              <span className="pmap-compare__k">Possible implication</span>
+              <p>{comparison.implication}</p>
+            </div>
+          </div>
+          <span className="pmap-compare__src">
+            <FileText aria-hidden /> Supported by {comparison.source}
+          </span>
+        </>
+      )}
+      <button className="pmap-more" onClick={() => setOpen((o) => !o)}>
+        <ChevronDown className={open ? "is-open" : ""} aria-hidden />
+        {open ? "Show less" : "Show difference & implication"}
+      </button>
+    </section>
+  );
+}
+
+/* ---------- Entity detail drawer ---------- */
+function entityContext(entity: Entity) {
+  const relatedAreas = clioProcessAreas.filter((a) =>
+    entity.related.includes(a.short)
+  );
+  const evMap = new Map<string, ProcessArea["evidence"][number]>();
+  relatedAreas.forEach((a) => a.evidence.forEach((e) => evMap.set(e.finding, e)));
+  const evidence = [...evMap.values()];
+  const oppMap = new Map<string, { id: string; name: string }>();
+  relatedAreas.forEach((a) => a.opportunities.forEach((o) => oppMap.set(o.id, o)));
+  const opportunities = [...oppMap.values()];
+  const sources = [...new Set(evidence.map((e) => e.source))];
+  return { relatedAreas, evidence, opportunities, sources };
+}
+
+const KIND_LABEL: Record<EntityKind, string> = {
+  system: "System",
+  team: "Team",
+  stakeholder: "Stakeholder",
+  document: "Document",
+};
+
+function EntityDetail({
+  entity,
+  projectId,
+  onClose,
+}: {
+  entity: Entity | null;
+  projectId: string;
+  onClose: () => void;
+}) {
+  const ctx = entity ? entityContext(entity) : null;
+  const kind = entity
+    ? (Object.keys(clioEntities) as EntityKind[]).find((k) =>
+        clioEntities[k].some((e) => e.id === entity.id)
+      )
+    : undefined;
+
+  return (
+    <SidePanel
+      open={Boolean(entity)}
+      onClose={onClose}
+      title={entity?.name ?? "Entity"}
+      subtitle={kind ? KIND_LABEL[kind] : "Entity"}
+    >
+      {entity && ctx && (
+        <div className="pmap-d" key={entity.id}>
+          <div className="pmap-d__badges">
+            {kind && (
+              <Badge tone="neutral" icon={kindIcon[kind]}>
+                {KIND_LABEL[kind]}
+              </Badge>
+            )}
+            {isPending(entity) && <Badge tone="amber" dot>Pending inclusion</Badge>}
+          </div>
+          <p className="pmap-d__text">{entity.role}</p>
+          {entity.meta && <p className="pmap-entmeta">{entity.meta}</p>}
+
+          <section className="pmap-d__section">
+            <h3 className="pmap-d__label">
+              <Layers aria-hidden /> Related processes
+            </h3>
+            {ctx.relatedAreas.length > 0 ? (
+              <div className="pmap-relproc">
+                {ctx.relatedAreas.map((a) => {
+                  const dh = displayHealth(a);
+                  return (
+                    <div className="pmap-relproc__item" key={a.id}>
+                      <span className="pmap-relproc__name">{a.name}</span>
+                      <span className="pmap-relproc__badges">
+                        <span className={`pmap-node__coverage cov-${a.coverage}`}>
+                          {coverageMeta[a.coverage].label}
+                        </span>
+                        <span className={`pmap-relproc__health h-${dh.key}`}>
+                          <span className="pmap-node__dot" />
+                          {dh.inferred
+                            ? `${healthMeta[dh.raw].label} · inferred`
+                            : healthMeta[dh.key].label}
+                        </span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="pmap-d__text">Not yet linked to a process.</p>
+            )}
+          </section>
+
+          {ctx.evidence.length > 0 && (
+            <section className="pmap-d__section">
+              <h3 className="pmap-d__label">
+                <FileText aria-hidden /> Evidence
+                <span className="pmap-d__count">{ctx.evidence.length}</span>
+              </h3>
+              <ul className="pmap-ev">
+                <MoreList
+                  items={ctx.evidence}
+                  initial={1}
+                  noun="evidence"
+                  render={(e, i) => (
+                    <li className="pmap-ev__item" key={i}>
+                      <div className="pmap-ev__top">
+                        <span className="pmap-ev__finding">{e.finding}</span>
+                        <EvidenceBadge level={e.level} />
+                      </div>
+                      <span className="pmap-ev__src">{e.source}</span>
+                    </li>
+                  )}
+                />
+              </ul>
+            </section>
+          )}
+
+          {ctx.sources.length > 0 && (
+            <section className="pmap-d__section">
+              <h3 className="pmap-d__label">
+                <FileStack aria-hidden /> Sources
+              </h3>
+              <ul className="pmap-d__list pmap-d__list--plain">
+                {ctx.sources.map((s) => (
+                  <li key={s}>{s}</li>
+                ))}
+              </ul>
+              <Link
+                to={`/projects/${projectId}/research`}
+                className="pmap-d__link"
+                onClick={onClose}
+              >
+                View sources in Research <ArrowRight aria-hidden />
+              </Link>
+            </section>
+          )}
+
+          {ctx.opportunities.length > 0 && (
+            <section className="pmap-d__section">
+              <h3 className="pmap-d__label">
+                <Target aria-hidden /> Opportunities
+              </h3>
+              <div className="pmap-chips">
+                {ctx.opportunities.map((o) => (
+                  <Link
+                    key={o.id}
+                    to={`/projects/${projectId}/opportunities`}
+                    className="pmap-chip pmap-chip--link"
+                    onClick={onClose}
+                  >
+                    {o.name}
+                  </Link>
+                ))}
+              </div>
+            </section>
           )}
         </div>
       )}

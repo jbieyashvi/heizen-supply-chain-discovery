@@ -92,9 +92,13 @@ const SRC_FOLLOWUP = "Follow-up operations call transcript · 13 Aug 2026";
 
 export const pmapSummary = {
   areas: 7,
+  stages: 6,
+  enabling: 1,
   explored: 5,
   critical: 2,
   openQuestions: 4,
+  refreshed: "13 Aug",
+  pendingSources: 2,
   lastUpdated: "13 Aug 2026",
   lastUpdatedSource: "follow-up operations call transcript",
 };
