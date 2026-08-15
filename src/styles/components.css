@@ -320,6 +320,8 @@
 }
 .app-shell[data-sidebar="collapsed"] .sidebar__nav {
   overflow: visible; /* let tooltips escape the rail */
+  gap: 4px; /* consistent spacing between icon tiles */
+  align-items: center;
 }
 .app-shell[data-sidebar="collapsed"] .brand {
   justify-content: center;
@@ -335,12 +337,45 @@
 .app-shell[data-sidebar="collapsed"] .userchip__settings {
   display: none;
 }
+/* Centred 40×40 icon tiles (no full-width backgrounds in the rail) */
 .app-shell[data-sidebar="collapsed"] .nav-item,
 .app-shell[data-sidebar="collapsed"] .sidebar__toggle {
   position: relative;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  padding: 0;
   justify-content: center;
   gap: 0;
-  padding: 10px 0;
+  border-radius: 10px;
+}
+/* Hover: subtle cool-grey tile */
+.app-shell[data-sidebar="collapsed"] .nav-item:hover,
+.app-shell[data-sidebar="collapsed"] .sidebar__toggle:hover {
+  background: var(--color-surface-hover);
+  color: var(--text-1);
+}
+/* Active: primary-tinted tile with brand icon */
+.app-shell[data-sidebar="collapsed"] .nav-item.active {
+  background: var(--brand-subtle);
+  color: var(--brand);
+  border-color: transparent;
+}
+.app-shell[data-sidebar="collapsed"] .nav-item.active svg {
+  color: var(--brand);
+  opacity: 1;
+}
+/* Subtle 3px brand indicator on the rail's edge */
+.app-shell[data-sidebar="collapsed"] .nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -14px; /* rail 68 − tile 40 → 14px margin → reaches the sidebar edge */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: 0 3px 3px 0;
+  background: var(--brand);
 }
 .app-shell[data-sidebar="collapsed"] .theme-row {
   flex-direction: column;
