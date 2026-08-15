@@ -61,6 +61,21 @@
   margin-top: 1px;
   color: var(--text-3);
 }
+.src-banner__sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--text-2);
+}
+.src-banner__sub svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--text-3);
+}
 .src-banner__actions {
   display: flex;
   gap: 10px;
@@ -562,11 +577,69 @@
   text-decoration: underline;
 }
 
+/* Collapsible drawer section header */
+.src-d__toggle {
+  width: 100%;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.src-d__toggle-l {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.src-d__toggle-l svg {
+  width: 14px;
+  height: 14px;
+}
+.src-d__chev {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  transition: transform 0.16s ease;
+}
+.src-d__chev.is-open {
+  transform: rotate(180deg);
+}
+
 /* Review panel */
 .src-review {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+.src-review__stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+.src-review__stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--color-surface-subtle);
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.src-review__stat svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  color: var(--text-3);
+}
+.src-review__stat b {
+  font-size: 15px;
+  font-weight: 720;
+  color: var(--text-1);
+}
+.src-review__block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 .src-review__item {
   padding: 12px 13px;

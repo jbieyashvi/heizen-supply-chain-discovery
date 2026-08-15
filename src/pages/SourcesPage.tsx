@@ -24,6 +24,7 @@ import {
   FileStack,
   Layers,
   Info,
+  ChevronDown,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Badge } from "../components/Badge";
@@ -37,12 +38,12 @@ import {
   clioSources,
   originMeta,
   statusMeta,
-  sourcesSummary,
   AUTOMATION_NOTE,
   ADD_METHODS,
   type SourceItem,
   type Origin,
 } from "../data/sources";
+import { clioWhatChanged } from "../data/discovery";
 
 type Filter = "all" | "processing" | "processed" | "needs-attention" | "client";
 
@@ -86,7 +87,6 @@ export function SourcesPage() {
   const [addMethod, setAddMethod] = useState<(typeof ADD_METHODS)[number] | null>(null);
   const [refreshOpen, setRefreshOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshed, setRefreshed] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const timers = useRef<number[]>([]);
   const seq = useRef(0);
@@ -201,7 +201,6 @@ export function SourcesPage() {
         )
       );
       setRefreshing(false);
-      setRefreshed(true);
       notify({
         title: "Research refreshed",
         body: "Processed sources are now included in the brief.",
@@ -210,10 +209,43 @@ export function SourcesPage() {
     timers.current.push(done);
   };
 
+  // Ready = processed but not yet in the brief. Refresh only ever includes these.
   const pending = sources.filter((s) => s.status === "processed" && !s.included);
+  const readyCount = pending.length;
   const findingsTotal = sources.reduce((n, s) => n + s.findings, 0);
   const processedCount = sources.filter((s) => s.status === "processed").length;
   const processingCount = sources.filter((s) => s.status === "processing").length;
+  const needsAttentionCount = sources.filter((s) => s.needsAttention).length;
+
+  // Change summary shown in Review changes (grounded in the ready sources).
+  const review = {
+    findings: pending.reduce((n, s) => n + s.findings, 0),
+    questions: pending.reduce((n, s) => n + s.questions, 0),
+    assumptionsConfirmed: clioWhatChanged.confirmed.length,
+    contradictions: clioWhatChanged.conflict ? 1 : 0,
+    opportunities: [...new Set(pending.flatMap((s) => s.relatedOpportunities))],
+    stages: [...new Set(pending.flatMap((s) => s.processStages))],
+  };
+
+  const filterOptions = FILTERS.map((f) =>
+    f.id === "processing"
+      ? { ...f, label: `Processing ${processingCount}` }
+      : f.id === "needs-attention"
+      ? { ...f, label: `Needs attention ${needsAttentionCount}` }
+      : f
+  );
+
+  const [confirmRemove, setConfirmRemove] = useState<SourceItem | null>(null);
+  const doRemove = (s: SourceItem) => {
+    setSources((prev) => prev.filter((x) => x.id !== s.id));
+    if (openId === s.id) setOpenId(null);
+    setConfirmRemove(null);
+    notify({
+      title: "Source removed",
+      body: "Prototype — removed from this session only.",
+      tone: "info",
+    });
+  };
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -266,17 +298,24 @@ export function SourcesPage() {
         subtitle="Every input behind the research — transcripts, documents and public context — and how far each has been processed."
       />
 
-      {/* Freshness banner */}
-      {!refreshed ? (
+      {/* Freshness banner — ready-to-include vs still-processing are separate */}
+      {readyCount > 0 ? (
         <div className="src-banner" role="region" aria-label="Research freshness">
           <span className="src-banner__icon" aria-hidden>
             <AlertTriangle />
           </span>
           <div className="src-banner__main">
             <p className="src-banner__title">
-              {sourcesSummary.pendingNotIncluded} newer sources are not included in
-              the current Research brief.
+              {readyCount} processed source{readyCount === 1 ? " is" : "s are"} ready
+              to include in Research.
             </p>
+            {processingCount > 0 && (
+              <p className="src-banner__sub">
+                <Loader aria-hidden /> {processingCount} source
+                {processingCount === 1 ? " is" : "s are"} still processing — available
+                after processing.
+              </p>
+            )}
             <p className="src-banner__note">
               <Info aria-hidden /> {AUTOMATION_NOTE}
             </p>
@@ -291,7 +330,9 @@ export function SourcesPage() {
               disabled={refreshing}
             >
               <RefreshCw className={refreshing ? "spin" : ""} />
-              {refreshing ? "Refreshing…" : "Refresh Research"}
+              {refreshing
+                ? "Refreshing…"
+                : `Refresh with ${readyCount} source${readyCount === 1 ? "" : "s"}`}
             </button>
           </div>
         </div>
@@ -304,6 +345,13 @@ export function SourcesPage() {
             <p className="src-banner__title">
               Research brief is up to date — all processed sources are included.
             </p>
+            {processingCount > 0 && (
+              <p className="src-banner__sub">
+                <Loader aria-hidden /> {processingCount} source
+                {processingCount === 1 ? " is" : "s are"} still processing — available
+                after processing.
+              </p>
+            )}
             <p className="src-banner__note">
               <Info aria-hidden /> {AUTOMATION_NOTE}
             </p>
@@ -319,7 +367,7 @@ export function SourcesPage() {
           <SrcStat icon={<Loader aria-hidden />} value={processingCount} label="Processing" tone="amber" />
           <SrcStat icon={<FileText aria-hidden />} value={findingsTotal} label="Findings extracted" tone="brand" />
           <div className="src-refreshstat">
-            {refreshed ? (
+            {readyCount === 0 ? (
               <Badge tone="green" dot>Brief up to date</Badge>
             ) : (
               <Badge tone="amber" dot>Research brief needs refresh</Badge>
@@ -357,7 +405,7 @@ export function SourcesPage() {
           value={filter}
           onChange={setFilter}
           ariaLabel="Filter sources"
-          options={FILTERS}
+          options={filterOptions}
         />
       </div>
 
@@ -374,10 +422,7 @@ export function SourcesPage() {
               source={s}
               onOpen={() => setOpenId(s.id)}
               onAction={proto}
-              onRemove={() => {
-                setSources((prev) => prev.filter((x) => x.id !== s.id));
-                notify({ title: "Source removed", body: "Prototype — removed from this session only.", tone: "info" });
-              }}
+              onRemove={() => setConfirmRemove(s)}
             />
           ))}
         </div>
@@ -389,12 +434,7 @@ export function SourcesPage() {
         projectId={projectId!}
         onClose={() => setOpenId(null)}
         onAction={proto}
-        onRemove={() => {
-          if (!active) return;
-          setSources((prev) => prev.filter((x) => x.id !== active.id));
-          setOpenId(null);
-          notify({ title: "Source removed", body: "Prototype — removed from this session only.", tone: "info" });
-        }}
+        onRemove={() => active && setConfirmRemove(active)}
       />
 
       {/* Add source modal (prototype) */}
@@ -467,26 +507,81 @@ export function SourcesPage() {
       <SidePanel
         open={reviewOpen}
         onClose={() => setReviewOpen(false)}
-        title="Pending changes"
-        subtitle="Processed sources not yet in the written brief"
+        title="Review changes"
+        subtitle="What a Research refresh would fold into the brief"
       >
-        <div className="src-review">
-          {pending.length === 0 ? (
-            <p className="muted">Nothing pending — the brief is current.</p>
-          ) : (
-            pending.map((s) => (
-              <div className="src-review__item" key={s.id}>
-                <div className="src-review__head">
-                  <span className="src-review__name">{s.name}</span>
-                  <Badge tone="amber" dot>Not in brief</Badge>
-                </div>
-                <p className="src-review__meta">
-                  {s.type} · {s.findings} findings · {s.questions} questions
-                </p>
+        {pending.length === 0 ? (
+          <p className="muted">Nothing pending — the brief is current.</p>
+        ) : (
+          <div className="src-review">
+            <div className="src-review__stats">
+              <div className="src-review__stat">
+                <FileText aria-hidden />
+                <b>{review.findings}</b> new findings
               </div>
-            ))
-          )}
-        </div>
+              <div className="src-review__stat">
+                <CheckCircle2 aria-hidden />
+                <b>{review.assumptionsConfirmed}</b> assumptions confirmed
+              </div>
+              <div className="src-review__stat">
+                <AlertTriangle aria-hidden />
+                <b>{review.contradictions}</b> contradiction
+                {review.contradictions === 1 ? "" : "s"} detected
+              </div>
+              <div className="src-review__stat">
+                <HelpCircle aria-hidden />
+                <b>{review.questions}</b> generated questions
+              </div>
+            </div>
+
+            {review.opportunities.length > 0 && (
+              <section className="src-review__block">
+                <span className="src-d__label">
+                  <Target aria-hidden /> Affected opportunities
+                </span>
+                <div className="src-chips">
+                  {review.opportunities.map((o) => (
+                    <span className="src-chip" key={o}>
+                      <Target aria-hidden /> {o}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {review.stages.length > 0 && (
+              <section className="src-review__block">
+                <span className="src-d__label">
+                  <Layers aria-hidden /> Process Map stages
+                </span>
+                <div className="src-chips">
+                  {review.stages.map((p) => (
+                    <span className="src-chip" key={p}>
+                      <Layers aria-hidden /> {p}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="src-review__block">
+              <span className="src-d__label">
+                <FileStack aria-hidden /> Ready to include
+              </span>
+              {pending.map((s) => (
+                <div className="src-review__item" key={s.id}>
+                  <div className="src-review__head">
+                    <span className="src-review__name">{s.name}</span>
+                    <Badge tone="amber" dot>Not in brief</Badge>
+                  </div>
+                  <p className="src-review__meta">
+                    {s.type} · {s.findings} findings · {s.questions} questions
+                  </p>
+                </div>
+              ))}
+            </section>
+          </div>
+        )}
         <div className="src-review__foot">
           <button
             className="btn btn-primary"
@@ -496,10 +591,42 @@ export function SourcesPage() {
             }}
             disabled={pending.length === 0}
           >
-            <RefreshCw /> Refresh Research
+            <RefreshCw /> Refresh with {readyCount} source
+            {readyCount === 1 ? "" : "s"}
           </button>
         </div>
       </SidePanel>
+
+      {/* Remove confirmation */}
+      <Modal
+        open={Boolean(confirmRemove)}
+        onClose={() => setConfirmRemove(null)}
+        title="Remove this source?"
+        subtitle={confirmRemove?.name}
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={() => setConfirmRemove(null)}>
+              Cancel
+            </button>
+            <button
+              className="btn btn-danger"
+              onClick={() => confirmRemove && doRemove(confirmRemove)}
+            >
+              <Trash2 /> Remove source
+            </button>
+          </>
+        }
+      >
+        <ul className="confirm-list">
+          <li>
+            <Trash2 aria-hidden /> The source is removed from this project's intake.
+          </li>
+          <li>
+            <Info aria-hidden /> Findings already folded into the brief are not
+            retroactively removed. Prototype — this session only.
+          </li>
+        </ul>
+      </Modal>
     </div>
   );
 }
@@ -526,6 +653,39 @@ function SrcStat({
         <span className="src-stat__label">{label}</span>
       </div>
     </div>
+  );
+}
+
+/* ---------- Collapsible drawer section (keeps status/metadata always open) ---------- */
+function CollapsibleSection({
+  icon,
+  label,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="src-d__section">
+      <button
+        className="src-d__label src-d__toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="src-d__toggle-l">
+          {icon} {label}
+          {count != null && <span className="src-d__count">{count}</span>}
+        </span>
+        <ChevronDown className={`src-d__chev${open ? " is-open" : ""}`} aria-hidden />
+      </button>
+      {open && children}
+    </section>
   );
 }
 
@@ -635,7 +795,7 @@ function SourceRow({
 
       <div className="src-row__incl">
         {s.status === "processing" ? (
-          <span className="src-incl src-incl--wait">—</span>
+          <span className="src-incl src-incl--wait">Available after processing</span>
         ) : s.included ? (
           <span className="src-incl src-incl--in">
             <CheckCircle2 aria-hidden /> In brief
@@ -693,7 +853,7 @@ function SourceDetail({
               {statusMeta[s.status].label}
             </Badge>
             {s.status === "processing" ? (
-              <Badge tone="neutral">Not in brief yet</Badge>
+              <Badge tone="neutral">Available after processing</Badge>
             ) : s.included ? (
               <Badge tone="green" dot>Included in Research</Badge>
             ) : (
@@ -741,19 +901,19 @@ function SourceDetail({
             </dl>
           </section>
 
-          {/* Findings */}
+          {/* Findings — collapsible */}
           {s.findingsList.length > 0 ? (
-            <section className="src-d__section">
-              <h3 className="src-d__label">
-                <FileText aria-hidden /> Extracted findings
-                <span className="src-d__count">{s.findings}</span>
-              </h3>
+            <CollapsibleSection
+              icon={<FileText aria-hidden />}
+              label="Extracted findings"
+              count={s.findings}
+            >
               <ul className="src-d__list">
                 {s.findingsList.map((f) => (
                   <li key={f}>{f}</li>
                 ))}
               </ul>
-            </section>
+            </CollapsibleSection>
           ) : (
             <section className="src-d__section">
               <h3 className="src-d__label">
@@ -765,13 +925,13 @@ function SourceDetail({
             </section>
           )}
 
-          {/* Questions */}
+          {/* Questions — collapsible */}
           {s.questionsList.length > 0 && (
-            <section className="src-d__section">
-              <h3 className="src-d__label">
-                <HelpCircle aria-hidden /> Generated questions
-                <span className="src-d__count">{s.questions}</span>
-              </h3>
+            <CollapsibleSection
+              icon={<HelpCircle aria-hidden />}
+              label="Generated questions"
+              count={s.questions}
+            >
               <ul className="src-qa">
                 {s.questionsList.map((q) => (
                   <li key={q}>
@@ -786,15 +946,15 @@ function SourceDetail({
               >
                 Open Discovery Questions <ExternalLink aria-hidden />
               </Link>
-            </section>
+            </CollapsibleSection>
           )}
 
-          {/* Opportunities + process stages */}
+          {/* Opportunities + process stages — collapsible */}
           {(s.relatedOpportunities.length > 0 || s.processStages.length > 0) && (
-            <section className="src-d__section">
-              <h3 className="src-d__label">
-                <Target aria-hidden /> Related opportunities &amp; stages
-              </h3>
+            <CollapsibleSection
+              icon={<Target aria-hidden />}
+              label="Related opportunities & stages"
+            >
               {s.relatedOpportunities.length > 0 && (
                 <div className="src-chips">
                   {s.relatedOpportunities.map((o) => (
@@ -823,7 +983,7 @@ function SourceDetail({
                   ))}
                 </div>
               )}
-            </section>
+            </CollapsibleSection>
           )}
         </div>
       )}
