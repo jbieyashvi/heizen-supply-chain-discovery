@@ -6,7 +6,6 @@ import {
   FlaskConical,
   HelpCircle,
   Target,
-  Clock3,
 } from "lucide-react";
 import type { Project } from "../data/types";
 import { ReadinessBadge, FreshnessBadge } from "./StatusBadges";
@@ -47,29 +46,26 @@ function Stat({
 export function ProjectItem({ project }: { project: Project }) {
   const navigate = useNavigate();
   const tone = readinessMeta[project.readiness].tone;
-  const clickable = project.id === "clio-snacks"; // only Clio has a built overview
+  const soon = project.meeting?.relative === "Tomorrow";
 
   const open = () => navigate(`/projects/${project.id}`);
 
   return (
     <article
-      className={`project-row stripe-${tone}${clickable ? " is-clickable" : ""}`}
-      onClick={clickable ? open : undefined}
-      onKeyDown={
-        clickable
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                open();
-              }
-            }
-          : undefined
-      }
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      aria-label={clickable ? `Open ${project.name} overview` : undefined}
+      className={`project-row stripe-${tone} is-clickable`}
+      onClick={open}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          open();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${project.name} overview`}
     >
       <div className="project-row__main">
+        {/* PRIMARY: client + status */}
         <div className="project-row__head">
           <div className="project-row__id">
             <h3 className="project-row__name">{project.name}</h3>
@@ -78,39 +74,28 @@ export function ProjectItem({ project }: { project: Project }) {
           <ReadinessBadge state={project.readiness} />
         </div>
 
-        <div className="project-row__people">
-          <span>
-            Owner <b>{project.owner}</b>
-          </span>
-          <span className="dotsep">·</span>
-          <span>
-            Stakeholder{" "}
-            <b>
-              {project.stakeholder.name === "—"
-                ? "Not identified"
-                : `${project.stakeholder.name}, ${project.stakeholder.role}`}
-            </b>
-          </span>
+        {/* PRIMARY: next meeting */}
+        <div className={`project-row__meeting${soon ? " is-soon" : ""}`}>
+          {project.meeting ? (
+            <>
+              {soon ? <CalendarClock aria-hidden /> : <CalendarClock aria-hidden />}
+              <span className="project-row__meeting-rel">
+                {project.meeting.relative}
+              </span>
+              <span className="project-row__meeting-abs">
+                {project.meeting.date}, {project.meeting.time}
+              </span>
+            </>
+          ) : (
+            <>
+              <CalendarOff aria-hidden />
+              <span className="project-row__meeting-abs">No meeting scheduled</span>
+            </>
+          )}
         </div>
 
+        {/* SECONDARY: research / questions / opportunities */}
         <div className="project-row__stats">
-          <Stat
-            icon={project.meeting ? <CalendarClock /> : <CalendarOff />}
-            label="Next meeting"
-          >
-            {project.meeting ? (
-              <>
-                {project.meeting.relative}
-                <span className="pstat__soft">
-                  {" · "}
-                  {project.meeting.date}, {project.meeting.time}
-                </span>
-              </>
-            ) : (
-              <span className="pstat__soft">Not scheduled</span>
-            )}
-          </Stat>
-
           <Stat icon={<FlaskConical />} label="Research">
             {project.research === "running" ? (
               <span className="research-running">
@@ -140,7 +125,7 @@ export function ProjectItem({ project }: { project: Project }) {
           >
             {project.criticalOpenQuestions > 0
               ? `${project.criticalOpenQuestions} open`
-              : "None"}
+              : "None open"}
           </Stat>
 
           <Stat
@@ -149,30 +134,36 @@ export function ProjectItem({ project }: { project: Project }) {
             tone={project.confirmedOpportunities > 0 ? "good" : "muted"}
           >
             {project.confirmedOpportunities > 0
-              ? `${project.confirmedOpportunities} confirmed`
+              ? `${project.confirmedOpportunities} identified`
               : "—"}
           </Stat>
+        </div>
 
-          <Stat icon={<Clock3 />} label="Last activity" tone="muted">
-            {project.lastActivity}
-          </Stat>
+        {/* TERTIARY: owner / stakeholder / last activity */}
+        <div className="project-row__tertiary">
+          <span>
+            Owner <b>{project.owner}</b>
+          </span>
+          <span className="dotsep">·</span>
+          <span>
+            {project.stakeholder.name === "—"
+              ? "Stakeholder not identified"
+              : `${project.stakeholder.name}, ${project.stakeholder.role}`}
+          </span>
+          <span className="dotsep">·</span>
+          <span>{project.lastActivity}</span>
         </div>
       </div>
 
+      {/* PRIMARY: recommended next action */}
       <div className={`project-row__action tone-${tone}`}>
         <div className="nextaction">
           <span className="nextaction__label">Recommended next</span>
           <span className="nextaction__text">{project.nextAction}</span>
         </div>
-        {clickable ? (
-          <span className="nextaction__go" aria-hidden>
-            Open <ArrowRight />
-          </span>
-        ) : (
-          <span className="nextaction__go is-disabled" aria-hidden>
-            Preview soon
-          </span>
-        )}
+        <span className="nextaction__go" aria-hidden>
+          Open <ArrowRight />
+        </span>
       </div>
     </article>
   );

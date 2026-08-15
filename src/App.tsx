@@ -19,7 +19,7 @@ export default function App() {
           />
           <Route
             path="projects/:projectId/discovery"
-            element={<PlaceholderPage section="Discovery" />}
+            element={<PlaceholderPage section="Discovery Questions" />}
           />
           <Route
             path="projects/:projectId/opportunities"

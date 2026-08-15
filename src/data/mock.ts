@@ -124,9 +124,10 @@ export const projects: Project[] = [
 export const projectDetails: Record<string, ProjectDetail> = {
   "clio-snacks": {
     attention: {
-      message:
-        "Your client call is tomorrow. Research is complete, but 2 new sources have not been included in the brief.",
-      note: "Questions and Opportunities have already been updated with the new sources. Research must be refreshed manually to fold them into the brief.",
+      title: "Research needs refresh",
+      body: "Two new sources are excluded from the current brief. Questions and Opportunities are already updated.",
+      detail:
+        "The current brief is usable for preparation, but excludes two recently added sources: a vendor contract summary and the 13 Aug discovery transcript. Refresh research to fold them into the written brief.",
     },
     readiness: [
       {
@@ -164,9 +165,9 @@ export const projectDetails: Record<string, ProjectDetail> = {
       {
         id: "opportunities",
         label: "Opportunities",
-        detail: "3 strongly supported",
+        detail: "3 identified · 2 strongly supported",
         state: "done",
-        meta: "3 strong",
+        meta: "2 strong",
         route: "opportunities",
       },
     ],
@@ -300,7 +301,7 @@ export const projectDetails: Record<string, ProjectDetail> = {
     nextAction: {
       headline: "Review the four critical questions before tomorrow's call.",
       detail:
-        "Research is fresh enough to prepare. Refresh it after you've reviewed questions if you want the two new sources folded into the written brief.",
+        "The current brief is usable for preparation, but excludes two recently added sources. Refresh research once you've reviewed questions to include them in the written brief.",
       primary: "Continue preparation",
       secondary: "View full research",
     },

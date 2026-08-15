@@ -99,8 +99,9 @@ export interface ActivityEntry {
 
 export interface ProjectDetail {
   attention: {
-    message: string;
-    note: string;
+    title: string;
+    body: string;
+    detail: string;
   } | null;
   readiness: ReadinessStep[];
   insights: Insight[];

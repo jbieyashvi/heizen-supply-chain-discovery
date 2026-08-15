@@ -23,21 +23,46 @@ export function SidePanel({
 
   useEffect(() => {
     if (!open) return;
+    const prevFocus = document.activeElement as HTMLElement | null;
+
+    const focusables = () =>
+      Array.from(
+        panelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key === "Tab") {
+        // Trap focus within the panel.
+        const items = focusables();
+        if (items.length === 0) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        const active = document.activeElement as HTMLElement;
+        if (e.shiftKey && (active === first || !panelRef.current?.contains(active))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
+
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
-    // move focus into the panel
-    const t = setTimeout(() => {
-      panelRef.current
-        ?.querySelector<HTMLElement>("input, button, select, textarea")
-        ?.focus();
-    }, 60);
+    const t = setTimeout(() => focusables()[0]?.focus(), 60);
+
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
       clearTimeout(t);
+      prevFocus?.focus?.(); // restore focus to the trigger
     };
   }, [open, onClose]);
 

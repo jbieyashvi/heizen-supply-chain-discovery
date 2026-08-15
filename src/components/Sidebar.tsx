@@ -12,14 +12,15 @@ import {
 } from "lucide-react";
 import { CONSULTANT, projects } from "../data/mock";
 import { Tooltip } from "./Tooltip";
+import { ThemeToggle } from "./ThemeToggle";
 
 const projectNav = [
-  { to: "", label: "Overview", icon: LayoutGrid, active: true, end: true },
-  { to: "research", label: "Research", icon: FlaskConical, active: false },
-  { to: "discovery", label: "Discovery", icon: MessagesSquare, active: false },
-  { to: "opportunities", label: "Opportunities", icon: Target, active: false },
-  { to: "process-map", label: "Process Map", icon: Workflow, active: false },
-  { to: "sources", label: "Sources", icon: FileStack, active: false },
+  { to: "", label: "Overview", icon: LayoutGrid, end: true },
+  { to: "research", label: "Research", icon: FlaskConical },
+  { to: "discovery", label: "Discovery Questions", icon: MessagesSquare },
+  { to: "opportunities", label: "Opportunities", icon: Target },
+  { to: "process-map", label: "Process Map", icon: Workflow },
+  { to: "sources", label: "Sources", icon: FileStack },
 ];
 
 function HeizenMark() {
@@ -88,9 +89,6 @@ export function Sidebar() {
                 >
                   <Icon />
                   <span>{item.label}</span>
-                  {!item.active && (
-                    <span className="nav-item__soon">Soon</span>
-                  )}
                 </NavLink>
               );
             })}
@@ -99,18 +97,21 @@ export function Sidebar() {
       </nav>
 
       <div className="sidebar__foot">
-        <Tooltip label="Settings — available in a later phase">
-          <button className="nav-item nav-item--btn" disabled>
-            <Settings />
-            <span>Settings</span>
-          </button>
-        </Tooltip>
+        <div className="theme-row">
+          <span className="theme-row__label">Theme</span>
+          <ThemeToggle />
+        </div>
         <div className="userchip">
           <div className="avatar">{CONSULTANT.initials}</div>
           <div className="userchip__text">
             <span className="userchip__name truncate">{CONSULTANT.name}</span>
             <span className="userchip__role truncate">{CONSULTANT.role}</span>
           </div>
+          <Tooltip label="Settings — available in a later phase">
+            <button className="icon-btn" disabled aria-label="Settings">
+              <Settings />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </aside>

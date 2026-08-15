@@ -8,6 +8,25 @@
       name="description"
       content="Heizen consultant workspace for supply-chain discovery preparation."
     />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Resolve theme before first paint to avoid a flash of the wrong theme.
+         Stores the *choice* (light|dark|system); resolves system via matchMedia. -->
+    <script>
+      (function () {
+        try {
+          var choice = localStorage.getItem("heizen-theme") || "system";
+          var resolved =
+            choice === "light" || choice === "dark"
+              ? choice
+              : window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark";
+          document.documentElement.setAttribute("data-theme", resolved);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

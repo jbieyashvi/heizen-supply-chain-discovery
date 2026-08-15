@@ -21,8 +21,10 @@ export function PlaceholderPage({ section }: { section: string }) {
       />
       <EmptyState
         icon={<Construction />}
-        title={`${section} arrives in the next phase`}
-        body="This prototype phase focuses on the Projects Command Centre and Project Overview. This section is stubbed so navigation stays intact."
+        title={`${section} is coming soon`}
+        body={`The ${section.toLowerCase()} workspace for ${
+          project?.name ?? "this project"
+        } is being built out. In the meantime, the Overview brings together everything you need to prepare.`}
         action={
           <Link className="btn btn-primary" to={`/projects/${projectId}`}>
             Back to overview

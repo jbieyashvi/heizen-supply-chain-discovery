@@ -8,12 +8,14 @@ import { useToast } from "./Toast";
 function Field({
   label,
   required,
+  recommended,
   hint,
   children,
   htmlFor,
 }: {
   label: string;
   required?: boolean;
+  recommended?: boolean;
   hint?: string;
   children: React.ReactNode;
   htmlFor?: string;
@@ -23,6 +25,7 @@ function Field({
       <label className="field__label" htmlFor={htmlFor}>
         {label}
         {required && <span className="field__req" aria-hidden> *</span>}
+        {recommended && <span className="field__rec">Recommended</span>}
       </label>
       {children}
       {hint && <span className="field__hint">{hint}</span>}
@@ -45,7 +48,9 @@ export function NewProjectPanel({
   const [contextOpen, setContextOpen] = useState(false);
   const [researchOpen, setResearchOpen] = useState(false);
 
-  const canCreate = name.trim() && client.trim() && website.trim();
+  // Only name + client are required. Website is strongly recommended.
+  const canCreate = Boolean(name.trim() && client.trim());
+  const needsEntityConfirm = canCreate && !website.trim();
 
   const reset = () => {
     setName("");
@@ -60,7 +65,9 @@ export function NewProjectPanel({
     notify({
       title: start ? "Project created — research starting" : "Draft project saved",
       body: start
-        ? `${name || "New project"} is queued. Research will run in the background.`
+        ? needsEntityConfirm
+          ? `${name || "New project"} created. Research setup may ask you to confirm the company entity.`
+          : `${name || "New project"} is queued. Research will run in the background.`
         : `${name || "New project"} saved. Add more context anytime to improve research.`,
     });
     reset();
@@ -72,9 +79,14 @@ export function NewProjectPanel({
       open={open}
       onClose={onClose}
       title="New project"
-      subtitle="Set up a client for discovery. This is a prototype — nothing is saved."
+      subtitle="Set up a client for discovery."
       footer={
         <>
+          {!canCreate && (
+            <span className="np-foot-hint" aria-live="polite">
+              Add a project name and client to continue
+            </span>
+          )}
           <button className="btn btn-ghost" onClick={() => submit(false)}>
             Save as draft
           </button>
@@ -82,9 +94,15 @@ export function NewProjectPanel({
             className="btn btn-primary"
             disabled={!canCreate}
             onClick={() => submit(true)}
+            aria-disabled={!canCreate}
+            title={
+              canCreate
+                ? "Create the project and start research"
+                : "Add a project name and client first"
+            }
           >
             <Sparkle style={{ width: 15, height: 15 }} />
-            Create & start research
+            Create &amp; start research
           </button>
         </>
       }
@@ -92,8 +110,8 @@ export function NewProjectPanel({
       <div className="np-note">
         <Info aria-hidden />
         <span>
-          The more context you provide, the sharper the generated research and
-          discovery questions. Only the first three fields are required to start.
+          Only project name and client are required to start. The more context you
+          add, the sharper the generated research and discovery questions.
         </span>
       </div>
 
@@ -119,9 +137,9 @@ export function NewProjectPanel({
         </Field>
         <Field
           label="Company website"
-          required
+          recommended
           htmlFor="np-web"
-          hint="We use this as the seed for automated research."
+          hint="Adding the company website helps us identify the correct entity and improves research accuracy."
         >
           <input
             id="np-web"
@@ -130,6 +148,13 @@ export function NewProjectPanel({
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
           />
+          {needsEntityConfirm && (
+            <span className="field-flag">
+              <Info aria-hidden />
+              Without a website, research setup may ask you to confirm the company
+              entity.
+            </span>
+          )}
         </Field>
       </fieldset>
 
@@ -190,13 +215,26 @@ export function NewProjectPanel({
               <input id="np-meet" type="datetime-local" className="field-control" />
             </Field>
             <div className="field-2col">
-              <Field label="Annual revenue" htmlFor="np-rev">
-                <input
-                  id="np-rev"
-                  className="field-control"
-                  inputMode="numeric"
-                  placeholder="e.g. 850"
-                />
+              <Field
+                label="Annual revenue"
+                htmlFor="np-rev"
+                hint="Approximate, in millions."
+              >
+                <div className="input-affix">
+                  <span className="input-affix__lead">
+                    {CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₹"}
+                  </span>
+                  <input
+                    id="np-rev"
+                    className="field-control has-lead"
+                    inputMode="numeric"
+                    placeholder="850"
+                    aria-describedby="np-rev-unit"
+                  />
+                  <span className="input-affix__trail" id="np-rev-unit">
+                    M {currency}
+                  </span>
+                </div>
               </Field>
               <Field label="Currency">
                 <CurrencySelect value={currency} onChange={setCurrency} />

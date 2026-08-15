@@ -13,7 +13,6 @@ import { PageHeader } from "../components/PageHeader";
 import { ProjectItem } from "../components/ProjectItem";
 import { NewProjectPanel } from "../components/NewProjectPanel";
 import { EmptyState } from "../components/EmptyState";
-import { Tooltip } from "../components/Tooltip";
 import { projects } from "../data/mock";
 import type { Project } from "../data/types";
 
@@ -232,9 +231,6 @@ export function ProjectsPage() {
             Clear filters
           </button>
         )}
-        <Tooltip label="Only Clio Snacks has a full overview built in this prototype phase.">
-          <span className="results-meta__hint">Prototype data</span>
-        </Tooltip>
       </div>
 
       {visible.length === 0 ? (
