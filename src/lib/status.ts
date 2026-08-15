@@ -104,3 +104,13 @@ export const confidenceMeta: Record<
   moderate: { label: "Moderate evidence", tone: "amber" },
   emerging: { label: "Emerging", tone: "info" },
 };
+
+/** Research finding confidence (distinct from evidence type). */
+export const confidenceLevelMeta: Record<
+  "high" | "medium" | "low",
+  { label: string; tone: Tone }
+> = {
+  high: { label: "High confidence", tone: "green" },
+  medium: { label: "Medium confidence", tone: "amber" },
+  low: { label: "Low confidence", tone: "neutral" },
+};

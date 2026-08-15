@@ -5,6 +5,7 @@ import App from "./App";
 import { ThemeProvider } from "./hooks/useTheme";
 import "./styles/global.css";
 import "./styles/components.css";
+import "./styles/research.css";
 
 // Derive the router basename from Vite's BASE_URL so routing works both in
 // local dev ("/") and under the GitHub Pages repo subpath

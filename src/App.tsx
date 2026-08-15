@@ -3,6 +3,7 @@ import { AppShell } from "./components/AppShell";
 import { ToastProvider } from "./components/Toast";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectOverviewPage } from "./pages/ProjectOverviewPage";
+import { ResearchPage } from "./pages/ResearchPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 
 export default function App() {
@@ -15,7 +16,7 @@ export default function App() {
           <Route path="projects/:projectId" element={<ProjectOverviewPage />} />
           <Route
             path="projects/:projectId/research"
-            element={<PlaceholderPage section="Research" />}
+            element={<ResearchPage />}
           />
           <Route
             path="projects/:projectId/discovery"

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Sparkle, ChevronDown, Info } from "lucide-react";
 import { SidePanel } from "./SidePanel";
 import { CurrencySelect } from "./CurrencySelect";
-import { INDUSTRIES } from "../data/mock";
+import { INDUSTRIES, CURRENCIES } from "../data/mock";
 import { useToast } from "./Toast";
 
 function Field({
