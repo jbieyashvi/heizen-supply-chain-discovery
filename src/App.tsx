@@ -11,6 +11,7 @@ import { ResearchPage } from "./pages/ResearchPage";
 import { DiscoveryPage } from "./pages/DiscoveryPage";
 import { CallModePage } from "./pages/CallModePage";
 import { OpportunitiesPage } from "./pages/OpportunitiesPage";
+import { ProcessMapPage } from "./pages/ProcessMapPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 
 export default function App() {
@@ -56,7 +57,7 @@ export default function App() {
               />
               <Route
                 path="projects/:projectId/process-map"
-                element={<PlaceholderPage section="Process Map" />}
+                element={<ProcessMapPage />}
               />
               <Route
                 path="projects/:projectId/sources"
