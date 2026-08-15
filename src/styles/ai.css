@@ -1,0 +1,410 @@
+/* =========================================================================
+   Lightweight AI helpers — Ask AI panel, Call-Mode follow-up, email draft.
+   Themed with existing tokens; brand accent = #5C95A8. AI content is always
+   visibly labelled.
+   ========================================================================= */
+
+/* ---------- Ask AI trigger (project header) ---------- */
+.ai-trigger {
+  color: var(--brand-text);
+  border-color: var(--brand-line);
+  background: var(--brand-subtle);
+}
+.ai-trigger:hover {
+  background: color-mix(in srgb, var(--brand) 20%, var(--color-surface));
+  border-color: var(--brand);
+}
+.ai-trigger svg {
+  color: var(--brand-text);
+}
+
+/* Shared "AI" inline tag */
+.ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.1px;
+  vertical-align: middle;
+  color: var(--brand-text);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-line);
+}
+.ai-tag svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- Ask AI panel body ---------- */
+.ai-disclaimer {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-line);
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.ai-disclaimer svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--brand-text);
+}
+
+.ai-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-prompts__label,
+.ai-sources__label {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+}
+.ai-prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--text-1);
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+}
+.ai-prompt:hover {
+  background: var(--brand-subtle);
+  border-color: var(--brand-line);
+}
+.ai-prompt:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.ai-prompt > svg:first-child {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--brand-text);
+}
+.ai-prompt__go {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  color: var(--text-3);
+}
+
+/* ---------- Answer thread ---------- */
+.ai-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ai-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--brand-text);
+  cursor: pointer;
+}
+.ai-back:hover {
+  text-decoration: underline;
+}
+.ai-back svg {
+  width: 14px;
+  height: 14px;
+}
+.ai-question {
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-1);
+}
+.ai-question__label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+
+.ai-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+.ai-answer--loading {
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-2);
+  font-size: 13px;
+  padding: 6px 0;
+}
+.ai-answer--loading svg {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-text);
+}
+.ai-answer__summary {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-1);
+}
+
+.ai-block {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-border-strong);
+  border-radius: var(--r-md);
+  padding: 11px 13px;
+  background: var(--color-surface);
+}
+.ai-block--ok {
+  border-left-color: var(--success);
+  background: var(--success-subtle);
+}
+.ai-block--warn {
+  border-left-color: var(--warning);
+  background: var(--warning-subtle);
+}
+.ai-block--info {
+  border-left-color: var(--brand);
+  background: var(--brand-subtle);
+}
+.ai-block__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text-1);
+  margin-bottom: 7px;
+}
+.ai-block__head svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.ai-block--ok .ai-block__head svg {
+  color: var(--success);
+}
+.ai-block--warn .ai-block__head svg {
+  color: var(--warning);
+}
+.ai-block--info .ai-block__head svg {
+  color: var(--brand-text);
+}
+.ai-block__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 16px;
+  list-style: disc;
+}
+.ai-block__list li {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+
+/* ---------- Source references ---------- */
+.ai-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-top: 13px;
+  border-top: 1px solid var(--border-subtle);
+}
+.ai-sources__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-sources__label svg {
+  width: 13px;
+  height: 13px;
+  color: var(--brand-text);
+}
+.ai-sources__chips {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ai-source-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  font-size: 12px;
+  color: var(--text-1);
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+.ai-source-chip:hover {
+  border-color: var(--brand-line);
+  background: var(--brand-subtle);
+}
+.ai-source-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.ai-source-chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--text-3);
+}
+.ai-source-chip--client .ai-source-chip__dot {
+  background: var(--brand);
+}
+.ai-source-chip--public .ai-source-chip__dot {
+  background: var(--warning);
+}
+.ai-source-chip__name {
+  font-weight: 550;
+}
+.ai-source-chip__date {
+  color: var(--text-3);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.ai-source-chip__pending {
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--warning);
+  background: var(--warning-subtle);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+.ai-source-chip__date + .ai-source-chip__pending {
+  margin-left: 0;
+}
+
+/* ---------- Call-Mode AI follow-up suggestion ---------- */
+.ai-suggest {
+  border: 1px solid var(--brand-line);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--brand) 7%, var(--color-surface));
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  animation: fade 0.18s ease;
+}
+.ai-suggest__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ai-suggest__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--brand-text);
+}
+.ai-suggest__badge svg {
+  width: 14px;
+  height: 14px;
+}
+.ai-suggest__q {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-1);
+}
+.ai-suggest__why {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+}
+.ai-suggest__why-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+  margin-bottom: 2px;
+}
+.ai-suggest__actions {
+  display: flex;
+  gap: 9px;
+  margin-top: 2px;
+}
+
+/* ---------- Follow-up email draft (Call Summary) ---------- */
+.email-draft .block-title {
+  display: flex;
+  align-items: center;
+}
+.email-draft__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.email-draft__text {
+  width: 100%;
+  min-height: 340px;
+  resize: vertical;
+  font-family: "SFMono-Regular", ui-monospace, "JetBrains Mono", Menlo,
+    Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--text-1);
+}
+.email-draft__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.email-draft__note {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-left: auto;
+}
+
+@media (max-width: 560px) {
+  .email-draft__note {
+    margin-left: 0;
+    width: 100%;
+  }
+}

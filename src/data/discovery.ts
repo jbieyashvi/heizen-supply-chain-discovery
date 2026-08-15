@@ -79,6 +79,13 @@ export interface PartialEvidence {
 
 export type ConfLevel = "low" | "medium" | "high";
 
+/** One optional AI-suggested follow-up, shown after an answer is captured.
+   Advisory only — the consultant chooses whether to use it. */
+export interface AiFollowUp {
+  question: string;
+  why: string;
+}
+
 /** The confidence effect a captured answer has on an opportunity. */
 export interface EvidenceImpact {
   opportunityId: string;
@@ -113,6 +120,8 @@ export interface DiscoveryQuestion {
   recommendedIndex: number;
   /** Set when a good answer here shifts an opportunity's confidence. */
   evidenceImpact?: EvidenceImpact;
+  /** Optional AI-suggested probe surfaced once an answer is captured. */
+  aiFollowUp?: AiFollowUp;
 }
 
 export interface OpportunityConfidence {
@@ -185,6 +194,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
       "What operational decision is delayed because inventory is not current?",
       "How is the gap handled today when a customer order comes in?",
     ],
+    aiFollowUp: {
+      question:
+        "During peak, how many orders get promised against inventory that's already a day old?",
+      why: "Ties the 24-hour lag to at-risk revenue, which sizes the business case.",
+    },
     stakeholder: "Rafael Rodas, COO",
     estMinutes: 2,
     criticalUnknown: true,
@@ -230,6 +244,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
       worthAsking: "Get the concrete step sequence to target automation precisely.",
     },
     followUps: ["Where do errors most often get introduced or caught?"],
+    aiFollowUp: {
+      question:
+        "At which handoff do corrections most often get introduced or caught?",
+      why: "Pinpoints where source-side capture would remove the most rework.",
+    },
     stakeholder: "Warehouse Manager",
     estMinutes: 2,
     criticalUnknown: false,
@@ -258,6 +277,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
       "A list of the diligence data requests and which were difficult to produce.",
     partial: null,
     followUps: ["Which of those figures were hardest to produce, and why?"],
+    aiFollowUp: {
+      question:
+        "Which of those diligence figures took longest to assemble, and who pulled them?",
+      why: "Reveals a reporting gap leadership already feels — and a ready-made success metric.",
+    },
     stakeholder: "John Thompson, CFO",
     estMinutes: 2,
     criticalUnknown: true,
@@ -292,6 +316,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
       worthAsking: "Confirm the authoritative source before scoping traceability.",
     },
     followUps: ["When two systems disagree, which one wins today?"],
+    aiFollowUp: {
+      question:
+        "If lot genealogy lives in a spreadsheet, who maintains it and how often is it reconciled?",
+      why: "Confirms the real source of truth before traceability scope is committed.",
+    },
     stakeholder: "Rafael Rodas, COO",
     estMinutes: 2,
     criticalUnknown: true,
@@ -335,6 +364,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
       worthAsking: "Confirm who owns the decision and by when.",
     },
     followUps: ["Who would own that decision internally?"],
+    aiFollowUp: {
+      question:
+        "What's the internal fallback if no support decision is made before October?",
+      why: "Surfaces the cost of inaction and sharpens the case for managed support.",
+    },
     stakeholder: "John Thompson, CFO",
     estMinutes: 2,
     criticalUnknown: true,
@@ -378,6 +412,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
       worthAsking: "Confirm scope and method to size the gap.",
     },
     followUps: ["What would a recall look like with today's tooling?"],
+    aiFollowUp: {
+      question:
+        "What would a mock recall look like end-to-end with today's tooling?",
+      why: "Turns FSMA 204 exposure into a concrete, testable readiness gap.",
+    },
     stakeholder: "Rafael Rodas, COO",
     estMinutes: 2,
     criticalUnknown: false,
@@ -416,6 +455,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
     evidenceToClose: "A description of the quality-to-release flow with system touchpoints.",
     partial: null,
     followUps: ["Where does lot lineage most often break down?"],
+    aiFollowUp: {
+      question:
+        "Where does lot lineage most often break between quality sign-off and release?",
+      why: "Locates the seam where a single lineage view would add the most value.",
+    },
     stakeholder: "Warehouse Manager",
     estMinutes: 2,
     criticalUnknown: false,
@@ -442,6 +486,11 @@ export const clioQuestions: DiscoveryQuestion[] = [
     evidenceToClose: "The named labelling application and what data it carries.",
     partial: null,
     followUps: ["Do those labels carry lot data downstream?"],
+    aiFollowUp: {
+      question:
+        "Do the GS1 case labels carry lot data downstream, or is it re-keyed?",
+      why: "Identifies whether labelling is the seam where traceability data is lost.",
+    },
     stakeholder: "Warehouse Manager",
     estMinutes: 2,
     criticalUnknown: false,

@@ -20,6 +20,10 @@ import {
   ArrowRight,
   FileStack,
   AlertTriangle,
+  Sparkles,
+  Copy,
+  RefreshCw,
+  Mail,
 } from "lucide-react";
 import { Badge } from "../components/Badge";
 import { Modal } from "../components/Modal";
@@ -46,6 +50,7 @@ import {
   type EvidenceImpact,
   type EvidenceStrength,
 } from "../data/discovery";
+import { buildFollowUpEmail } from "../data/assistant";
 
 const STRENGTHS: { id: EvidenceStrength; label: string; hint: string }[] = [
   { id: "strong", label: "Strong", hint: "Direct, specific evidence" },
@@ -100,6 +105,7 @@ export function CallModePage() {
   const [dirty, setDirty] = useState(false);
   const [saveHint, setSaveHint] = useState<null | "blank">(null);
   const [impact, setImpact] = useState<EvidenceImpact | null>(null);
+  const [aiDismissed, setAiDismissed] = useState(false);
   const [pendingLeave, setPendingLeave] = useState<
     { type: "exit" } | { type: "jump"; index: number } | null
   >(null);
@@ -121,6 +127,7 @@ export function CallModePage() {
     setDirty(false);
     setSaveHint(null);
     setImpact(null);
+    setAiDismissed(false);
     setMoreOpen(shortlisted[safeIndex]?.answer.followUpRequired ?? false);
     setGuidanceOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -503,6 +510,59 @@ export function CallModePage() {
               />
               <span>Follow-up required</span>
             </label>
+
+            {/* Optional AI follow-up — appears once an answer is captured.
+               Advisory: never edits the consultant's notes automatically. */}
+            {current.aiFollowUp &&
+              Boolean(a.text.trim() || a.keyFacts.trim()) &&
+              !aiDismissed &&
+              !a.followUps.some(
+                (f) => f.text === current.aiFollowUp!.question
+              ) && (
+                <div className="ai-suggest" role="note" aria-label="AI follow-up suggestion">
+                  <div className="ai-suggest__head">
+                    <span className="ai-suggest__badge">
+                      <Sparkles aria-hidden /> AI follow-up suggestion
+                    </span>
+                    <button
+                      className="icon-btn icon-btn--xs"
+                      onClick={() => setAiDismissed(true)}
+                      aria-label="Dismiss suggestion"
+                    >
+                      <X />
+                    </button>
+                  </div>
+                  <p className="ai-suggest__q">{current.aiFollowUp.question}</p>
+                  <p className="ai-suggest__why">
+                    <span className="ai-suggest__why-label">Why it matters</span>
+                    {current.aiFollowUp.why}
+                  </p>
+                  <div className="ai-suggest__actions">
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        addFollowUp(current.id, current.aiFollowUp!.question);
+                        setMoreOpen(true);
+                        touch();
+                        setDirty(true);
+                        notify({
+                          title: "Added to follow-ups",
+                          body: "Your notes were left unchanged.",
+                          tone: "info",
+                        });
+                      }}
+                    >
+                      <Plus aria-hidden /> Use question
+                    </button>
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={() => setAiDismissed(true)}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
 
             {/* Add more detail — secondary capture */}
             <div className="answer__more">
@@ -960,8 +1020,44 @@ function CallSummaryView({
   onReviewAnswers: () => void;
   onSources: () => void;
 }) {
+  const { notify } = useToast();
   const wc = clioWhatChanged;
   const remaining = clioConfidence.filter((c) => c.level !== "high");
+
+  // AI-drafted follow-up email (editable; never sent from here).
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [emailVariant, setEmailVariant] = useState(0);
+  const [emailText, setEmailText] = useState("");
+
+  const generateEmail = () => {
+    setEmailText(buildFollowUpEmail(0));
+    setEmailVariant(0);
+    setEmailOpen(true);
+  };
+  const regenerateEmail = () => {
+    const v = emailVariant + 1;
+    setEmailVariant(v);
+    setEmailText(buildFollowUpEmail(v));
+    notify({ title: "Draft regenerated", body: "Same facts, fresh wording.", tone: "info" });
+  };
+  const copyEmail = () => {
+    const done = () =>
+      notify({
+        title: "Email copied",
+        body: "Paste it into your mail client to review and send.",
+      });
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(emailText).then(done, () =>
+        notify({
+          title: "Couldn't copy automatically",
+          body: "Select the draft text and copy it manually.",
+          tone: "info",
+        })
+      );
+    } else {
+      done();
+    }
+  };
   return (
     <div className="callmode callmode--summary">
       <header className="call-header">
@@ -1139,6 +1235,53 @@ function CallSummaryView({
             </ol>
           </section>
         </div>
+
+        {/* AI-drafted follow-up email */}
+        <section className="card card-pad email-draft">
+          <div className="section-head">
+            <div>
+              <h2 className="block-title">
+                Follow-up email
+                <span className="ai-tag">
+                  <Sparkles aria-hidden /> AI-drafted
+                </span>
+              </h2>
+              <p className="block-sub">
+                A recap built from this call's confirmed problems, open
+                questions, owners and next steps. Edit before you send — nothing
+                is sent from here.
+              </p>
+            </div>
+          </div>
+
+          {!emailOpen ? (
+            <button className="btn btn-primary" onClick={generateEmail}>
+              <Mail /> Generate follow-up email
+            </button>
+          ) : (
+            <div className="email-draft__body">
+              <textarea
+                className="field-control email-draft__text"
+                value={emailText}
+                onChange={(e) => setEmailText(e.target.value)}
+                rows={20}
+                aria-label="Follow-up email draft"
+                spellCheck
+              />
+              <div className="email-draft__actions">
+                <button className="btn btn-primary btn-sm" onClick={copyEmail}>
+                  <Copy /> Copy email
+                </button>
+                <button className="btn btn-sm" onClick={regenerateEmail}>
+                  <RefreshCw /> Regenerate
+                </button>
+                <span className="email-draft__note">
+                  Review and send from your own email client.
+                </span>
+              </div>
+            </div>
+          )}
+        </section>
 
         <div className="summary-actions">
           <button className="btn btn-primary" onClick={onReviewAnswers}>

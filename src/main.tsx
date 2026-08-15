@@ -8,6 +8,7 @@ import "./styles/components.css";
 import "./styles/research.css";
 import "./styles/discovery.css";
 import "./styles/auth.css";
+import "./styles/ai.css";
 
 // Derive the router basename from Vite's BASE_URL so routing works both in
 // local dev ("/") and under the GitHub Pages repo subpath
