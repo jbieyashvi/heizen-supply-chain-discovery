@@ -1,5 +1,6 @@
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useTheme, type ThemeChoice } from "../hooks/useTheme";
+import type { RailBind } from "./Sidebar";
 
 const options: { id: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { id: "light", label: "Light", icon: Sun },
@@ -7,8 +8,10 @@ const options: { id: ThemeChoice; label: string; icon: typeof Sun }[] = [
   { id: "system", label: "System", icon: Monitor },
 ];
 
-/** Accessible segmented theme switcher (radiogroup semantics). */
-export function ThemeToggle() {
+/** Accessible segmented theme switcher (radiogroup semantics).
+   `tip` (from the collapsed sidebar) adds portal rail tooltips on
+   hover/focus; otherwise the native title is used. */
+export function ThemeToggle({ tip }: { tip?: RailBind }) {
   const { choice, setChoice } = useTheme();
   return (
     <div
@@ -19,6 +22,7 @@ export function ThemeToggle() {
       {options.map((o) => {
         const Icon = o.icon;
         const active = choice === o.id;
+        const label = `${o.label} theme`;
         return (
           <button
             key={o.id}
@@ -26,10 +30,11 @@ export function ThemeToggle() {
             aria-checked={active}
             className={`theme-toggle__btn${active ? " is-active" : ""}`}
             onClick={() => setChoice(o.id)}
-            title={`${o.label} theme`}
+            title={tip ? undefined : label}
+            {...(tip ? tip(label) : {})}
           >
             <Icon aria-hidden />
-            <span className="sr-only">{o.label} theme</span>
+            <span className="sr-only">{label}</span>
           </button>
         );
       })}

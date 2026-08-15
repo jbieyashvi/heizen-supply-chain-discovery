@@ -31,6 +31,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  z-index: 20; /* above main content; drawers (100) and rail tooltips (9999) sit above */
   display: flex;
   flex-direction: column;
   gap: var(--s-2);
@@ -289,8 +290,28 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.nav-item__tip {
-  display: none;
+/* Portal rail tooltip — rendered on document.body, above everything */
+.rail-tip {
+  position: fixed;
+  transform: translateY(-50%);
+  z-index: 9999;
+  pointer-events: none;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 550;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  animation: rail-tip-in 0.12s ease;
+}
+@keyframes rail-tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(-3px);
+  }
 }
 .sidebar__toggle {
   display: flex;
@@ -416,33 +437,6 @@
   justify-content: center;
   padding-left: 0;
   padding-right: 0;
-}
-/* Rail tooltips */
-.app-shell[data-sidebar="collapsed"] .nav-item__tip {
-  display: block;
-  position: absolute;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--tooltip-bg);
-  color: var(--tooltip-text);
-  border: 1px solid var(--border-strong);
-  padding: 6px 10px;
-  border-radius: var(--r-sm);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  box-shadow: var(--shadow-2);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.12s ease;
-  z-index: 70;
-}
-.app-shell[data-sidebar="collapsed"] .nav-item:hover .nav-item__tip,
-.app-shell[data-sidebar="collapsed"] .nav-item:focus-visible .nav-item__tip,
-.app-shell[data-sidebar="collapsed"] .sidebar__toggle:hover .nav-item__tip,
-.app-shell[data-sidebar="collapsed"] .sidebar__toggle:focus-visible .nav-item__tip {
-  opacity: 1;
 }
 
 /* =========================================================================
