@@ -13,6 +13,7 @@ import { CallModePage } from "./pages/CallModePage";
 import { OpportunitiesPage } from "./pages/OpportunitiesPage";
 import { ProcessMapPage } from "./pages/ProcessMapPage";
 import { SourcesPage } from "./pages/SourcesPage";
+import { TeamPage } from "./pages/TeamPage";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
             >
               <Route index element={<Navigate to="/projects" replace />} />
               <Route path="projects" element={<ProjectsPage />} />
+              <Route path="team" element={<TeamPage />} />
               <Route path="projects/:projectId" element={<ProjectOverviewPage />} />
               <Route
                 path="projects/:projectId/research"

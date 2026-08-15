@@ -4,12 +4,12 @@ import type { LucideIcon } from "lucide-react";
 import {
   LayoutGrid,
   FolderKanban,
+  Users,
   FlaskConical,
   MessagesSquare,
   Target,
   Workflow,
   FileStack,
-  ChevronLeft,
   Settings,
   LogOut,
   MoreVertical,
@@ -109,31 +109,20 @@ export function Sidebar() {
       </div>
 
       <nav className="sidebar__nav" aria-label="Primary navigation">
-        {!inProject ? (
+        {/* Workspace-level navigation is always available */}
+        <div className="nav-group-label">Workspace</div>
+        <NavItem
+          to="/projects"
+          label="Projects"
+          icon={FolderKanban}
+          end
+          onNavigate={onNavigate}
+        />
+        <NavItem to="/team" label="Team" icon={Users} onNavigate={onNavigate} />
+
+        {/* Inside a project, the project navigation appears below Workspace */}
+        {inProject && (
           <>
-            <div className="nav-group-label">Workspace</div>
-            <NavItem
-              to="/projects"
-              label="Projects"
-              icon={FolderKanban}
-              onNavigate={onNavigate}
-            />
-          </>
-        ) : (
-          <>
-            <NavLink
-              to="/projects"
-              end
-              className="nav-back nav-item"
-              aria-label="All projects"
-              onClick={onNavigate}
-            >
-              <ChevronLeft aria-hidden />
-              <span className="nav-item__label">All projects</span>
-              <span className="nav-item__tip" role="tooltip">
-                All projects
-              </span>
-            </NavLink>
             <div className="nav-project">
               <span className="nav-project__name truncate">{project?.name}</span>
               <span className="nav-project__meta truncate">

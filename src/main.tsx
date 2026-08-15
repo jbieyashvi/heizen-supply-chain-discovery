@@ -12,6 +12,7 @@ import "./styles/ai.css";
 import "./styles/opportunities.css";
 import "./styles/processmap.css";
 import "./styles/sources.css";
+import "./styles/team.css";
 
 // Derive the router basename from Vite's BASE_URL so routing works both in
 // local dev ("/") and under the GitHub Pages repo subpath
