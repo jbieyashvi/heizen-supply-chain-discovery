@@ -150,7 +150,7 @@ function HeaderMeta({ project }: { project: Project }) {
       <span className="proj-meta__item">{project.industry}</span>
       <span className="dotsep">·</span>
       <span className="proj-meta__item">
-        <User aria-hidden /> {project.owner}
+        <User aria-hidden /> Owner <b>{project.owner}</b>
       </span>
       <span className="dotsep">·</span>
       <span className="proj-meta__item">
@@ -221,7 +221,10 @@ function FullOverview({
   const { notify } = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshed, setRefreshed] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const readyCount = detail.readiness.filter(
+    (s) => s.state === "done" || s.detail.startsWith("Complete")
+  ).length;
 
   const doRefresh = () => {
     if (refreshing || refreshed) return;
@@ -263,17 +266,6 @@ function FullOverview({
               <span className="notice__title">{detail.attention.title}</span>
               <span className="notice__body">{detail.attention.body}</span>
             </div>
-            {detailsOpen && (
-              <p className="notice__detail">{detail.attention.detail}</p>
-            )}
-            <button
-              className="notice__toggle"
-              onClick={() => setDetailsOpen((v) => !v)}
-              aria-expanded={detailsOpen}
-            >
-              {detailsOpen ? "Hide details" : "What changed?"}
-              <ChevronDown className={detailsOpen ? "is-open" : ""} aria-hidden />
-            </button>
           </div>
           <div className="notice__actions">
             <button
@@ -320,6 +312,9 @@ function FullOverview({
               <h2 className="block-title">Call readiness</h2>
               <p className="block-sub">Where preparation stands for the next call.</p>
             </div>
+            <span className="block-progress">
+              {refreshed ? readyCount + 1 : readyCount} of {detail.readiness.length} ready
+            </span>
           </div>
           <div className="readiness">
             {detail.readiness.map((step, i) => (
@@ -327,7 +322,7 @@ function FullOverview({
                 key={step.id}
                 step={
                   refreshed && step.id === "research"
-                    ? { ...step, state: "done", detail: "Up to date — all sources included", meta: "Current" }
+                    ? { ...step, state: "done", detail: "Up to date — all sources included", meta: "" }
                     : step
                 }
                 projectId={projectId}
@@ -335,6 +330,20 @@ function FullOverview({
                 total={detail.readiness.length}
               />
             ))}
+          </div>
+
+          {/* Goal for this call — uses the lower readiness space */}
+          <div className="goal">
+            <span className="goal__label">Goal for this call</span>
+            <p className="goal__text">
+              Validate the inventory lag, confirm process ownership, and agree
+              whether to scope a one-line pilot.
+            </p>
+            <div className="goal__chips">
+              <span className="goal-chip">Confirm daily volume</span>
+              <span className="goal-chip">Identify owner</span>
+              <span className="goal-chip">Agree next step</span>
+            </div>
           </div>
         </section>
 
