@@ -158,7 +158,7 @@
   --brand-solid: var(--brand-700);
   --brand-solid-hover: var(--brand-800);
   --brand-text: #35677a; /* darker brand for text/links on light (AA 5.7:1) */
-  --brand-subtle: rgba(92, 149, 168, 0.12); /* light tint for selected/active */
+  --brand-subtle: #eaf2f4; /* primary tint for selected/active */
   --brand-line: rgba(92, 149, 168, 0.42);
   --brand-contrast: #ffffff;
 

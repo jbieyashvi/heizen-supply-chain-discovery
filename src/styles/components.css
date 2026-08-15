@@ -2282,3 +2282,49 @@ textarea.field-control {
     align-items: flex-start;
   }
 }
+
+/* =========================================================================
+   LIGHT THEME — surface hierarchy
+   White content cards + inputs on the light-grey page, with a 1px cool border
+   and a minimal shadow. Grey (#F0F3F4) stays reserved for nested / selected /
+   disabled states. Scoped to light so the dark theme is unchanged.
+   ========================================================================= */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .project-row,
+:root[data-theme="light"] .summary-strip,
+:root[data-theme="light"] .prep-strip,
+:root[data-theme="light"] .qrow,
+:root[data-theme="light"] .answer,
+:root[data-theme="light"] .signal,
+:root[data-theme="light"] .thesis,
+:root[data-theme="light"] .module,
+:root[data-theme="light"] .stake,
+:root[data-theme="light"] .unknown,
+:root[data-theme="light"] .simwork,
+:root[data-theme="light"] .insight,
+:root[data-theme="light"] .tech-group,
+:root[data-theme="light"] .qcard,
+:root[data-theme="light"] .oppcard,
+:root[data-theme="light"] .pending__item {
+  background: var(--color-surface); /* #FFFFFF */
+  border: 1px solid var(--color-border); /* #DDE4E7 */
+  box-shadow: var(--shadow-1); /* minimal */
+}
+
+/* Inputs are white with a cool border (incl. on focus) */
+:root[data-theme="light"] .field-control {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+:root[data-theme="light"] .field-control:focus {
+  background: var(--color-surface);
+  border-color: var(--brand-line);
+}
+:root[data-theme="light"] .searchbox {
+  border-color: var(--color-border);
+}
+
+/* Hover on the answered inner block / nested rows keeps the subtle grey */
+:root[data-theme="light"] .qrow__answer {
+  background: var(--color-surface-subtle);
+}
