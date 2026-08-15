@@ -19,6 +19,7 @@ import {
   FlaskConical,
   ArrowRight,
   FileStack,
+  AlertTriangle,
 } from "lucide-react";
 import { Badge } from "../components/Badge";
 import { Modal } from "../components/Modal";
@@ -36,7 +37,13 @@ import {
   STAKEHOLDER,
   areaLabel,
   discoveryMeta,
+  clioConfidence,
+  clioWhatChanged,
+  confLabel,
+  confTone,
+  questionById,
   type Completeness,
+  type EvidenceImpact,
   type EvidenceStrength,
 } from "../data/discovery";
 
@@ -92,6 +99,7 @@ export function CallModePage() {
   const [elapsed, setElapsed] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [saveHint, setSaveHint] = useState<null | "blank">(null);
+  const [impact, setImpact] = useState<EvidenceImpact | null>(null);
   const [pendingLeave, setPendingLeave] = useState<
     { type: "exit" } | { type: "jump"; index: number } | null
   >(null);
@@ -112,6 +120,7 @@ export function CallModePage() {
   useEffect(() => {
     setDirty(false);
     setSaveHint(null);
+    setImpact(null);
     setMoreOpen(shortlisted[safeIndex]?.answer.followUpRequired ?? false);
     setGuidanceOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -187,6 +196,16 @@ export function CallModePage() {
       body: "Draft saved locally.",
       tone: "info",
     });
+
+    // A captured answer that shifts an opportunity surfaces the impact panel
+    // (in place) instead of auto-advancing.
+    if (
+      current.evidenceImpact &&
+      (outcome === "answered" || outcome === "partial")
+    ) {
+      setImpact(current.evidenceImpact);
+      return;
+    }
     if (safeIndex < total - 1) {
       setIndex((i) => Math.min(total - 1, i + 1));
     }
@@ -273,10 +292,21 @@ export function CallModePage() {
   }
 
   if (ended) {
+    // Opportunity confidence changes captured this round (deduped, last wins).
+    const changeMap = new Map<string, EvidenceImpact>();
+    shortlisted.forEach((q) => {
+      if (
+        q.evidenceImpact &&
+        (q.outcome === "answered" || q.outcome === "partial")
+      ) {
+        changeMap.set(q.evidenceImpact.opportunityId, q.evidenceImpact);
+      }
+    });
     return (
       <CallSummaryView
         summary={summary}
         elapsed={elapsed}
+        changes={Array.from(changeMap.values())}
         onBack={backToPrep}
         onReviewAnswers={backToPrep}
         onSources={() => navigate(`/projects/${projectId}/sources`)}
@@ -548,6 +578,69 @@ export function CallModePage() {
             </button>
             <button className="btn btn-sm" onClick={markNotAnswered}>
               <XCircle /> Mark not answered
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Evidence impact panel — appears after saving an answer that shifts an opportunity */}
+      {impact && (
+        <div className="impact" role="status" aria-live="polite">
+          <div className="impact__head">
+            <span className="impact__title">Evidence impact</span>
+            <button
+              className="icon-btn icon-btn--xs"
+              onClick={() => setImpact(null)}
+              aria-label="Dismiss evidence impact"
+            >
+              <X />
+            </button>
+          </div>
+          <div className="impact__body">
+            <div className="impact__opp">
+              <Target aria-hidden />
+              <span>{impact.opportunity}</span>
+            </div>
+            <div className="impact__change">
+              <Badge tone={confTone[impact.from]}>{confLabel[impact.from]}</Badge>
+              <ArrowRight aria-hidden />
+              <Badge tone={confTone[impact.to]} dot>
+                {confLabel[impact.to]}
+              </Badge>
+            </div>
+            <p className="impact__reason">{impact.reason}</p>
+            <div className="impact__next">
+              <span className="impact__next-label">Next best question</span>
+              <p className="impact__next-q">
+                {questionById(impact.nextQuestionId)?.question ??
+                  "Continue with the shortlist."}
+              </p>
+              <p className="impact__next-why">{impact.nextReason}</p>
+            </div>
+          </div>
+          <div className="impact__actions">
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                const next = safeIndex < total - 1 ? safeIndex + 1 : safeIndex;
+                setImpact(null);
+                setIndex(next);
+              }}
+            >
+              Continue
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => {
+                const i = shortlisted.findIndex(
+                  (q) => q.id === impact.nextQuestionId
+                );
+                setImpact(null);
+                if (i !== -1) setIndex(i);
+                else if (safeIndex < total - 1) setIndex(safeIndex + 1);
+              }}
+            >
+              Ask this next <ArrowRight />
             </button>
           </div>
         </div>
@@ -855,16 +948,20 @@ const NEXT_ACTIONS = [
 function CallSummaryView({
   summary: s,
   elapsed,
+  changes,
   onBack,
   onReviewAnswers,
   onSources,
 }: {
   summary: Summary;
   elapsed: number;
+  changes: EvidenceImpact[];
   onBack: () => void;
   onReviewAnswers: () => void;
   onSources: () => void;
 }) {
+  const wc = clioWhatChanged;
+  const remaining = clioConfidence.filter((c) => c.level !== "high");
   return (
     <div className="callmode callmode--summary">
       <header className="call-header">
@@ -893,6 +990,99 @@ function CallSummaryView({
           <SummaryStat value={s.notVisited} label="Not visited" tone="neutral" />
           <SummaryStat value={s.followUps} label="Follow-ups created" tone="accent" />
         </div>
+
+        {/* What changed */}
+        <section className="card card-pad whatchanged">
+          <h2 className="block-title">What changed</h2>
+          <p className="block-sub">
+            How this call moved the picture — and where research and the client
+            disagree.
+          </p>
+
+          <div className="wc-cols">
+            <div className="wc-col">
+              <h3 className="wc-label wc-label--ok">Confirmed assumptions</h3>
+              <ul className="wc-list">
+                {wc.confirmed.map((t) => (
+                  <li key={t}>
+                    <CheckCircle2 aria-hidden /> {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="wc-col">
+              <h3 className="wc-label wc-label--new">New findings</h3>
+              <ul className="wc-list">
+                {wc.newFindings.map((t) => (
+                  <li key={t}>
+                    <FlaskConical aria-hidden /> {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Conflicting evidence — research vs client */}
+          <div className="wc-conflict">
+            <div className="wc-conflict__head">
+              <AlertTriangle aria-hidden /> Contradicted assumption ·{" "}
+              {wc.conflict.opportunity}
+            </div>
+            <div className="wc-conflict__rows">
+              <p>
+                <span className="wc-conflict__src">Research</span>
+                {wc.conflict.researchSaid}
+              </p>
+              <p>
+                <span className="wc-conflict__src wc-conflict__src--client">
+                  Client
+                </span>
+                {wc.conflict.clientSaid}
+              </p>
+            </div>
+            <p className="wc-conflict__impl">{wc.conflict.implication}</p>
+          </div>
+
+          <div className="wc-changes">
+            <h3 className="wc-label">Opportunity confidence changes</h3>
+            {changes.length === 0 ? (
+              <p className="wc-none">
+                No confidence changes captured this round.
+              </p>
+            ) : (
+              <ul className="wc-change-list">
+                {changes.map((c) => (
+                  <li key={c.opportunityId}>
+                    <span className="wc-change-opp">{c.opportunity}</span>
+                    <span className="wc-change-delta">
+                      <Badge tone={confTone[c.from]}>{confLabel[c.from]}</Badge>
+                      <ArrowRight aria-hidden />
+                      <Badge tone={confTone[c.to]} dot>
+                        {confLabel[c.to]}
+                      </Badge>
+                    </span>
+                    <span className="wc-change-reason">{c.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="wc-foot">
+            <div className="wc-foot__block">
+              <span className="wc-label">Remaining unknowns</span>
+              <ul className="wc-list wc-list--plain">
+                {remaining.map((r) => (
+                  <li key={r.id}>{r.biggestUncertainty}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="wc-foot__next">
+              <span className="wc-label">Recommended next action</span>
+              <p>{wc.recommendedNext}</p>
+            </div>
+          </div>
+        </section>
 
         <div className="summary-grid">
           <section className="card card-pad">

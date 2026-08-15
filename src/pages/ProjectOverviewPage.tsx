@@ -32,6 +32,13 @@ import { useClickOutside } from "../hooks/useClickOutside";
 import { projects, projectDetails } from "../data/mock";
 import type { Project } from "../data/types";
 import { readinessMeta } from "../lib/status";
+import { Badge } from "../components/Badge";
+import {
+  clioConfidence,
+  confLabel,
+  confTone,
+  questionById,
+} from "../data/discovery";
 
 /* ------------------------------------------------------------------ */
 function ProjectSwitcher({ currentId }: { currentId: string }) {
@@ -348,6 +355,56 @@ function FullOverview({
           </section>
         </div>
       </div>
+
+      {/* Discovery confidence */}
+      <section className="card card-pad overview-block">
+        <div className="section-head">
+          <div>
+            <h2 className="block-title">Discovery confidence</h2>
+            <p className="block-sub">
+              How confident we are in each opportunity — and the question that
+              would move it most.
+            </p>
+          </div>
+        </div>
+        <div className="conf-grid">
+          {clioConfidence.map((c) => {
+            const nextQ = questionById(c.nextQuestionId);
+            return (
+              <div className="conf-card" key={c.id}>
+                <div className="conf-card__top">
+                  <h4 className="conf-card__name">{c.name}</h4>
+                  <Badge tone={confTone[c.level]} dot>
+                    {confLabel[c.level]} confidence
+                  </Badge>
+                </div>
+                <div className="conf-card__stats">
+                  <span className="conf-stat">
+                    <b>{c.evidenceCount}</b> supporting
+                    {c.evidenceCount === 1 ? " item" : " items"}
+                  </span>
+                  <span className="dotsep">·</span>
+                  <span className="conf-stat">
+                    <b>{c.openUnknowns}</b> open unknown
+                    {c.openUnknowns === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <p className="conf-card__uncertainty">
+                  <span className="conf-card__label">Biggest uncertainty</span>
+                  {c.biggestUncertainty}
+                </p>
+                <Link
+                  to={`/projects/${projectId}/discovery`}
+                  className="conf-card__action"
+                  title={nextQ?.question}
+                >
+                  Review next question <ArrowRight aria-hidden />
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Lower detail */}
       <section className="card card-pad overview-block">

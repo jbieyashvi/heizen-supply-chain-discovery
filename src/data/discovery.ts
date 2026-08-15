@@ -77,6 +77,19 @@ export interface PartialEvidence {
   worthAsking: string;
 }
 
+export type ConfLevel = "low" | "medium" | "high";
+
+/** The confidence effect a captured answer has on an opportunity. */
+export interface EvidenceImpact {
+  opportunityId: string;
+  opportunity: string;
+  from: ConfLevel;
+  to: ConfLevel;
+  reason: string;
+  nextQuestionId: string;
+  nextReason: string;
+}
+
 export interface DiscoveryQuestion {
   id: string;
   question: string;
@@ -98,6 +111,18 @@ export interface DiscoveryQuestion {
   shortlisted: boolean;
   /** 1-based position in the recommended order (lower = earlier). */
   recommendedIndex: number;
+  /** Set when a good answer here shifts an opportunity's confidence. */
+  evidenceImpact?: EvidenceImpact;
+}
+
+export interface OpportunityConfidence {
+  id: string;
+  name: string;
+  level: ConfLevel;
+  evidenceCount: number;
+  openUnknowns: number;
+  biggestUncertainty: string;
+  nextQuestionId: string;
 }
 
 export const STAKEHOLDER = { name: "Meera Iyer", role: "VP Operations" };
@@ -165,6 +190,17 @@ export const clioQuestions: DiscoveryQuestion[] = [
     criticalUnknown: true,
     shortlisted: true,
     recommendedIndex: 1,
+    evidenceImpact: {
+      opportunityId: "opp-1",
+      opportunity: "Manufacturing execution visibility",
+      from: "medium",
+      to: "high",
+      reason:
+        "The client quantified the ~24-hour lag and its peak-demand cost, confirming the core pain.",
+      nextQuestionId: "q11",
+      nextReason:
+        "Confirm who owns production-data entry so the fix can be scoped to a real workflow.",
+    },
   },
   {
     id: "q2",
@@ -261,6 +297,17 @@ export const clioQuestions: DiscoveryQuestion[] = [
     criticalUnknown: true,
     shortlisted: true,
     recommendedIndex: 5,
+    evidenceImpact: {
+      opportunityId: "opp-2",
+      opportunity: "Traceability & recall readiness",
+      from: "medium",
+      to: "low",
+      reason:
+        "Client says lot genealogy is kept in a standalone spreadsheet — contradicting the inferred TraceGains/NetSuite map.",
+      nextQuestionId: "q6",
+      nextReason:
+        "Re-scope traceability around a manual source: confirm which SKUs and the lot-tracking method.",
+    },
   },
   {
     id: "q5",
@@ -293,6 +340,17 @@ export const clioQuestions: DiscoveryQuestion[] = [
     criticalUnknown: true,
     shortlisted: true,
     recommendedIndex: 8,
+    evidenceImpact: {
+      opportunityId: "opp-3",
+      opportunity: "NetSuite operational support",
+      from: "medium",
+      to: "high",
+      reason:
+        "Client named a decision owner and a timeline to replace ACS support before peak.",
+      nextQuestionId: "q3",
+      nextReason:
+        "Tie the support gap to the diligence data asks to frame the commercial case.",
+    },
   },
   {
     id: "q6",
@@ -325,6 +383,17 @@ export const clioQuestions: DiscoveryQuestion[] = [
     criticalUnknown: false,
     shortlisted: true,
     recommendedIndex: 6,
+    evidenceImpact: {
+      opportunityId: "opp-2",
+      opportunity: "Traceability & recall readiness",
+      from: "low",
+      to: "medium",
+      reason:
+        "Client identified the in-scope FSMA 204 SKUs and today's lot-tracking method, narrowing the gap.",
+      nextQuestionId: "q7",
+      nextReason:
+        "Trace a finished lot from quality to release to find where lineage breaks.",
+    },
   },
   {
     id: "q7",
@@ -486,3 +555,75 @@ export const clioQuestions: DiscoveryQuestion[] = [
     recommendedIndex: 12,
   },
 ];
+
+/* ---------- Discovery confidence (baseline, before this round's answers) ---------- */
+export const clioConfidence: OpportunityConfidence[] = [
+  {
+    id: "opp-1",
+    name: "Manufacturing execution visibility",
+    level: "medium",
+    evidenceCount: 4,
+    openUnknowns: 2,
+    biggestUncertainty:
+      "Exact daily volume and who owns production-data entry.",
+    nextQuestionId: "q1",
+  },
+  {
+    id: "opp-2",
+    name: "Traceability & recall readiness",
+    level: "low",
+    evidenceCount: 2,
+    openUnknowns: 3,
+    biggestUncertainty:
+      "Whether lot genealogy lives in a system or a spreadsheet.",
+    nextQuestionId: "q4",
+  },
+  {
+    id: "opp-3",
+    name: "NetSuite operational support",
+    level: "medium",
+    evidenceCount: 3,
+    openUnknowns: 2,
+    biggestUncertainty: "Owner and timeline to replace ACS support.",
+    nextQuestionId: "q5",
+  },
+];
+
+/* Curated "what changed" narrative for the Call Summary. Includes one
+   conflicting-evidence example where research and the client disagree. */
+export const clioWhatChanged = {
+  confirmed: [
+    "Production completion is recorded on paper and keyed in the next morning — the cause of the 24-hour inventory lag.",
+    "NetSuite ACS support ends in October with no renewal.",
+  ],
+  newFindings: [
+    "A named owner and a Q4 window exist for the ACS support decision.",
+    "FSMA 204 scope is limited to the refrigerated lines.",
+  ],
+  conflict: {
+    opportunity: "Traceability & recall readiness",
+    researchSaid:
+      "Public research inferred lot genealogy spans TraceGains and NetSuite.",
+    clientSaid:
+      "The client said lot genealogy is tracked in a standalone spreadsheet, not TraceGains.",
+    implication:
+      "Traceability scope shifts from system integration to consolidating a manual source — validate before proposing.",
+  },
+  recommendedNext:
+    "Confirm who owns production-data entry, then validate the lot-genealogy source of truth.",
+};
+
+export function questionById(id: string): DiscoveryQuestion | undefined {
+  return clioQuestions.find((q) => q.id === id);
+}
+
+export const confLabel: Record<ConfLevel, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+};
+export const confTone: Record<ConfLevel, "red" | "amber" | "green"> = {
+  low: "red",
+  medium: "amber",
+  high: "green",
+};
