@@ -53,11 +53,12 @@
     -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 
-  /* --- Radii --- */
-  --r-sm: 6px;
-  --r-md: 9px;
-  --r-lg: 13px;
-  --r-xl: 18px;
+  /* --- Radii — "Editorial Industrial": crisp, low-radius surfaces.
+     Large cards/panels 4px; buttons & inputs 4–6px; pills/avatars stay round. */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 4px;
+  --r-xl: 6px;
   --r-pill: 999px;
 
   /* --- Spacing scale --- */
@@ -130,13 +131,14 @@
   --tooltip-bg: #05070a;
   --tooltip-text: #e8eaec;
 
-  /* Atmospheric wash tints (brand-based, restrained) */
-  --wash-1: rgba(92, 149, 168, 0.06);
-  --wash-2: rgba(110, 166, 220, 0.035);
+  /* Flat editorial ground — no atmospheric wash. */
+  --wash-1: transparent;
+  --wash-2: transparent;
 
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.36);
-  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.5);
+  /* Thin borders over shadows — elevation only where genuinely needed. */
+  --shadow-1: none;
+  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.44);
 }
 
 /* =========================================================================
@@ -145,19 +147,19 @@
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --color-bg: #f5f7f8; /* cool very-light grey page */
+  --color-bg: #f4f7f8; /* editorial page ground */
   --color-sidebar: #ffffff; /* white */
   --color-surface: #ffffff; /* cards */
-  --color-surface-subtle: #f0f3f4; /* inputs, secondary fills */
+  --color-surface-subtle: #eef2f4; /* inputs, secondary fills */
   --color-surface-raised: #ffffff; /* menus/popovers (with shadow) */
-  --color-surface-hover: #eaeff1;
+  --color-surface-hover: #e9eff1;
 
-  --color-text: #1b2529; /* dark cool charcoal */
-  --color-text-secondary: #566169; /* readable neutral grey */
-  --color-text-muted: #667079;
+  --color-text: #172b33; /* ink headings */
+  --color-text-secondary: #63747b; /* secondary text */
+  --color-text-muted: #7c8b91;
 
-  --color-border-subtle: #e7ecee;
-  --color-border: #dde4e7; /* cool neutral grey */
+  --color-border-subtle: #e4ebed;
+  --color-border: #d9e2e5; /* editorial hairline */
   --color-border-strong: #c4ced2;
 
   --brand: var(--brand-500);
@@ -186,12 +188,14 @@
   --tooltip-bg: #1f2a2f;
   --tooltip-text: #f5f7f8;
 
-  --wash-1: rgba(92, 149, 168, 0.05);
-  --wash-2: rgba(51, 104, 159, 0.03);
+  /* Flat editorial ground — no atmospheric wash. */
+  --wash-1: transparent;
+  --wash-2: transparent;
 
-  --shadow-1: 0 1px 2px rgba(20, 30, 35, 0.07);
-  --shadow-2: 0 8px 22px rgba(20, 30, 35, 0.09);
-  --shadow-pop: 0 16px 40px rgba(20, 30, 35, 0.16);
+  /* Thin borders over shadows. */
+  --shadow-1: none;
+  --shadow-2: 0 1px 2px rgba(20, 30, 35, 0.06);
+  --shadow-pop: 0 10px 28px rgba(20, 30, 35, 0.12);
 }
 
 /* =========================================================================

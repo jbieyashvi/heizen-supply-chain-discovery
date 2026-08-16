@@ -99,11 +99,11 @@
   align-items: center;
   gap: 11px;
   padding: 9px 10px;
-  border-radius: var(--r-md);
+  border-radius: 4px;
   color: var(--text-2);
   font-weight: 500;
   font-size: 14px;
-  transition: background 0.14s ease, color 0.14s ease;
+  transition: background 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
   border: 1px solid transparent;
   width: 100%;
   text-align: left;
@@ -118,13 +118,17 @@
   background: var(--surface-2);
   color: var(--text-1);
 }
+/* Active nav: thin primary left indicator + very subtle tint, no heavy
+   rounded container. */
 .nav-item.active {
-  background: var(--accent-soft);
+  background: var(--brand-subtle);
   color: var(--accent-strong);
-  border-color: var(--accent-line);
+  border-color: transparent;
+  box-shadow: inset 2px 0 0 var(--brand);
 }
 .nav-item.active svg {
   opacity: 1;
+  color: var(--brand);
 }
 .nav-item--btn:disabled {
   opacity: 0.5;
@@ -1646,16 +1650,13 @@
   line-height: 1.45;
 }
 
-/* ---------- Next-action card (rail) ---------- */
+/* ---------- Next-action card (2px primary left rail) ---------- */
 .nextcard {
   border-radius: var(--r-lg);
   padding: 20px;
-  background: linear-gradient(
-    155deg,
-    color-mix(in srgb, var(--brand) 9%, var(--color-surface)),
-    var(--color-surface) 70%
-  );
-  border: 1px solid var(--brand-line);
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--brand);
 }
 .nextcard__eyebrow {
   font-size: 11px;
@@ -2635,3 +2636,61 @@ textarea.field-control {
 .simw-d__safe.is-unsafe .simw-d__safe-h { color: var(--warning); }
 .simw-d__safe-h svg { width: 14px; height: 14px; }
 .simw-d__safe > p { font-size: 13.5px; line-height: 1.55; color: var(--text-1); }
+
+/* =========================================================================
+   Editorial Industrial Intelligence — cross-cutting restyle
+   (colours/radii/shadows come from the tokens; this adds hierarchy + rails)
+   ========================================================================= */
+
+/* Stronger metric hierarchy — larger, tighter KPI values. */
+.summary-cell__value,
+.opp-stat__value,
+.pmap-stat__value,
+.src-stat__value,
+.sstat__value,
+.prep-cell__value,
+.conf-card__name {
+  letter-spacing: -0.5px;
+}
+.summary-cell__value,
+.opp-stat__value,
+.pmap-stat__value,
+.src-stat__value,
+.prep-cell__value {
+  font-size: 26px;
+  font-weight: 700;
+}
+.opp-stat__value--sm {
+  font-size: 17px;
+}
+
+/* Compact uppercase labels with slight tracking, applied consistently. */
+.summary-cell__label,
+.opp-stat__label,
+.pmap-stat__label,
+.src-stat__label,
+.prep-cell__label {
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-3);
+}
+
+/* 2px primary left rail on key insight / evidence cards (inset = no reflow). */
+.signal,
+.conf-card,
+.opp-ev__item,
+.pmap-ev__item,
+.fcb-d__source,
+.fcr-d__source {
+  box-shadow: inset 2px 0 0 var(--brand);
+}
+
+/* Flatten remaining heavy card shadows to the token (thin borders instead). */
+.card,
+.summary-strip,
+.oppc,
+.pmap-node {
+  box-shadow: none;
+}
