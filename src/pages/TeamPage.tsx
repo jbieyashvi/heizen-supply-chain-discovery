@@ -20,7 +20,6 @@ import { Badge } from "../components/Badge";
 import { Segmented } from "../components/Segmented";
 import { SidePanel } from "../components/SidePanel";
 import { Modal } from "../components/Modal";
-import { EmptyState } from "../components/EmptyState";
 import { useToast } from "../components/Toast";
 import { useClickOutside } from "../hooks/useClickOutside";
 import {

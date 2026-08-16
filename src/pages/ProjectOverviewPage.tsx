@@ -18,8 +18,16 @@ import {
   Loader,
   Rocket,
   Sparkles,
+  Handshake,
+  Compass,
+  TrendingUp,
+  Gauge,
+  Target,
+  Network,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
+import { Segmented, type SegmentOption } from "../components/Segmented";
+import { FirstCallBrief } from "../components/FirstCallBrief";
 import { AskAIPanel } from "../components/AskAIPanel";
 import { ReadinessStepItem } from "../components/ReadinessStepItem";
 import { InsightItem } from "../components/InsightItem";
@@ -209,6 +217,23 @@ export function ProjectOverviewPage() {
 }
 
 /* ============ Full overview (Clio Snacks) ============ */
+type PrepStage = "intro" | "discovery" | "expansion";
+
+const STAGE_OPTS: SegmentOption<PrepStage>[] = [
+  { id: "intro", label: "Introductory Call", icon: <Handshake aria-hidden /> },
+  { id: "discovery", label: "Discovery Call", icon: <Compass aria-hidden /> },
+  { id: "expansion", label: "Account Expansion", icon: <TrendingUp aria-hidden /> },
+];
+
+const stageBlurb: Record<PrepStage, string> = {
+  intro:
+    "First conversation. Understand the business, build rapport and surface the pains worth exploring — the 15-minute first-call brief leads here.",
+  discovery:
+    "Deep-dive stage. Discovery confidence, opportunities and the process map lead here.",
+  expansion:
+    "Existing account. Expansion signals, opportunities and the process map lead here.",
+};
+
 function FullOverview({
   projectId,
   project,
@@ -221,6 +246,22 @@ function FullOverview({
   const { notify } = useToast();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshed, setRefreshed] = useState(false);
+  const [stage, setStage] = useState<PrepStage>(() => {
+    try {
+      return (localStorage.getItem(`heizen-stage-${projectId}`) as PrepStage) || "intro";
+    } catch {
+      return "intro";
+    }
+  });
+
+  const changeStage = (s: PrepStage) => {
+    setStage(s);
+    try {
+      localStorage.setItem(`heizen-stage-${projectId}`, s);
+    } catch {
+      /* prototype — no persistence guarantees */
+    }
+  };
 
   const readyCount = detail.readiness.filter(
     (s) => s.state === "done" || s.detail.startsWith("Complete")
@@ -255,6 +296,117 @@ function FullOverview({
         meta={<HeaderMeta project={project} />}
       />
 
+      {/* Preparation-stage selector — tailors the overview to the call type */}
+      <section className="stage-picker" aria-label="Preparation stage">
+        <div className="stage-picker__label">
+          <span className="stage-picker__title">Preparation stage</span>
+          <span className="stage-picker__blurb">{stageBlurb[stage]}</span>
+        </div>
+        <Segmented
+          value={stage}
+          onChange={changeStage}
+          options={STAGE_OPTS}
+          ariaLabel="Preparation stage"
+        />
+      </section>
+
+      {stage === "intro" ? (
+        <IntroStage projectId={projectId} />
+      ) : (
+        <DiscoveryStage
+          projectId={projectId}
+          detail={detail}
+          stage={stage}
+          refreshing={refreshing}
+          refreshed={refreshed}
+          readyCount={readyCount}
+          doRefresh={doRefresh}
+          notify={notify}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---- Introductory Call: first-call brief + de-emphasised tools ---- */
+function IntroStage({ projectId }: { projectId: string }) {
+  const laterTools = [
+    {
+      icon: Gauge,
+      title: "Discovery confidence",
+      meta: "3 opportunities scored",
+      to: `/projects/${projectId}/discovery`,
+    },
+    {
+      icon: Target,
+      title: "Opportunities",
+      meta: "3 identified",
+      to: `/projects/${projectId}/opportunities`,
+    },
+    {
+      icon: Network,
+      title: "Process map",
+      meta: "7 process areas",
+      to: `/projects/${projectId}/process-map`,
+    },
+  ];
+
+  return (
+    <>
+      <FirstCallBrief />
+
+      {/* Kept, but de-emphasised — these lead once you move past an intro call */}
+      <section className="card card-pad later-tools">
+        <div className="section-head">
+          <div>
+            <h2 className="block-title">Discovery &amp; expansion tools</h2>
+            <p className="block-sub">
+              Discovery confidence, opportunities and the process map become primary once
+              you move to a Discovery or Account Expansion stage. They're still available now.
+            </p>
+          </div>
+        </div>
+        <div className="later-tools__grid">
+          {laterTools.map((t) => (
+            <Link key={t.title} to={t.to} className="later-tool">
+              <span className="later-tool__icon" aria-hidden>
+                <t.icon />
+              </span>
+              <span className="later-tool__body">
+                <span className="later-tool__title">{t.title}</span>
+                <span className="later-tool__meta">{t.meta}</span>
+              </span>
+              <ArrowRight className="later-tool__chev" aria-hidden />
+            </Link>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ---- Discovery Call / Account Expansion: the deep-dive overview ---- */
+function DiscoveryStage({
+  projectId,
+  detail,
+  stage,
+  refreshing,
+  refreshed,
+  readyCount,
+  doRefresh,
+  notify,
+}: {
+  projectId: string;
+  detail: NonNullable<(typeof projectDetails)[string]>;
+  stage: PrepStage;
+  refreshing: boolean;
+  refreshed: boolean;
+  readyCount: number;
+  doRefresh: () => void;
+  notify: ReturnType<typeof useToast>["notify"];
+}) {
+  return (
+    <>
       {/* Compact attention notice — owns research freshness */}
       {detail.attention && !refreshed && (
         <div className="notice notice--warn" role="region" aria-label="Research status">
@@ -298,6 +450,23 @@ function FullOverview({
               <span className="notice__title">Brief up to date</span>
               <span className="notice__body">
                 All 5 sources are now included. You're ready to prepare for tomorrow's call.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stage === "expansion" && (
+        <div className="notice notice--info" role="note">
+          <span className="notice__icon" aria-hidden>
+            <TrendingUp />
+          </span>
+          <div className="notice__main">
+            <div className="notice__text">
+              <span className="notice__title">Account expansion view</span>
+              <span className="notice__body">
+                Confidence, opportunities and the process map are framed for growing an
+                existing account. Prototype — the underlying data is shared with Discovery.
               </span>
             </div>
           </div>
@@ -484,7 +653,7 @@ function FullOverview({
           <ActivityFeed items={detail.activity} />
         </section>
       </div>
-    </div>
+    </>
   );
 }
 
