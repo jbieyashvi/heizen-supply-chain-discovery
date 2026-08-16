@@ -18,6 +18,7 @@ import {
 import { SidePanel } from "./SidePanel";
 import { Badge } from "./Badge";
 import { FocusChip } from "./FocusChip";
+import { SimilarWork } from "./SimilarWork";
 import { evidenceMeta } from "../lib/status";
 import { confLabel, confTone } from "../data/discovery";
 import { useFocus } from "../hooks/useFocus";
@@ -221,7 +222,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         <SecHead
           icon={Boxes}
           n={5}
-          title="Tech stack & related Heizen work"
+          title="Tech stack"
           sub="Technology and supply-chain vendors we can speak to."
         />
         <div className="fcb-vendors">
@@ -258,9 +259,20 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         </details>
       </section>
 
-      {/* 6 · Conversation starters & outcome ------------------------- */}
+      {/* 6 · Similar Heizen work ------------------------------------- */}
       <section className="fcb-sec">
-        <SecHead icon={MessageSquareText} n={6} title="How to open — and where to land" />
+        <SecHead
+          icon={Sparkles}
+          n={6}
+          title="Similar Heizen work"
+          sub="Delivered, safe-to-mention proof. Click any for overlap detail."
+        />
+        <SimilarWork projectId={projectId} introOnly />
+      </section>
+
+      {/* 7 · Conversation starters & outcome ------------------------- */}
+      <section className="fcb-sec">
+        <SecHead icon={MessageSquareText} n={7} title="How to open — and where to land" />
         <div className="fcb-open">
           <div className="fcb-starters">
             <span className="fcb-open__label">Three conversation starters</span>

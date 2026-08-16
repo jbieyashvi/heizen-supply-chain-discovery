@@ -15,17 +15,17 @@ import {
   MessageSquareText,
   HelpCircle,
   AlertTriangle,
-  CircleCheck,
   ShieldCheck,
 } from "lucide-react";
 import { SidePanel } from "../SidePanel";
 import { Badge } from "../Badge";
 import { FocusChip } from "../FocusChip";
+import { SimilarWork } from "../SimilarWork";
 import { OnThisPageNav } from "./OnThisPageNav";
 import type { ResearchData } from "../../data/research";
 import { questionById } from "../../data/discovery";
 import { useFocus } from "../../hooks/useFocus";
-import { scoreDomains, SIGNAL_DOMAINS, SIMILAR_DOMAINS } from "../../data/focus";
+import { scoreDomains, SIGNAL_DOMAINS } from "../../data/focus";
 import {
   fcBusinessContext,
   fcBusinessContextNote,
@@ -86,8 +86,6 @@ export function ResearchFirstCall({
 
   const tech = data.brief.tech;
   const techStack = [...tech.record, ...tech.planning, ...tech.ot].slice(0, 5);
-  // Related Heizen work re-ranked by focus (top 3 shown, all retained).
-  const similar = byFocus(data.brief.similar, SIMILAR_DOMAINS).slice(0, 3);
 
   return (
     <div className="brief">
@@ -181,24 +179,12 @@ export function ResearchFirstCall({
 
         {/* 6 · Similar Heizen work */}
         <section id="fc-similar" className="brief-section">
-          <SecHead icon={Sparkles} title="Similar Heizen work" sub="Prior work as supporting proof." />
-          <div className="fcr-similar">
-            {similar.map((s) => (
-              <div className="simwork" key={s.id}>
-                <div className="simwork__top">
-                  <span className="simwork__area">{s.area}</span>
-                  <Badge tone={s.similarity === "high" ? "green" : "neutral"} dot>
-                    {s.similarity === "high" ? "High similarity" : "Some overlap"}
-                  </Badge>
-                </div>
-                <p className="simwork__pain">
-                  <CircleCheck aria-hidden /> {s.relatedPain}
-                </p>
-                <p className="simwork__rel">{s.relevance}</p>
-                <span className="simwork__client">{s.clientLabel}</span>
-              </div>
-            ))}
-          </div>
+          <SecHead
+            icon={Sparkles}
+            title="Similar Heizen work"
+            sub="Delivered, safe-to-mention proof for a first call. Click any for overlap detail."
+          />
+          <SimilarWork projectId={projectId} introOnly />
         </section>
       </div>
 

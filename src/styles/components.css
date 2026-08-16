@@ -2468,3 +2468,170 @@ textarea.field-control {
 :root[data-theme="light"] .qrow__answer {
   background: var(--color-surface-subtle);
 }
+
+/* =========================================================================
+   Similar Heizen work — shared cards + overlap detail drawer
+   (used on Overview first-call brief and Research)
+   ========================================================================= */
+.simw { display: flex; flex-direction: column; gap: 12px; }
+.simw__intro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--success);
+  background: var(--success-subtle);
+  border: 1px solid rgba(107, 191, 143, 0.28);
+  border-radius: var(--r-md);
+  padding: 9px 12px;
+}
+.simw__intro svg { width: 15px; height: 15px; flex: none; }
+
+.simw__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .simw__grid { grid-template-columns: 1fr; }
+}
+
+.simw-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.05s ease;
+}
+.simw-card:hover { border-color: var(--brand-line); background: var(--surface-hover); }
+.simw-card:active { transform: translateY(1px); }
+/* Non-delivered work gets a muted left rail so it never reads as proof */
+.simw-card--discussed,
+.simw-card--research-based { border-left: 3px solid var(--warning); }
+.simw-card--in-discovery { border-left: 3px solid var(--info); }
+.simw-card--delivered { border-left: 3px solid var(--success); }
+
+.simw-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.simw-card__id { display: flex; flex-direction: column; gap: 1px; }
+.simw-card__name { font-size: 15px; font-weight: 650; letter-spacing: -0.2px; color: var(--text-1); }
+.simw-card__industry { font-size: 12.5px; color: var(--text-3); }
+
+.simw-card__facts { display: flex; flex-direction: column; gap: 8px; }
+.simw-card__facts > div { display: flex; flex-direction: column; gap: 2px; }
+.simw-card__facts dt {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.simw-card__facts dd { font-size: 13px; line-height: 1.45; color: var(--text-1); }
+
+.simw-card__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+.simw-card__evi {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.simw-card__evi svg { width: 13px; height: 13px; flex: none; }
+.simw-card__chev { width: 16px; height: 16px; color: var(--text-3); flex: none; }
+
+/* ---- Drawer ---- */
+.simw-d { display: flex; flex-direction: column; gap: 16px; }
+.simw-d__badges { display: flex; flex-wrap: wrap; gap: 8px; }
+.simw-d__sec { display: flex; flex-direction: column; gap: 8px; }
+.simw-d__sec > p { font-size: 14px; line-height: 1.6; color: var(--text-1); }
+.simw-d__h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.simw-d__h svg { width: 14px; height: 14px; color: var(--brand-text); }
+
+.simw-bars { display: flex; flex-direction: column; gap: 8px; }
+.simw-bar { display: grid; grid-template-columns: 140px 1fr 40px; align-items: center; gap: 10px; }
+.simw-bar__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.simw-bar__label svg { width: 13px; height: 13px; color: var(--text-3); flex: none; }
+.simw-bar__track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.simw-bar__fill { display: block; height: 100%; border-radius: 999px; background: var(--brand); }
+.simw-bar__fill--total { background: var(--brand-solid); }
+.simw-bar__val { font-size: 12.5px; font-weight: 650; color: var(--text-1); text-align: right; }
+.simw-bar--total { padding-top: 8px; border-top: 1px solid var(--border-subtle); }
+.simw-bar--total .simw-bar__label { color: var(--text-1); font-weight: 700; }
+
+.simw-d__explainer {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.simw-d__explainer svg { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+
+.simw-d__risks > p { color: var(--text-1); }
+
+.simw-d__safe {
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+}
+.simw-d__safe.is-safe {
+  border-color: rgba(107, 191, 143, 0.3);
+  background: var(--success-subtle);
+}
+.simw-d__safe.is-unsafe {
+  border-color: rgba(214, 163, 85, 0.3);
+  background: var(--warning-subtle);
+}
+.simw-d__safe-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.simw-d__safe.is-safe .simw-d__safe-h { color: var(--success); }
+.simw-d__safe.is-unsafe .simw-d__safe-h { color: var(--warning); }
+.simw-d__safe-h svg { width: 14px; height: 14px; }
+.simw-d__safe > p { font-size: 13.5px; line-height: 1.55; color: var(--text-1); }

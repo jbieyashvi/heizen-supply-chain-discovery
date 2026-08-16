@@ -9,7 +9,6 @@ import {
   Layers,
   Plug,
   AlertTriangle,
-  CircleCheck,
   HelpCircle,
   History,
   Eye,
@@ -18,6 +17,7 @@ import type { ResearchData, Signal, Module } from "../../data/research";
 import { Badge } from "../Badge";
 import { EvidenceBadge } from "../StatusBadges";
 import { Tooltip } from "../Tooltip";
+import { SimilarWork } from "../SimilarWork";
 import { confidenceMeta } from "../../lib/status";
 import { OnThisPageNav } from "./OnThisPageNav";
 import type { EvidenceView } from "./EvidencePanel";
@@ -382,25 +382,12 @@ export function ResearchBrief({
         <section id="similar" className="brief-section">
           <header className="brief-head">
             <h3 className="brief-title">Similar Heizen work</h3>
-            <p className="brief-sub">Prior work relevant as supporting proof.</p>
+            <p className="brief-sub">
+              Prior work by provenance — only delivered work is safe as social proof. Click any
+              for overlap detail.
+            </p>
           </header>
-          <div className="similar">
-            {b.similar.map((s) => (
-              <div className="simwork" key={s.id}>
-                <div className="simwork__top">
-                  <span className="simwork__area">{s.area}</span>
-                  <Badge tone={s.similarity === "high" ? "green" : "neutral"} dot>
-                    {s.similarity === "high" ? "High similarity" : "Some overlap"}
-                  </Badge>
-                </div>
-                <p className="simwork__pain">
-                  <CircleCheck aria-hidden /> {s.relatedPain}
-                </p>
-                <p className="simwork__rel">{s.relevance}</p>
-                <span className="simwork__client">{s.clientLabel}</span>
-              </div>
-            ))}
-          </div>
+          <SimilarWork projectId={projectId} />
         </section>
       </div>
     </div>
