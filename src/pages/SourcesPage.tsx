@@ -31,6 +31,7 @@ import { Badge } from "../components/Badge";
 import { Segmented } from "../components/Segmented";
 import { SidePanel } from "../components/SidePanel";
 import { Modal } from "../components/Modal";
+import { ReviewChangesPanel } from "../components/sources/ReviewChangesPanel";
 import { useToast } from "../components/Toast";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { projects } from "../data/mock";
@@ -43,7 +44,6 @@ import {
   type SourceItem,
   type Origin,
 } from "../data/sources";
-import { clioWhatChanged } from "../data/discovery";
 
 type Filter = "all" | "processing" | "processed" | "needs-attention" | "client";
 
@@ -216,16 +216,6 @@ export function SourcesPage() {
   const processedCount = sources.filter((s) => s.status === "processed").length;
   const processingCount = sources.filter((s) => s.status === "processing").length;
   const needsAttentionCount = sources.filter((s) => s.needsAttention).length;
-
-  // Change summary shown in Review changes (grounded in the ready sources).
-  const review = {
-    findings: pending.reduce((n, s) => n + s.findings, 0),
-    questions: pending.reduce((n, s) => n + s.questions, 0),
-    assumptionsConfirmed: clioWhatChanged.confirmed.length,
-    contradictions: clioWhatChanged.conflict ? 1 : 0,
-    opportunities: [...new Set(pending.flatMap((s) => s.relatedOpportunities))],
-    stages: [...new Set(pending.flatMap((s) => s.processStages))],
-  };
 
   const filterOptions = FILTERS.map((f) =>
     f.id === "processing"
@@ -503,99 +493,15 @@ export function SourcesPage() {
         </ul>
       </Modal>
 
-      {/* Review changes */}
-      <SidePanel
+      {/* Review changes — approval workflow */}
+      <ReviewChangesPanel
         open={reviewOpen}
         onClose={() => setReviewOpen(false)}
-        title="Review changes"
-        subtitle="What a Research refresh would fold into the brief"
-      >
-        {pending.length === 0 ? (
-          <p className="muted">Nothing pending — the brief is current.</p>
-        ) : (
-          <div className="src-review">
-            <div className="src-review__stats">
-              <div className="src-review__stat">
-                <FileText aria-hidden />
-                <b>{review.findings}</b> new findings
-              </div>
-              <div className="src-review__stat">
-                <CheckCircle2 aria-hidden />
-                <b>{review.assumptionsConfirmed}</b> assumptions confirmed
-              </div>
-              <div className="src-review__stat">
-                <AlertTriangle aria-hidden />
-                <b>{review.contradictions}</b> contradiction
-                {review.contradictions === 1 ? "" : "s"} detected
-              </div>
-              <div className="src-review__stat">
-                <HelpCircle aria-hidden />
-                <b>{review.questions}</b> generated questions
-              </div>
-            </div>
-
-            {review.opportunities.length > 0 && (
-              <section className="src-review__block">
-                <span className="src-d__label">
-                  <Target aria-hidden /> Affected opportunities
-                </span>
-                <div className="src-chips">
-                  {review.opportunities.map((o) => (
-                    <span className="src-chip" key={o}>
-                      <Target aria-hidden /> {o}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {review.stages.length > 0 && (
-              <section className="src-review__block">
-                <span className="src-d__label">
-                  <Layers aria-hidden /> Process Map stages
-                </span>
-                <div className="src-chips">
-                  {review.stages.map((p) => (
-                    <span className="src-chip" key={p}>
-                      <Layers aria-hidden /> {p}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            <section className="src-review__block">
-              <span className="src-d__label">
-                <FileStack aria-hidden /> Ready to include
-              </span>
-              {pending.map((s) => (
-                <div className="src-review__item" key={s.id}>
-                  <div className="src-review__head">
-                    <span className="src-review__name">{s.name}</span>
-                    <Badge tone="amber" dot>Not in brief</Badge>
-                  </div>
-                  <p className="src-review__meta">
-                    {s.type} · {s.findings} findings · {s.questions} questions
-                  </p>
-                </div>
-              ))}
-            </section>
-          </div>
-        )}
-        <div className="src-review__foot">
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              setReviewOpen(false);
-              setRefreshOpen(true);
-            }}
-            disabled={pending.length === 0}
-          >
-            <RefreshCw /> Refresh with {readyCount} source
-            {readyCount === 1 ? "" : "s"}
-          </button>
-        </div>
-      </SidePanel>
+        onRefreshBrief={() => {
+          setReviewOpen(false);
+          setRefreshOpen(true);
+        }}
+      />
 
       {/* Remove confirmation */}
       <Modal

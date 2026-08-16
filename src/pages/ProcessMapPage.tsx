@@ -506,8 +506,12 @@ function AreasToExplore({
     <div className="pmap-explore">
       {ordered.map((a) => {
         const isRelevant = relevant(a);
+        // Show Healthy/Friction/Critical only when a client source backs the
+        // reading — displayHealth already downgrades inference-only health to
+        // "unknown", and hasClientEvidence gates out public-only findings.
+        const dh = displayHealth(a);
         const showHealth =
-          hasClientEvidence(a) && a.health !== "unknown";
+          hasClientEvidence(a) && dh.key !== "unknown" && !dh.inferred;
         const openQ = a.questions.filter((q) => !q.answered).length;
         const suggested = a.coverage === "not-explored" ? a.suggestedQuestions?.length ?? 0 : 0;
         return (
@@ -529,8 +533,8 @@ function AreasToExplore({
             </span>
 
             {showHealth ? (
-              <span className={`pmap-area__health h-${a.health}`}>
-                <span className="pmap-node__dot" /> {healthMeta[a.health].label}
+              <span className={`pmap-area__health h-${dh.key}`}>
+                <span className="pmap-node__dot" /> {healthMeta[dh.key].label}
               </span>
             ) : (
               <span className="pmap-area__health pmap-area__health--none">

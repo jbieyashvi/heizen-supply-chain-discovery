@@ -30,7 +30,9 @@ export default defineConfig({
   base: BASE,
   plugins: [react(), spa404Fallback()],
   server: {
-    port: 5173,
+    // Honour the harness-assigned PORT when present; fall back to Vite's
+    // default (auto-increments if the port is busy) otherwise.
+    port: process.env.PORT ? Number(process.env.PORT) : undefined,
     host: true,
   },
 });
