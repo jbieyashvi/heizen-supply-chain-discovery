@@ -1063,3 +1063,217 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================================
+   Stage-aware Process Map — Areas to Explore, hypotheses, expansion overlay
+   ========================================================================= */
+
+/* ---- Areas to Explore (introductory) ---- */
+.pmap-explore {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1100px) { .pmap-explore { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px) { .pmap-explore { grid-template-columns: 1fr; } }
+
+.pmap-area {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.05s ease;
+}
+.pmap-area:hover { border-color: var(--brand-line); background: var(--surface-hover); }
+.pmap-area:active { transform: translateY(1px); }
+.pmap-area.is-relevant { border-left: 3px solid var(--brand); }
+.pmap-area.is-dim { opacity: 0.6; }
+.pmap-area.is-dim:hover { opacity: 1; }
+
+.pmap-area__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pmap-area__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.pmap-area__name svg { width: 15px; height: 15px; color: var(--brand-text); }
+.pmap-area__rel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--brand-text);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-line);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+.pmap-area__health {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+.pmap-area__health--none { color: var(--text-3); font-weight: 500; font-style: italic; }
+.pmap-area__counts {
+  display: flex;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--text-3);
+}
+.pmap-area__counts span { display: inline-flex; align-items: center; gap: 5px; }
+.pmap-area__counts svg { width: 13px; height: 13px; }
+.pmap-area__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-text);
+}
+.pmap-area__go svg { width: 14px; height: 14px; }
+
+/* ---- AI-suggested hypotheses (unvalidated) ---- */
+.pmap-hyps .block-title { display: inline-flex; align-items: center; gap: 7px; }
+.pmap-hyps .block-title svg { width: 16px; height: 16px; color: var(--brand-text); }
+.pmap-hyp-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.pmap-hyp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--warning-subtle);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.pmap-hyp__body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.pmap-hyp__domain { font-size: 13.5px; font-weight: 650; color: var(--text-1); }
+.pmap-hyp__text { font-size: 13px; line-height: 1.45; color: var(--text-2); }
+.pmap-hyp__act {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-text);
+}
+.pmap-hyp__act svg { width: 13px; height: 13px; }
+
+/* ---- Expansion overlay ---- */
+.pmap-expansion { margin-top: 16px; }
+.pmap-expansion .block-title { display: inline-flex; align-items: center; gap: 7px; }
+.pmap-expansion .block-title svg { width: 16px; height: 16px; color: var(--brand-text); }
+.pmap-exp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+@media (max-width: 900px) { .pmap-exp-grid { grid-template-columns: 1fr; } }
+.pmap-exp {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.pmap-exp__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pmap-exp__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text-1);
+}
+.pmap-exp__name svg { width: 14px; height: 14px; color: var(--brand-text); }
+.pmap-exp__name:hover { color: var(--brand-text); }
+.pmap-exp__field { display: flex; flex-direction: column; gap: 4px; }
+.pmap-exp__field > p { font-size: 13px; line-height: 1.5; color: var(--text-1); }
+.pmap-exp__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.pmap-exp__label svg { width: 13px; height: 13px; }
+.pmap-exp__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pmap-exp__meta p { font-size: 13px; color: var(--text-1); margin-top: 3px; }
+.pmap-exp__proof {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 11px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-subtle);
+}
+.pmap-exp__proofitem { display: flex; flex-direction: column; gap: 1px; }
+.pmap-exp__proofname { font-size: 13px; font-weight: 650; color: var(--brand-text); }
+.pmap-exp__proofrel { font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
+
+/* ---- Investigate-domain modal ---- */
+.pmap-inv { display: flex; flex-direction: column; gap: 10px; }
+.pmap-inv__label { font-size: 13px; font-weight: 600; color: var(--text-1); }
+.pmap-inv input {
+  height: 38px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 14px;
+}
+.pmap-inv__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+  background: var(--warning-subtle);
+  border: 1px solid rgba(214, 163, 85, 0.28);
+  border-radius: var(--r-sm);
+  padding: 9px 11px;
+}
+.pmap-inv__note svg { width: 14px; height: 14px; flex: none; margin-top: 1px; color: var(--warning); }
+
+/* ---- Friction/critical evidence source in the drawer ---- */
+.pmap-healthsrc {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  padding: 9px 11px;
+}
+.pmap-healthsrc svg { width: 14px; height: 14px; flex: none; margin-top: 1px; color: var(--text-3); }
+.pmap-healthsrc b { color: var(--text-1); font-weight: 600; }

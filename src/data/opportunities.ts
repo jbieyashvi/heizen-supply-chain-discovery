@@ -49,7 +49,10 @@ export interface Opportunity {
   assumptions: string[];
   unknowns: string[];
   confidenceReason: string;
+  /** Recommended next action (solution-oriented) — used post-validation. */
   nextAction: string;
+  /** A validation question / action to run on the call — never a solution. */
+  validationAction: string;
   lastUpdated: string;
   /** Indicative annual value range (pre-validation). */
   estValue: string;
@@ -190,6 +193,8 @@ export const clioOpportunities: Opportunity[] = [
       "High — the lag, its cause and its peak-demand cost are all client-confirmed on the discovery call, with a comparable prior project as precedent.",
     nextAction:
       "Scope a source-side capture pilot on one line and size the peak-season value with the COO.",
+    validationAction:
+      "Ask: “How long after production does inventory actually reflect today, and who owns that data entry?” Confirm the lag and the peak-season cost before proposing anything.",
     lastUpdated: "13 Aug 2026",
     estValue: "$0.6M–0.9M / yr",
   },
@@ -270,6 +275,8 @@ export const clioOpportunities: Opportunity[] = [
       "Medium — the regulatory pressure is well-evidenced from public sources, but the system of record is contested and not yet client-confirmed. A recent call contradicts the inferred system map.",
     nextAction:
       "Validate the lot-genealogy source of truth and confirm in-scope SKUs before scoping the traceability build.",
+    validationAction:
+      "Ask: “Where does lot genealogy actually live today — a system or a spreadsheet — and which SKUs fall under FSMA 204?” Confirm before assuming a traceability gap.",
     lastUpdated: "13 Aug 2026",
     estValue: "$0.4M–0.7M / yr (risk-avoidance)",
   },
@@ -352,6 +359,8 @@ export const clioOpportunities: Opportunity[] = [
       "Low — this opportunity rests entirely on public-source inference. There is no client confirmation yet of the planning workflow or the value at stake.",
     nextAction:
       "Confirm how Netstock feeds production and whether planners trust current availability before pursuing this.",
+    validationAction:
+      "Ask: “How often is the production plan overridden by hand, and do planners trust the availability they’re working from?” Establish the problem is real before scoping.",
     lastUpdated: "12 Aug 2026",
     estValue: "$0.3M–0.6M / yr (indicative)",
   },

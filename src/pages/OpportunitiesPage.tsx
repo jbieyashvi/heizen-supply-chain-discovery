@@ -450,9 +450,10 @@ function OpportunityCard({
 
       <div className="oppc__next">
         <span className="oppc__next-label">
-          <Lightbulb aria-hidden /> {isIntro ? "How to validate" : "Recommended next action"}
+          {isIntro ? <HelpCircle aria-hidden /> : <Lightbulb aria-hidden />}
+          {isIntro ? "How to validate" : "Recommended next action"}
         </span>
-        <p>{opp.nextAction}</p>
+        <p>{isIntro ? opp.validationAction : opp.nextAction}</p>
       </div>
 
       <div className="oppc__foot">
@@ -710,12 +711,13 @@ function OpportunityDetail({
             <p className="opp-d__text">{opp.confidenceReason}</p>
           </section>
 
-          {/* Recommended next action */}
+          {/* How to validate (intro) / Recommended next action */}
           <section className="opp-d__section opp-d__next">
             <h3 className="opp-d__label">
-              <Lightbulb aria-hidden /> {isIntro ? "How to validate" : "Recommended next action"}
+              {isIntro ? <HelpCircle aria-hidden /> : <Lightbulb aria-hidden />}
+              {isIntro ? "How to validate" : "Recommended next action"}
             </h3>
-            <p className="opp-d__text">{opp.nextAction}</p>
+            <p className="opp-d__text">{isIntro ? opp.validationAction : opp.nextAction}</p>
           </section>
         </div>
       )}

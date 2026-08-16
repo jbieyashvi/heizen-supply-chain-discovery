@@ -1,4 +1,5 @@
 import type { EvidenceLevel } from "./types";
+import type { FocusDomain } from "./focus";
 
 /* ================================================================
    Clio Snacks — Process Map
@@ -805,3 +806,41 @@ export const ENTITY_KINDS: { id: EntityKind; label: string }[] = [
   { id: "stakeholder", label: "Stakeholders" },
   { id: "document", label: "Documents" },
 ];
+
+/* ---------------------------------------------------------------- */
+/* Stage-aware helpers (Introductory / Discovery / Account Expansion) */
+/* ---------------------------------------------------------------- */
+
+/** Which focus domains each process area belongs to (stakeholder relevance). */
+export const AREA_FOCUS_DOMAINS: Record<string, FocusDomain[]> = {
+  plan: ["supply-chain"],
+  source: ["procurement", "supply-chain"],
+  make: ["manufacturing"],
+  quality: ["quality"],
+  store: ["supply-chain", "manufacturing"],
+  deliver: ["supply-chain"],
+  data: ["tech-ai"],
+};
+
+/** Coverage labels used on an introductory call ("Areas to Explore"). */
+export const introCoverageLabel: Record<Coverage, string> = {
+  "not-explored": "Not explored",
+  partial: "Partial",
+  validated: "Known",
+};
+
+/** Health may only be shown where a client source backs it — not on
+   public inference alone. */
+export function hasClientEvidence(n: { evidence: NodeEvidence[] }): boolean {
+  return n.evidence.some(
+    (e) => e.level === "client-confirmed" || e.level === "client-document"
+  );
+}
+
+/** The first client-backed source string for a node, if any. */
+export function clientEvidenceSource(n: { evidence: NodeEvidence[] }): string | null {
+  const e = n.evidence.find(
+    (x) => x.level === "client-confirmed" || x.level === "client-document"
+  );
+  return e ? e.source : null;
+}

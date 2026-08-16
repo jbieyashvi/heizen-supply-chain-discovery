@@ -23,15 +23,25 @@ import {
   Cpu,
   Layers3,
   Clock3,
+  Search,
+  Sparkles,
+  FlaskConical,
+  Wrench,
+  Link2,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
 import { Badge } from "../components/Badge";
 import { Segmented } from "../components/Segmented";
 import { SidePanel } from "../components/SidePanel";
+import { Modal } from "../components/Modal";
 import { EvidenceBadge } from "../components/StatusBadges";
 import { Canvas, type MiniNode } from "../components/Canvas";
 import { useToast } from "../components/Toast";
+import { useFocus } from "../hooks/useFocus";
+import { stakeholderById, type FocusStakeholder } from "../data/focus";
+import { safeDeliveredWork } from "../data/heizenWork";
+import { investigateDomain } from "../data/assistant";
 import { projects } from "../data/mock";
 import {
   clioProcessAreas,
@@ -40,6 +50,10 @@ import {
   coverageMeta,
   healthMeta,
   pmapSummary,
+  AREA_FOCUS_DOMAINS,
+  introCoverageLabel,
+  hasClientEvidence,
+  clientEvidenceSource,
   type ProcessArea,
   type SubProcess,
   type Health,
@@ -48,7 +62,23 @@ import {
 } from "../data/processmap";
 
 type View = "processes" | "entities";
+type Stage = "intro" | "discovery" | "expansion";
 type NodeLike = ProcessArea | SubProcess;
+
+function readStage(projectId: string | undefined): Stage {
+  try {
+    const s = localStorage.getItem(`heizen-stage-${projectId}`);
+    return s === "discovery" || s === "expansion" ? s : "intro";
+  } catch {
+    return "intro";
+  }
+}
+
+interface Hypothesis {
+  id: string;
+  domain: string;
+  text: string;
+}
 
 /* Health → Badge tone (accent = brand #5C95A8 for healthy/validated). */
 const healthBadgeTone: Record<Health, "neutral" | "accent" | "amber" | "red"> = {
@@ -93,13 +123,20 @@ export function ProcessMapPage() {
   const { projectId } = useParams();
   const project = projects.find((p) => p.id === projectId);
   const { notify } = useToast();
+  const { focus } = useFocus(projectId);
   const proto = (label: string) =>
     notify({ title: label, body: "Prototype action — no changes were made.", tone: "info" });
+
+  const [stage] = useState<Stage>(() => readStage(projectId));
+  const stakeholder =
+    stakeholderById(focus?.stakeholderId) ?? stakeholderById("meera")!;
 
   const [view, setView] = useState<View>("processes");
   const [drillId, setDrillId] = useState<string | null>(null);
   const [openNode, setOpenNode] = useState<NodeLike | null>(null);
   const [openEntity, setOpenEntity] = useState<Entity | null>(null);
+  const [investigateOpen, setInvestigateOpen] = useState(false);
+  const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
 
   if (projectId !== "clio-snacks") {
     return (
@@ -133,82 +170,223 @@ export function ProcessMapPage() {
     ? clioProcessAreas.find((a) => a.id === drillId) ?? null
     : null;
 
+  const isIntro = stage === "intro";
+
+  const subtitle =
+    stage === "intro"
+      ? `Areas to explore before the introductory call — ${stakeholder.name}'s domains are highlighted.`
+      : stage === "expansion"
+      ? "Confirmed gaps, opportunity overlays and the delivered Heizen work that maps to them."
+      : "How Clio Snacks plans, makes, checks, stores and ships — coverage and health, mapped from the evidence.";
+
+  const addHypothesis = (domain: string) => {
+    const r = investigateDomain(domain);
+    setHypotheses((prev) => [
+      {
+        id: `hyp-${prev.length}-${domain.toLowerCase().replace(/\s+/g, "-")}`,
+        domain: r.query,
+        text: r.findings[0]?.text ?? `Possible unexplored area in ${r.query}.`,
+      },
+      ...prev,
+    ]);
+    setInvestigateOpen(false);
+    notify({
+      title: "Unvalidated hypothesis added",
+      body: `Simulated AI research on “${r.query}” — added as an unvalidated hypothesis, not a confirmed gap.`,
+      tone: "info",
+    });
+  };
+
   return (
     <div className="page pmap-page">
       <PageHeader
         crumbs={[
           { label: "Projects", to: "/projects" },
           { label: project?.name ?? "Clio Snacks", to: `/projects/${projectId}` },
-          { label: "Process Map" },
+          { label: isIntro ? "Areas to Explore" : "Process Map" },
         ]}
-        title={<h1 className="page-title">Process Map</h1>}
-        subtitle="How Clio Snacks plans, makes, checks, stores and ships — mapped from the evidence, with the gaps called out."
+        title={<h1 className="page-title">{isIntro ? "Areas to Explore" : "Process Map"}</h1>}
+        subtitle={subtitle}
+        actions={
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn btn-sm" onClick={() => setInvestigateOpen(true)}>
+              <Search /> Investigate another domain
+            </button>
+            {isIntro && (
+              <Link
+                to={`/projects/${projectId}/discovery`}
+                className="btn btn-primary btn-sm"
+              >
+                <HelpCircle /> Add exploration question
+              </Link>
+            )}
+          </div>
+        }
       />
 
       {/* Summary */}
       <section className="card card-pad pmap-summary">
         <div className="pmap-sum-grid">
-          <div className="pmap-stat">
-            <span className="pmap-stat__icon">
-              <Layers3 aria-hidden />
-            </span>
-            <div className="pmap-stat__body">
-              <span className="pmap-stat__value">{pmapSummary.stages}</span>
-              <span className="pmap-stat__label">Process stages</span>
-              <span className="pmap-stat__sub">· {pmapSummary.enabling} enabling layer</span>
-            </div>
-          </div>
-          <PmapStat icon={<CheckCircle2 aria-hidden />} value={pmapSummary.explored} label="Explored" tone="brand" />
-          <PmapStat icon={<AlertTriangle aria-hidden />} value={pmapSummary.critical} label="Critical issues" tone="red" />
-          <PmapStat icon={<HelpCircle aria-hidden />} value={pmapSummary.openQuestions} label="Unique open questions" tone="amber" />
-          <div className="pmap-updated">
-            <span className="pmap-updated__label">
-              <Clock3 aria-hidden /> Map refreshed
-            </span>
-            <span className="pmap-updated__value">{pmapSummary.refreshed}</span>
-            <span className="pmap-updated__pending">
-              <AlertTriangle aria-hidden /> {pmapSummary.pendingSources} newer sources
-              awaiting inclusion
-            </span>
-          </div>
+          {isIntro ? (
+            <>
+              <PmapStat icon={<Layers3 aria-hidden />} value={clioProcessAreas.length} label="Areas to explore" />
+              <PmapStat
+                icon={<CheckCircle2 aria-hidden />}
+                value={clioProcessAreas.filter((a) => a.coverage !== "not-explored").length}
+                label="Known or partial"
+                tone="brand"
+              />
+              <PmapStat
+                icon={<Circle aria-hidden />}
+                value={clioProcessAreas.filter((a) => a.coverage === "not-explored").length}
+                label="Not explored"
+                tone="amber"
+              />
+              <PmapStat
+                icon={<User aria-hidden />}
+                value={
+                  clioProcessAreas.filter((a) =>
+                    (AREA_FOCUS_DOMAINS[a.id] ?? []).some((d) => stakeholder.domains.includes(d))
+                  ).length
+                }
+                label={`Relevant to ${stakeholder.name.split(" ")[0]}`}
+              />
+            </>
+          ) : stage === "expansion" ? (
+            <>
+              <PmapStat
+                icon={<AlertTriangle aria-hidden />}
+                value={confirmedGaps().length}
+                label="Confirmed gaps"
+                tone="red"
+              />
+              <PmapStat
+                icon={<Target aria-hidden />}
+                value={new Set(confirmedGaps().flatMap((a) => a.opportunities.map((o) => o.id))).size}
+                label="Opportunity overlays"
+                tone="brand"
+              />
+              <PmapStat icon={<Wrench aria-hidden />} value={confirmedGaps().length} label="Potential next modules" />
+              <PmapStat icon={<Sparkles aria-hidden />} value={safeDeliveredWork(2).length} label="Delivered proof points" tone="brand" />
+            </>
+          ) : (
+            <>
+              <div className="pmap-stat">
+                <span className="pmap-stat__icon">
+                  <Layers3 aria-hidden />
+                </span>
+                <div className="pmap-stat__body">
+                  <span className="pmap-stat__value">{pmapSummary.stages}</span>
+                  <span className="pmap-stat__label">Process stages</span>
+                  <span className="pmap-stat__sub">· {pmapSummary.enabling} enabling layer</span>
+                </div>
+              </div>
+              <PmapStat icon={<CheckCircle2 aria-hidden />} value={pmapSummary.explored} label="Explored" tone="brand" />
+              <PmapStat icon={<AlertTriangle aria-hidden />} value={pmapSummary.critical} label="Critical issues" tone="red" />
+              <PmapStat icon={<HelpCircle aria-hidden />} value={pmapSummary.openQuestions} label="Unique open questions" tone="amber" />
+              <div className="pmap-updated">
+                <span className="pmap-updated__label">
+                  <Clock3 aria-hidden /> Map refreshed
+                </span>
+                <span className="pmap-updated__value">{pmapSummary.refreshed}</span>
+                <span className="pmap-updated__pending">
+                  <AlertTriangle aria-hidden /> {pmapSummary.pendingSources} newer sources
+                  awaiting inclusion
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
-      {/* View toggle + legend */}
-      <div className="pmap-toolbar">
-        <Segmented<View>
-          value={view}
-          onChange={setView}
-          ariaLabel="Process Map view"
-          options={[
-            { id: "processes", label: "Processes", icon: <Layers aria-hidden /> },
-            { id: "entities", label: "Entities", icon: <Boxes aria-hidden /> },
-          ]}
-        />
-        {view === "processes" && drillArea && (
-          <nav className="pmap-breadcrumb" aria-label="Process level">
-            <button className="pmap-crumb" onClick={() => setDrillId(null)}>
-              <ChevronLeft aria-hidden /> Process Map
-            </button>
-            <ChevronRight className="pmap-crumb-sep" aria-hidden />
-            <span className="pmap-crumb-current">{drillArea.name}</span>
-          </nav>
-        )}
-        {view === "processes" && <PmapLegend />}
-      </div>
+      {/* AI-suggested hypotheses (unvalidated) */}
+      {hypotheses.length > 0 && (
+        <section className="card card-pad pmap-hyps">
+          <div className="section-head">
+            <div>
+              <h2 className="block-title">
+                <Sparkles aria-hidden /> AI-suggested areas
+              </h2>
+              <p className="block-sub">
+                Simulated research — each is an <b>unvalidated hypothesis</b>, never a confirmed gap.
+                Confirm on a call before treating it as real.
+              </p>
+            </div>
+          </div>
+          <ul className="pmap-hyp-list">
+            {hypotheses.map((h) => (
+              <li className="pmap-hyp" key={h.id}>
+                <Badge tone="amber" icon={<AlertTriangle aria-hidden />}>
+                  Unvalidated
+                </Badge>
+                <div className="pmap-hyp__body">
+                  <span className="pmap-hyp__domain">{h.domain}</span>
+                  <span className="pmap-hyp__text">{h.text}</span>
+                </div>
+                <Link
+                  to={`/projects/${projectId}/discovery`}
+                  className="pmap-hyp__act"
+                >
+                  Add validation question <ArrowRight aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
-      {view === "processes" ? (
-        <ProcessesView
-          drillArea={drillArea}
-          onOpen={setOpenNode}
-          onDrill={(id) => setDrillId(id)}
-        />
+      {isIntro ? (
+        <>
+          <div className="pmap-toolbar">
+            <PmapCoverageLegend />
+          </div>
+          <AreasToExplore stakeholder={stakeholder} onOpen={setOpenNode} />
+        </>
       ) : (
-        <EntitiesView onAction={proto} onOpenEntity={setOpenEntity} />
+        <>
+          {/* View toggle + legend */}
+          <div className="pmap-toolbar">
+            <Segmented<View>
+              value={view}
+              onChange={setView}
+              ariaLabel="Process Map view"
+              options={[
+                { id: "processes", label: "Processes", icon: <Layers aria-hidden /> },
+                { id: "entities", label: "Entities", icon: <Boxes aria-hidden /> },
+              ]}
+            />
+            {view === "processes" && drillArea && (
+              <nav className="pmap-breadcrumb" aria-label="Process level">
+                <button className="pmap-crumb" onClick={() => setDrillId(null)}>
+                  <ChevronLeft aria-hidden /> Process Map
+                </button>
+                <ChevronRight className="pmap-crumb-sep" aria-hidden />
+                <span className="pmap-crumb-current">{drillArea.name}</span>
+              </nav>
+            )}
+            {view === "processes" && <PmapLegend />}
+          </div>
+
+          {view === "processes" ? (
+            <ProcessesView
+              drillArea={drillArea}
+              onOpen={setOpenNode}
+              onDrill={(id) => setDrillId(id)}
+            />
+          ) : (
+            <EntitiesView onAction={proto} onOpenEntity={setOpenEntity} />
+          )}
+
+          {/* Account expansion — opportunity/module overlay */}
+          {stage === "expansion" && view === "processes" && !drillArea && (
+            <ExpansionOverlay projectId={projectId!} onOpen={setOpenNode} />
+          )}
+        </>
       )}
 
       <NodeDetail
         node={openNode}
+        stage={stage}
         projectId={projectId!}
         onClose={() => setOpenNode(null)}
         onAction={proto}
@@ -227,7 +405,24 @@ export function ProcessMapPage() {
         projectId={projectId!}
         onClose={() => setOpenEntity(null)}
       />
+
+      <InvestigateDomainModal
+        open={investigateOpen}
+        onClose={() => setInvestigateOpen(false)}
+        onCreate={addHypothesis}
+      />
     </div>
+  );
+}
+
+/** Areas with a client-evidenced friction/critical health and an
+   opportunity — the confirmed gaps used in the expansion view. */
+function confirmedGaps(): ProcessArea[] {
+  return clioProcessAreas.filter(
+    (a) =>
+      (a.health === "critical" || a.health === "friction") &&
+      hasClientEvidence(a) &&
+      a.opportunities.length > 0
   );
 }
 
@@ -274,6 +469,246 @@ function PmapLegend() {
         <span className="pmap-legend__item"><i className="pmap-sw h-critical" /> Critical</span>
       </span>
     </div>
+  );
+}
+
+/* ---------- Coverage-only legend (intro) ---------- */
+function PmapCoverageLegend() {
+  return (
+    <div className="pmap-legend" aria-label="Coverage legend">
+      <span className="pmap-legend__group">
+        <span className="pmap-legend__label">Coverage</span>
+        <span className="pmap-legend__cov cov-validated">Known</span>
+        <span className="pmap-legend__cov cov-partial">Partial</span>
+        <span className="pmap-legend__cov cov-not-explored">Not explored</span>
+      </span>
+    </div>
+  );
+}
+
+/* ---------- Areas to Explore (introductory call) ---------- */
+function AreasToExplore({
+  stakeholder,
+  onOpen,
+}: {
+  stakeholder: FocusStakeholder;
+  onOpen: (n: NodeLike) => void;
+}) {
+  const relevant = (a: ProcessArea) =>
+    (AREA_FOCUS_DOMAINS[a.id] ?? []).some((d) => stakeholder.domains.includes(d));
+
+  // Relevant areas first, then the rest (dimmed).
+  const ordered = [...clioProcessAreas].sort(
+    (a, b) => Number(relevant(b)) - Number(relevant(a))
+  );
+
+  return (
+    <div className="pmap-explore">
+      {ordered.map((a) => {
+        const isRelevant = relevant(a);
+        const showHealth =
+          hasClientEvidence(a) && a.health !== "unknown";
+        const openQ = a.questions.filter((q) => !q.answered).length;
+        const suggested = a.coverage === "not-explored" ? a.suggestedQuestions?.length ?? 0 : 0;
+        return (
+          <button
+            key={a.id}
+            className={`pmap-area${isRelevant ? " is-relevant" : " is-dim"}`}
+            onClick={() => onOpen(a)}
+          >
+            <div className="pmap-area__head">
+              <span className="pmap-area__name">
+                {a.crossCutting && <Cpu aria-hidden />}
+                {a.name}
+              </span>
+              {isRelevant && <span className="pmap-area__rel">Relevant</span>}
+            </div>
+
+            <span className={`pmap-node__coverage cov-${a.coverage}`}>
+              {introCoverageLabel[a.coverage]}
+            </span>
+
+            {showHealth ? (
+              <span className={`pmap-area__health h-${a.health}`}>
+                <span className="pmap-node__dot" /> {healthMeta[a.health].label}
+              </span>
+            ) : (
+              <span className="pmap-area__health pmap-area__health--none">
+                Health pending client evidence
+              </span>
+            )}
+
+            <div className="pmap-area__counts">
+              <span title="Evidence">
+                <FileText aria-hidden /> {a.evidence.length}
+              </span>
+              <span title={a.coverage === "not-explored" ? "Suggested questions" : "Open questions"}>
+                <HelpCircle aria-hidden /> {a.coverage === "not-explored" ? suggested : openQ}
+              </span>
+            </div>
+
+            <span className="pmap-area__go">
+              {a.coverage === "not-explored" ? "Explore area" : "Review area"}
+              <ArrowRight aria-hidden />
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- Expansion overlay (opportunities + delivered work) ---------- */
+function ExpansionOverlay({
+  projectId,
+  onOpen,
+}: {
+  projectId: string;
+  onOpen: (n: NodeLike) => void;
+}) {
+  const gaps = confirmedGaps();
+  const delivered = safeDeliveredWork();
+
+  if (gaps.length === 0) return null;
+
+  return (
+    <section className="card card-pad pmap-expansion">
+      <div className="section-head">
+        <div>
+          <h2 className="block-title">
+            <Wrench aria-hidden /> Confirmed gaps &amp; next modules
+          </h2>
+          <p className="block-sub">
+            Client-evidenced gaps with owners, dependencies, the opportunity they map to,
+            and delivered Heizen work as proof.
+          </p>
+        </div>
+      </div>
+
+      <div className="pmap-exp-grid">
+        {gaps.map((a) => {
+          const proof = delivered.filter((p) =>
+            p.domains.some((d) => (AREA_FOCUS_DOMAINS[a.id] ?? []).includes(d))
+          );
+          return (
+            <article className="pmap-exp" key={a.id}>
+              <div className="pmap-exp__head">
+                <button className="pmap-exp__name" onClick={() => onOpen(a)}>
+                  {a.name} <ArrowRight aria-hidden />
+                </button>
+                <Badge tone={healthBadgeTone[a.health]} dot>
+                  {healthMeta[a.health].label}
+                </Badge>
+              </div>
+
+              <div className="pmap-exp__field">
+                <span className="pmap-exp__label">Confirmed gap</span>
+                <p>{a.painPoints[0] ?? a.description}</p>
+              </div>
+
+              <div className="pmap-exp__meta">
+                <div>
+                  <span className="pmap-exp__label">
+                    <User aria-hidden /> Owner
+                  </span>
+                  <p>{a.owners.join(", ") || "—"}</p>
+                </div>
+                <div>
+                  <span className="pmap-exp__label">
+                    <Link2 aria-hidden /> Dependencies
+                  </span>
+                  <p>{a.systems.slice(0, 3).join(", ") || "—"}</p>
+                </div>
+              </div>
+
+              <div className="pmap-exp__field">
+                <span className="pmap-exp__label">
+                  <Wrench aria-hidden /> Potential next module
+                </span>
+                <div className="pmap-chips">
+                  {a.opportunities.map((o) => (
+                    <Link
+                      key={o.id}
+                      to={`/projects/${projectId}/opportunities`}
+                      className="pmap-chip pmap-chip--link"
+                    >
+                      {o.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {proof.length > 0 && (
+                <div className="pmap-exp__proof">
+                  <span className="pmap-exp__label">
+                    <Sparkles aria-hidden /> Delivered Heizen work
+                  </span>
+                  {proof.map((p) => (
+                    <div className="pmap-exp__proofitem" key={p.id}>
+                      <span className="pmap-exp__proofname">{p.name}</span>
+                      <span className="pmap-exp__proofrel">{p.delivered}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Investigate another domain (simulated) ---------- */
+function InvestigateDomainModal({
+  open,
+  onClose,
+  onCreate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (domain: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Investigate another domain"
+      subtitle="Simulated AI research — creates an unvalidated hypothesis, never a confirmed gap"
+      footer={
+        <>
+          <button className="btn btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={() => q.trim() && onCreate(q.trim())}
+            disabled={!q.trim()}
+          >
+            <Search /> Investigate
+          </button>
+        </>
+      }
+    >
+      <div className="pmap-inv">
+        <label className="pmap-inv__label" htmlFor="pmap-inv-q">
+          Which domain should we look into?
+        </label>
+        <input
+          id="pmap-inv-q"
+          type="text"
+          placeholder="e.g. Cold-chain logistics, Procurement, Maintenance"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && q.trim() && onCreate(q.trim())}
+        />
+        <p className="pmap-inv__note">
+          <FlaskConical aria-hidden /> The result is added as an <b>unvalidated hypothesis</b> —
+          simulated research to confirm on a call, not a mapped or confirmed gap.
+        </p>
+      </div>
+    </Modal>
   );
 }
 
@@ -570,12 +1005,14 @@ function MoreList<T>({
 /* ---------- Node detail drawer ---------- */
 function NodeDetail({
   node,
+  stage,
   projectId,
   onClose,
   onAction,
   onDrill,
 }: {
   node: NodeLike | null;
+  stage: Stage;
   projectId: string;
   onClose: () => void;
   onAction: (l: string) => void;
@@ -583,6 +1020,19 @@ function NodeDetail({
 }) {
   const unexplored = node?.coverage === "not-explored";
   const dh = node ? displayHealth(node) : null;
+  const isIntro = stage === "intro";
+  // On a first call, only show health where a client source backs it.
+  const showHealth = node
+    ? isIntro
+      ? hasClientEvidence(node) && dh!.key !== "unknown"
+      : true
+    : false;
+  // Friction/critical must always cite an evidence source.
+  const healthSource =
+    node && dh && (dh.key === "friction" || dh.key === "critical")
+      ? clientEvidenceSource(node) ??
+        (node.evidence[0] ? node.evidence[0].source : null)
+      : null;
 
   const footer = node ? (
     unexplored ? (
@@ -619,13 +1069,25 @@ function NodeDetail({
       {node && dh && (
         <div className="pmap-d" key={node.id}>
           <div className="pmap-d__badges">
-            <Badge tone="neutral">{coverageMeta[node.coverage].label}</Badge>
-            <Badge tone={healthBadgeTone[dh.key]} dot>
-              {dh.inferred
-                ? `${healthMeta[dh.raw].label} · inferred`
-                : healthMeta[dh.key].label}
+            <Badge tone="neutral">
+              {isIntro ? introCoverageLabel[node.coverage] : coverageMeta[node.coverage].label}
             </Badge>
+            {showHealth && (
+              <Badge tone={healthBadgeTone[dh.key]} dot>
+                {dh.inferred
+                  ? `${healthMeta[dh.raw].label} · inferred`
+                  : healthMeta[dh.key].label}
+              </Badge>
+            )}
           </div>
+
+          {/* Friction/critical must show its evidence source */}
+          {!isIntro && healthSource && (
+            <p className="pmap-healthsrc">
+              <FileText aria-hidden /> {healthMeta[dh.key].label} reading is backed by{" "}
+              <b>{healthSource}</b>.
+            </p>
+          )}
 
           {dh.inferred && (
             <p className="pmap-inference">
