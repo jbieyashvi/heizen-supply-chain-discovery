@@ -31,11 +31,15 @@ import {
 } from "../hooks/useDiscovery";
 import { QuestionDetailPanel } from "../components/discovery/QuestionDetailPanel";
 import { StartCallDialog } from "../components/discovery/StartCallDialog";
+import { IntroQuestionSet } from "../components/discovery/IntroQuestionSet";
+import { Segmented, type SegmentOption } from "../components/Segmented";
 import { projects } from "../data/mock";
+import type { Project } from "../data/types";
 import {
   PRIORITIES,
   QUESTION_TYPES,
   QUESTION_AREAS,
+  PROBLEM_AREAS,
   RECOMMENDED_ORDER_NOTE,
   areaShort,
   discoveryMeta,
@@ -44,8 +48,16 @@ import {
   type QPriority,
   type QType,
 } from "../data/discovery";
+import { Handshake, Compass } from "lucide-react";
 
 type View = "all" | "shortlisted" | "to-review" | "answered" | "skipped";
+
+/* Question-set tabs — mirror the project preparation stage. */
+type QSet = "intro" | "discovery";
+const QSET_OPTS: SegmentOption<QSet>[] = [
+  { id: "intro", label: "Introductory Call", icon: <Handshake aria-hidden /> },
+  { id: "discovery", label: "Discovery Call", icon: <Compass aria-hidden /> },
+];
 
 const strengthLabel = { strong: "Strong", medium: "Medium", weak: "Weak" } as const;
 
@@ -289,11 +301,50 @@ function OverflowMenu({ onRecommended }: { onRecommended: () => void }) {
   );
 }
 
-/* ---------- Page ---------- */
+/* ---------- Shell: switches between the two question sets ---------- */
 export function DiscoveryPage() {
   const { projectId } = useParams();
-  const navigate = useNavigate();
   const project = projects.find((p) => p.id === projectId);
+  const [qset, setQset] = useState<QSet>(() => {
+    try {
+      const stage = localStorage.getItem(`heizen-stage-${projectId}`);
+      return stage === "discovery" || stage === "expansion" ? "discovery" : "intro";
+    } catch {
+      return "intro";
+    }
+  });
+
+  if (!project) return null;
+
+  const tabs = (
+    <div className="qset-tabs">
+      <Segmented
+        value={qset}
+        onChange={setQset}
+        options={QSET_OPTS}
+        ariaLabel="Question set"
+      />
+    </div>
+  );
+
+  return qset === "intro" ? (
+    <IntroQuestionSet project={project} projectId={projectId!} tabs={tabs} />
+  ) : (
+    <DiscoveryQuestionSet project={project} projectId={projectId!} tabs={tabs} />
+  );
+}
+
+/* ---------- Discovery Call set (detailed, evidence-backed) ---------- */
+function DiscoveryQuestionSet({
+  project,
+  projectId,
+  tabs,
+}: {
+  project: Project;
+  projectId: string;
+  tabs: React.ReactNode;
+}) {
+  const navigate = useNavigate();
   const {
     questions,
     shortlisted,
@@ -368,6 +419,21 @@ export function DiscoveryPage() {
     });
   }, [view, shortlisted, questions, query, fPriority, fType, fArea, fOpp]);
 
+  /* All view: group by confirmed problem area, first-to-last within each. */
+  const problemGroups = useMemo(() => {
+    const known = PROBLEM_AREAS.map((area) => ({
+      area,
+      items: list
+        .filter((q) => q.relatedOpportunity === area)
+        .sort((a, b) => a.recommendedIndex - b.recommendedIndex),
+    }));
+    const other = list
+      .filter((q) => !PROBLEM_AREAS.includes(q.relatedOpportunity))
+      .sort((a, b) => a.recommendedIndex - b.recommendedIndex);
+    if (other.length) known.push({ area: "Other", items: other });
+    return known.filter((g) => g.items.length > 0);
+  }, [list]);
+
   const clearFilters = () => {
     setQuery("");
     setFPriority("all");
@@ -375,8 +441,6 @@ export function DiscoveryPage() {
     setFArea("all");
     setFOpp("all");
   };
-
-  if (!project) return null;
 
   const shortlistMinutes = shortlisted.length * discoveryMeta.minutesPerQuestion;
   const reorderable = view === "shortlisted" && sortMode === "custom";
@@ -413,9 +477,9 @@ export function DiscoveryPage() {
           { label: "Discovery Questions" },
         ]}
         title={<h1 className="page-title">Discovery Questions</h1>}
-        subtitle={`Prepare and prioritise questions for ${possessive(
+        subtitle={`Evidence-backed questions for ${possessive(
           project.name
-        )} next call.`}
+        )} discovery call, grouped by confirmed problem area.`}
         actions={
           <div className="row" style={{ gap: 8 }}>
             <button
@@ -434,6 +498,7 @@ export function DiscoveryPage() {
             <OverflowMenu onRecommended={() => setSortMode("recommended")} />
           </div>
         }
+        meta={tabs}
       />
 
       <div className="discovery-status">
@@ -580,6 +645,35 @@ export function DiscoveryPage() {
             ) : undefined
           }
         />
+      ) : view === "all" ? (
+        /* Grouped by confirmed problem area, first-to-last within each */
+        <div className="pa-groups">
+          {problemGroups.map((g) => (
+            <section className="pa-group" key={g.area}>
+              <div className="pa-group__head">
+                <Target aria-hidden />
+                <h2 className="pa-group__title">{g.area}</h2>
+                <span className="pa-group__count">
+                  {g.items.length} question{g.items.length === 1 ? "" : "s"}
+                </span>
+              </div>
+              <div className="qlist">
+                {g.items.map((q, i) => (
+                  <QuestionRow
+                    key={q.id}
+                    q={q}
+                    onSelect={setSelected}
+                    reorderable={false}
+                    onUp={() => moveUp(q.id)}
+                    onDown={() => moveDown(q.id)}
+                    isFirst={i === 0}
+                    isLast={i === g.items.length - 1}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="qlist">
           {list.map((q, i) => (

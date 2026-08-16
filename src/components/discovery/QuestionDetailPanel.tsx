@@ -101,9 +101,31 @@ export function QuestionDetailPanel({
           </div>
 
           <section className="qdetail__block">
-            <h4 className="qdetail__label">Why it matters</h4>
+            <h4 className="qdetail__label">Why ask this now</h4>
             <p>{q.whyItMatters}</p>
           </section>
+
+          {(q.useWhen || q.skipWhen) && (
+            <div className="qdetail__usewhen">
+              {q.useWhen && (
+                <div className="qdetail__uw qdetail__uw--use">
+                  <span className="qdetail__uw-k">
+                    <CheckCircle2 aria-hidden /> Use when
+                  </span>
+                  <p>{q.useWhen}</p>
+                </div>
+              )}
+              {q.skipWhen && (
+                <div className="qdetail__uw qdetail__uw--skip">
+                  <span className="qdetail__uw-k">
+                    <CircleSlash aria-hidden /> Skip when
+                  </span>
+                  <p>{q.skipWhen}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           <section className="qdetail__block">
             <h4 className="qdetail__label">Decision it influences</h4>
             <p>{q.decision}</p>
@@ -155,15 +177,31 @@ export function QuestionDetailPanel({
             <p>{q.evidenceToClose}</p>
           </section>
 
-          {q.followUps.length > 0 && (
+          {q.answerBranches && q.answerBranches.length > 0 ? (
             <section className="qdetail__block">
-              <h4 className="qdetail__label">Suggested follow-ups</h4>
-              <ul className="qdetail__list">
-                {q.followUps.map((f) => (
-                  <li key={f}>{f}</li>
+              <h4 className="qdetail__label">Follow-up based on likely answers</h4>
+              <div className="qdetail__branches">
+                {q.answerBranches.map((b) => (
+                  <div className="qbranch" key={b.likely}>
+                    <span className="qbranch__if">
+                      If you hear <b>{b.likely}</b>
+                    </span>
+                    <span className="qbranch__then">{b.followUp}</span>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </section>
+          ) : (
+            q.followUps.length > 0 && (
+              <section className="qdetail__block">
+                <h4 className="qdetail__label">Suggested follow-ups</h4>
+                <ul className="qdetail__list">
+                  {q.followUps.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </section>
+            )
           )}
 
           <section className="qdetail__block">

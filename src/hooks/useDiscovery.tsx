@@ -77,6 +77,9 @@ interface DiscoveryCtx {
   shortlisted: AugmentedQuestion[]; // ordered by sortMode
   sortMode: SortMode;
   callStartId: string | null;
+  /** Introductory-call question shortlist (broad question set). */
+  introShortlist: Record<string, boolean>;
+  toggleIntroShortlist: (id: string) => void;
   get: (id: string) => AugmentedQuestion | undefined;
   toggleShortlist: (id: string) => void;
   setOutcome: (id: string, outcome: QOutcome) => void;
@@ -113,6 +116,13 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
   );
   const [callStartId, setCallStart] = useState<string | null>(null);
   const [fuSeq, setFuSeq] = useState(0);
+  const [introShortlist, setIntroShortlist] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  const toggleIntroShortlist = useCallback((id: string) => {
+    setIntroShortlist((s) => ({ ...s, [id]: !s[id] }));
+  }, []);
 
   const questions = useMemo<AugmentedQuestion[]>(
     () => clioQuestions.map((q) => ({ ...q, ...states[q.id] })),
@@ -257,6 +267,8 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
     shortlisted,
     sortMode,
     callStartId,
+    introShortlist,
+    toggleIntroShortlist,
     get,
     toggleShortlist,
     setOutcome,

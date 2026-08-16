@@ -1588,3 +1588,322 @@
   .wc-cols,
   .wc-foot { grid-template-columns: 1fr; }
 }
+
+/* =========================================================================
+   Question-set tabs + Introductory-call set + Discovery grouping
+   (call-stage restructure). Reuses .qrow, .dtoolbar, .dfilters, .notice.
+   ========================================================================= */
+
+/* Set switcher lives in the page-header meta slot */
+.qset-tabs {
+  display: inline-flex;
+}
+.qset-tabs .segmented {
+  flex: none;
+}
+
+/* ---- Discovery Call: problem-area groups ---- */
+.pa-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.pa-group__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pa-group__head svg {
+  width: 16px;
+  height: 16px;
+  color: var(--brand-text);
+  flex: none;
+}
+.pa-group__title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.pa-group__count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+}
+
+/* ---- Discovery detail: Use when / Skip when ---- */
+.qdetail__usewhen {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.qdetail__uw {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+}
+.qdetail__uw p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.qdetail__uw-k {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.qdetail__uw-k svg {
+  width: 14px;
+  height: 14px;
+}
+.qdetail__uw--use {
+  border-color: rgba(107, 191, 143, 0.32);
+  background: var(--success-subtle);
+}
+.qdetail__uw--use .qdetail__uw-k {
+  color: var(--success);
+}
+.qdetail__uw--skip .qdetail__uw-k {
+  color: var(--text-3);
+}
+
+/* ---- Discovery detail: answer-based follow-ups ---- */
+.qdetail__branches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.qbranch {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--brand-line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.qbranch__if {
+  font-size: 12.5px;
+  color: var(--text-2);
+}
+.qbranch__if b {
+  color: var(--text-1);
+  font-weight: 650;
+}
+.qbranch__then {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-1);
+}
+
+/* ---- Introductory-call set ---- */
+.intro-shortcount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent-strong);
+}
+.intro-shortcount svg {
+  width: 14px;
+  height: 14px;
+}
+.intro-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.intro-group__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.intro-group__title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.intro-group__count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin-left: auto;
+}
+.intro-group--aside .intro-group__head {
+  padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  margin-bottom: 0;
+}
+.intro-group--aside .intro-group__title {
+  color: var(--text-2);
+}
+.intro-group__aside-note {
+  font-size: 12.5px;
+  color: var(--text-3);
+  margin-left: auto;
+}
+.intro-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.intro-row .qrow__type {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.intro-row__chev {
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+}
+.intro-row.is-skip {
+  opacity: 0.72;
+}
+
+/* ---- Conversation guide modal ---- */
+.cguide {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.cguide__label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.cguide__label svg {
+  width: 14px;
+  height: 14px;
+  color: var(--brand-text);
+}
+.cguide__open,
+.cguide__outcome {
+  padding: 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+}
+.cguide__outcome {
+  border-color: var(--brand-line);
+  background: linear-gradient(
+    135deg,
+    rgba(92, 149, 168, 0.14),
+    rgba(92, 149, 168, 0.04) 60%,
+    var(--surface-1) 100%
+  );
+}
+.cguide__outcome p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-1);
+}
+.cguide__openers {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-left: 18px;
+  list-style: decimal;
+}
+.cguide__openers li {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.cguide__group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-1);
+  margin-bottom: 10px;
+}
+.cguide__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cguide__q {
+  display: flex;
+  gap: 11px;
+  padding: 11px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+.cguide__n {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--brand-subtle);
+  color: var(--brand-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.cguide__qbody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.cguide__qtext {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-1);
+}
+.cguide__qmeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cguide__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-3);
+}
+.cguide__note svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-top: 2px;
+}
+
+@media (max-width: 680px) {
+  .qdetail__usewhen {
+    grid-template-columns: 1fr;
+  }
+}

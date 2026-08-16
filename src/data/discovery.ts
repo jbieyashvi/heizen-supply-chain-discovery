@@ -122,7 +122,21 @@ export interface DiscoveryQuestion {
   evidenceImpact?: EvidenceImpact;
   /** Optional AI-suggested probe surfaced once an answer is captured. */
   aiFollowUp?: AiFollowUp;
+  /** When this question is the right one to ask (Discovery Call detail). */
+  useWhen?: string;
+  /** When to skip it (Discovery Call detail). */
+  skipWhen?: string;
+  /** Conditional follow-ups keyed to the likely answers you might hear. */
+  answerBranches?: { likely: string; followUp: string }[];
 }
+
+/* Confirmed problem areas for the Discovery Call, in first-to-last order.
+   Questions group under these (via relatedOpportunity). */
+export const PROBLEM_AREAS: string[] = [
+  "Manufacturing execution visibility",
+  "Traceability & recall readiness",
+  "NetSuite operational support",
+];
 
 export interface OpportunityConfidence {
   id: string;
@@ -602,6 +616,319 @@ export const clioQuestions: DiscoveryQuestion[] = [
     criticalUnknown: false,
     shortlisted: false,
     recommendedIndex: 12,
+  },
+];
+
+/* Discovery-Call detail guidance, merged into the questions above.
+   Kept separate so the question literals stay readable. */
+const discoveryGuidance: Record<
+  string,
+  Pick<DiscoveryQuestion, "useWhen" | "skipWhen" | "answerBranches">
+> = {
+  q1: {
+    useWhen: "Early — it anchors the whole manufacturing-visibility thread.",
+    skipWhen: "The client already gave a precise, current delay figure in writing.",
+    answerBranches: [
+      { likely: "\"About a day / next morning\"", followUp: "What does that delay cost you during peak?" },
+      { likely: "\"It's basically real-time\"", followUp: "Then where do availability errors actually come from?" },
+    ],
+  },
+  q2: {
+    useWhen: "Right after the lag is confirmed, to map where to intervene.",
+    skipWhen: "The end-to-end workflow is already documented from a prior call.",
+    answerBranches: [
+      { likely: "Many manual handoffs", followUp: "Which handoff introduces the most errors or rework?" },
+      { likely: "Mostly automated already", followUp: "What's the one manual step that still trips you up?" },
+    ],
+  },
+  q3: {
+    useWhen: "When a commercial/leadership stakeholder is on the call.",
+    skipWhen: "There was no recent diligence, financing or board data request.",
+    answerBranches: [
+      { likely: "Named specific metrics", followUp: "Which of those was hardest to produce, and who pulled it?" },
+      { likely: "\"Nothing unusual\"", followUp: "What operational number does leadership ask for most?" },
+    ],
+  },
+  q4: {
+    useWhen: "Before scoping any traceability or visibility work.",
+    skipWhen: "The system of record for each domain is already confirmed.",
+    answerBranches: [
+      { likely: "One clear system named", followUp: "Where does reconciliation between systems happen?" },
+      { likely: "\"A spreadsheet\"", followUp: "Who maintains it and how often is it reconciled?" },
+    ],
+  },
+  q5: {
+    useWhen: "Whenever the ACS October deadline is in scope.",
+    skipWhen: "A renewal or replacement is already signed and owned.",
+    answerBranches: [
+      { likely: "No owner yet", followUp: "What's the internal fallback if no decision is made by October?" },
+      { likely: "Owner + timeline exist", followUp: "What would make an external managed option worth considering?" },
+    ],
+  },
+  q6: {
+    useWhen: "When traceability / FSMA 204 is a live concern for the client.",
+    skipWhen: "None of the client's SKUs fall under FSMA 204.",
+    answerBranches: [
+      { likely: "Manual lot tracking", followUp: "What would a mock recall look like end-to-end today?" },
+      { likely: "System-based tracking", followUp: "Where does the lineage break between systems?" },
+    ],
+  },
+  q7: {
+    useWhen: "After the source of truth for lots is established.",
+    skipWhen: "The quality-to-release flow is already mapped.",
+    answerBranches: [
+      { likely: "Clear sign-off step", followUp: "How does release tie back to inventory records?" },
+      { likely: "Ad-hoc / unclear", followUp: "Where does lot lineage most often get lost?" },
+    ],
+  },
+  q8: {
+    useWhen: "When labelling could be the seam where lot data is created or lost.",
+    skipWhen: "Labelling is out of scope for the engagement.",
+    answerBranches: [
+      { likely: "Labels carry lot/GS1 data", followUp: "Does that data flow downstream or get re-keyed?" },
+      { likely: "Generic labels", followUp: "How is lot data attached after labelling?" },
+    ],
+  },
+  q9: {
+    useWhen: "When demand-to-production alignment might be in scope.",
+    skipWhen: "Planning isn't a pain the client raises.",
+    answerBranches: [
+      { likely: "Plan often overridden", followUp: "What triggers the manual overrides?" },
+      { likely: "Planners trust the data", followUp: "Then where does availability drift actually show up?" },
+    ],
+  },
+  q10: {
+    useWhen: "When exploring whether OT/machine data could feed visibility.",
+    skipWhen: "OT integration is clearly out of scope or budget.",
+    answerBranches: [
+      { likely: "Data is retained", followUp: "Is any of it reaching NetSuite or Power BI today?" },
+      { likely: "Nothing retained", followUp: "What would it take to start capturing downtime?" },
+    ],
+  },
+  q11: {
+    useWhen: "When designing the capture workflow and its owners.",
+    skipWhen: "Ownership of production-data entry is already clear.",
+    answerBranches: [
+      { likely: "A named owner", followUp: "How are corrections handled when a posting is wrong?" },
+      { likely: "\"Nobody really\"", followUp: "Who should own it as you scale?" },
+    ],
+  },
+  q12: {
+    useWhen: "Late — to frame the business case and next step.",
+    skipWhen: "The funding outcome and sponsor are already agreed.",
+    answerBranches: [
+      { likely: "A specific target", followUp: "Who signs off on prioritising that next quarter?" },
+      { likely: "Vague / unsure", followUp: "What happens if this slips another two quarters?" },
+    ],
+  },
+};
+clioQuestions.forEach((q) => {
+  const g = discoveryGuidance[q.id];
+  if (g) {
+    q.useWhen = g.useWhen;
+    q.skipWhen = g.skipWhen;
+    q.answerBranches = g.answerBranches;
+  }
+});
+
+/* ================================================================
+   Introductory-Call question set (broad, stakeholder-relevant)
+
+   6–8 questions grouped by domain, ordered within each domain by the
+   conversation-type sequence. Tuned for Meera Iyer (VP Operations):
+   Manufacturing and Supply Chain lead; Procurement / SAP questions are
+   set aside (skip) and excluded from the default sequence.
+   ================================================================ */
+
+export type IntroDomain =
+  | "tech-data"
+  | "manufacturing"
+  | "supply-chain"
+  | "procurement";
+
+export const INTRO_DOMAINS: {
+  id: IntroDomain;
+  label: string;
+  /** Prioritised for this stakeholder (shown first, flagged). */
+  prioritised: boolean;
+}[] = [
+  { id: "manufacturing", label: "Manufacturing", prioritised: true },
+  { id: "supply-chain", label: "Supply Chain", prioritised: true },
+  { id: "tech-data", label: "Technology & Data", prioritised: false },
+  { id: "procurement", label: "Procurement", prioritised: false },
+];
+
+/** Conversation-type sequence — questions within a domain follow this order. */
+export type IntroType =
+  | "context"
+  | "priorities"
+  | "process"
+  | "pain"
+  | "impact"
+  | "budget"
+  | "next-step";
+
+export const INTRO_TYPES: { id: IntroType; label: string; order: number }[] = [
+  { id: "context", label: "Context", order: 1 },
+  { id: "priorities", label: "Current priorities", order: 2 },
+  { id: "process", label: "Current process", order: 3 },
+  { id: "pain", label: "Pain / friction", order: 4 },
+  { id: "impact", label: "Business impact", order: 5 },
+  { id: "budget", label: "Budget / intent", order: 6 },
+  { id: "next-step", label: "Next step", order: 7 },
+];
+
+export function introTypeLabel(t: IntroType) {
+  return INTRO_TYPES.find((x) => x.id === t)?.label ?? t;
+}
+export function introTypeOrder(t: IntroType) {
+  return INTRO_TYPES.find((x) => x.id === t)?.order ?? 99;
+}
+export function introDomainLabel(d: IntroDomain) {
+  return INTRO_DOMAINS.find((x) => x.id === d)?.label ?? d;
+}
+
+export type IntroFlag = "start-here" | "ask-next" | "optional" | "skip";
+
+export const INTRO_FLAG_META: Record<
+  IntroFlag,
+  { label: string; tone: "accent" | "info" | "neutral" | "amber" }
+> = {
+  "start-here": { label: "Start here", tone: "accent" },
+  "ask-next": { label: "Ask next", tone: "info" },
+  optional: { label: "Optional follow-up", tone: "neutral" },
+  skip: { label: "Skip when irrelevant", tone: "amber" },
+};
+
+export interface IntroQuestion {
+  id: string;
+  question: string;
+  domain: IntroDomain;
+  type: IntroType;
+  flag: IntroFlag;
+  /** Why this is worth asking on a first call. */
+  intent: string;
+  listenFor: string[];
+  /** In the default sequence for this stakeholder. */
+  inDefault: boolean;
+}
+
+export const INTRO_STAKEHOLDER_NOTE =
+  "Sequenced for Meera Iyer (VP Operations) — Manufacturing and Supply Chain lead. Procurement / SAP questions are set aside as not relevant to this stakeholder; filter to Procurement to view them.";
+
+export const clioIntroQuestions: IntroQuestion[] = [
+  /* --- Manufacturing (prioritised) --- */
+  {
+    id: "i-mfg-context",
+    question:
+      "Walk me through what the plant makes and how production is set up today.",
+    domain: "manufacturing",
+    type: "context",
+    flag: "start-here",
+    intent:
+      "Opens the call on familiar ground and gives you the shape of the operation before probing.",
+    listenFor: ["Product mix and volumes", "Number of lines / shifts", "Recent capacity changes"],
+    inDefault: true,
+  },
+  {
+    id: "i-mfg-priorities",
+    question:
+      "What are your biggest operational priorities as you scale over the next few quarters?",
+    domain: "manufacturing",
+    type: "priorities",
+    flag: "ask-next",
+    intent: "Surfaces what Meera is measured on, so you can frame value against it.",
+    listenFor: ["Throughput / service goals", "Cost or quality pressure", "Any board or growth targets"],
+    inDefault: true,
+  },
+  {
+    id: "i-mfg-pain",
+    question:
+      "As volume grows, where does keeping production and inventory data accurate get hardest?",
+    domain: "manufacturing",
+    type: "pain",
+    flag: "ask-next",
+    intent: "Gently surfaces the paper-to-ERP lag without leading with a solution.",
+    listenFor: ["Manual data entry", "Timing of inventory updates", "Firefighting or reconciliation"],
+    inDefault: true,
+  },
+  {
+    id: "i-mfg-next",
+    question:
+      "If something we discuss today looks worth pursuing, what would a good next step look like for you?",
+    domain: "manufacturing",
+    type: "next-step",
+    flag: "optional",
+    intent: "Tests intent and sets up a concrete follow-up without pushing.",
+    listenFor: ["Willingness to go deeper", "Who else should be involved", "Any timing constraints"],
+    inDefault: true,
+  },
+  /* --- Supply Chain (prioritised) --- */
+  {
+    id: "i-sc-process",
+    question:
+      "How do you track inventory and lot information from production through to dispatch?",
+    domain: "supply-chain",
+    type: "process",
+    flag: "ask-next",
+    intent: "Maps the visibility chain and where traceability could break.",
+    listenFor: ["Systems in the path", "Manual steps", "Where lot data is created"],
+    inDefault: true,
+  },
+  {
+    id: "i-sc-impact",
+    question:
+      "When availability or traceability slips, what does that cost you operationally?",
+    domain: "supply-chain",
+    type: "impact",
+    flag: "optional",
+    intent: "Turns process gaps into business impact in the client's own words.",
+    listenFor: ["Short-ships or expedites", "Recall / audit risk", "Overtime or safety stock"],
+    inDefault: true,
+  },
+  /* --- Technology & Data --- */
+  {
+    id: "i-tech-process",
+    question:
+      "Which systems run operations day to day — NetSuite, Netstock, Power BI — and where do they not talk to each other?",
+    domain: "tech-data",
+    type: "process",
+    flag: "ask-next",
+    intent: "Confirms the stack and finds the integration seams to explore later.",
+    listenFor: ["Named systems", "Manual bridges between them", "Reporting gaps"],
+    inDefault: true,
+  },
+  {
+    id: "i-tech-budget",
+    question:
+      "With NetSuite ACS support ending in October, how are you thinking about support and any tech investment?",
+    domain: "tech-data",
+    type: "budget",
+    flag: "optional",
+    intent: "Tests appetite and timing for investment against a known, dated trigger.",
+    listenFor: ["Decision owner", "Budget window", "Build vs. managed leaning"],
+    inDefault: true,
+  },
+  /* --- Procurement (set aside for this stakeholder) --- */
+  {
+    id: "i-proc-context",
+    question: "How is procurement structured, and which systems (e.g. SAP) support it?",
+    domain: "procurement",
+    type: "context",
+    flag: "skip",
+    intent: "Only relevant if a procurement or finance stakeholder joins — not Meera's remit.",
+    listenFor: ["Procurement systems", "Who owns supplier relationships"],
+    inDefault: false,
+  },
+  {
+    id: "i-proc-process",
+    question: "How do you manage supplier onboarding and purchase approvals today?",
+    domain: "procurement",
+    type: "process",
+    flag: "skip",
+    intent: "Set aside for a first call with an operations leader; revisit with procurement.",
+    listenFor: ["Approval workflow", "Supplier data quality"],
+    inDefault: false,
   },
 ];
 
