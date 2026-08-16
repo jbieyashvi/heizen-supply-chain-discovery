@@ -33,6 +33,9 @@ import { QuestionDetailPanel } from "../components/discovery/QuestionDetailPanel
 import { StartCallDialog } from "../components/discovery/StartCallDialog";
 import { IntroQuestionSet } from "../components/discovery/IntroQuestionSet";
 import { Segmented, type SegmentOption } from "../components/Segmented";
+import { FocusChip } from "../components/FocusChip";
+import { useFocus } from "../hooks/useFocus";
+import { scoreDomains, AREA_DOMAIN } from "../data/focus";
 import { projects } from "../data/mock";
 import type { Project } from "../data/types";
 import {
@@ -345,6 +348,7 @@ function DiscoveryQuestionSet({
   tabs: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const { focus } = useFocus(projectId);
   const {
     questions,
     shortlisted,
@@ -431,8 +435,15 @@ function DiscoveryQuestionSet({
       .filter((q) => !PROBLEM_AREAS.includes(q.relatedOpportunity))
       .sort((a, b) => a.recommendedIndex - b.recommendedIndex);
     if (other.length) known.push({ area: "Other", items: other });
-    return known.filter((g) => g.items.length > 0);
-  }, [list]);
+    const groups = known.filter((g) => g.items.length > 0);
+    // Focus floats the most relevant problem area to the top (stable; nothing hidden).
+    const areaScore = (g: { items: AugmentedQuestion[] }) =>
+      g.items.reduce((s, q) => s + scoreDomains([AREA_DOMAIN[q.area]], focus), 0);
+    return groups
+      .map((g, i) => ({ g, i }))
+      .sort((a, b) => areaScore(b.g) - areaScore(a.g) || a.i - b.i)
+      .map((x) => x.g);
+  }, [list, focus]);
 
   const clearFilters = () => {
     setQuery("");
@@ -500,6 +511,8 @@ function DiscoveryQuestionSet({
         }
         meta={tabs}
       />
+
+      <FocusChip projectId={projectId} />
 
       <div className="discovery-status">
         <span className="rstat">

@@ -16,7 +16,10 @@ import { Tooltip } from "../Tooltip";
 import { SidePanel } from "../SidePanel";
 import { Modal } from "../Modal";
 import { EmptyState } from "../EmptyState";
+import { FocusChip } from "../FocusChip";
 import { useDiscovery } from "../../hooks/useDiscovery";
+import { useFocus } from "../../hooks/useFocus";
+import { scoreDomains, type FocusDomain } from "../../data/focus";
 import type { Project } from "../../data/types";
 import {
   clioIntroQuestions,
@@ -38,6 +41,13 @@ function possessive(name: string): string {
   return /s$/i.test(name) ? `${name}'` : `${name}'s`;
 }
 
+const INTRO_TO_FOCUS: Record<string, FocusDomain> = {
+  manufacturing: "manufacturing",
+  "supply-chain": "supply-chain",
+  "tech-data": "tech-ai",
+  procurement: "procurement",
+};
+
 export function IntroQuestionSet({
   project,
   projectId,
@@ -48,6 +58,7 @@ export function IntroQuestionSet({
   tabs: React.ReactNode;
 }) {
   const { introShortlist, toggleIntroShortlist } = useDiscovery();
+  const { focus } = useFocus(projectId);
   const [query, setQuery] = useState("");
   const [fDomain, setFDomain] = useState<IntroDomain | "all">("all");
   const [fType, setFType] = useState<IntroType | "all">("all");
@@ -67,10 +78,21 @@ export function IntroQuestionSet({
   /* Build the grouped view. Procurement is excluded from the default
      sequence for this stakeholder unless explicitly filtered to. */
   const groups = useMemo(() => {
-    const domainsToShow =
+    const base =
       fDomain === "all"
         ? INTRO_DOMAINS
         : INTRO_DOMAINS.filter((d) => d.id === fDomain);
+
+    // Focus floats the most relevant domains to the top (stable, nothing hidden).
+    const domainsToShow = [...base]
+      .map((d, i) => ({ d, i }))
+      .sort(
+        (a, b) =>
+          scoreDomains([INTRO_TO_FOCUS[a.d.id]], focus) === scoreDomains([INTRO_TO_FOCUS[b.d.id]], focus)
+            ? a.i - b.i
+            : scoreDomains([INTRO_TO_FOCUS[b.d.id]], focus) - scoreDomains([INTRO_TO_FOCUS[a.d.id]], focus)
+      )
+      .map((x) => x.d);
 
     return domainsToShow.map((d) => {
       const setAside = d.id === "procurement" && fDomain === "all";
@@ -81,7 +103,7 @@ export function IntroQuestionSet({
         .sort((a, b) => introTypeOrder(a.type) - introTypeOrder(b.type));
       return { domain: d, items, setAside };
     });
-  }, [fDomain, fType, query]);
+  }, [fDomain, fType, query, focus]);
 
   const defaultCount = clioIntroQuestions.filter((q) => q.inDefault).length;
   const shortlistCount = clioIntroQuestions.filter(
@@ -113,6 +135,8 @@ export function IntroQuestionSet({
         }
         meta={tabs}
       />
+
+      <FocusChip projectId={projectId} />
 
       {/* Stakeholder note */}
       <div className="notice notice--info" role="note">

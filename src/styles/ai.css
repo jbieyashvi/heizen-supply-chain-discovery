@@ -408,3 +408,289 @@
     width: 100%;
   }
 }
+
+/* =========================================================================
+   Project research assistant — floating launcher, focus, investigate
+   ========================================================================= */
+
+/* Floating launcher (project screens only) */
+.assistant-fab {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: var(--r-pill);
+  background: var(--brand-solid);
+  color: var(--brand-contrast);
+  font-size: 14px;
+  font-weight: 650;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-2);
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+.assistant-fab:hover { background: var(--brand-solid-hover); }
+.assistant-fab:active { transform: translateY(1px); }
+.assistant-fab svg { width: 17px; height: 17px; }
+
+@media (max-width: 700px) {
+  .assistant-fab { right: 16px; bottom: 16px; }
+  .assistant-fab span { display: none; }
+  .assistant-fab { padding: 0; width: 44px; justify-content: center; }
+}
+
+/* Home layout */
+.asst-home {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.asst-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Focus block */
+.asst-focus {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  padding: 12px 14px;
+}
+.asst-focus--set {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-1);
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+.asst-focus--set:hover { border-color: var(--brand-line); background: var(--surface-hover); }
+.asst-focus--set > svg:first-child { width: 16px; height: 16px; color: var(--brand-text); flex: none; }
+.asst-focus--set > svg:last-child { width: 16px; height: 16px; color: var(--text-3); margin-left: auto; }
+.asst-focus.is-on { border-color: var(--brand-line); background: var(--brand-subtle); }
+.asst-focus__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.asst-focus__row svg { width: 15px; height: 15px; color: var(--brand-text); flex: none; }
+.asst-focus__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--brand-text);
+}
+.asst-focus__value { font-size: 13.5px; font-weight: 650; color: var(--text-1); }
+.asst-focus__note { font-size: 12.5px; line-height: 1.45; color: var(--text-2); margin: 6px 0 10px; }
+.asst-focus__acts { display: flex; gap: 8px; }
+
+/* Focus picker */
+.focus-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+.focus-picker__field { display: flex; flex-direction: column; gap: 5px; }
+.focus-picker__field label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.focus-picker__field select {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 13.5px;
+}
+.focus-picker__acts { display: flex; gap: 8px; margin-top: 2px; }
+.focus-picker__hint { font-size: 12px; line-height: 1.45; color: var(--text-3); }
+
+/* Focus confirmation note in a thread */
+.asst-note {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--r-md);
+  background: var(--brand-subtle);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.asst-note svg { width: 16px; height: 16px; color: var(--brand-text); flex: none; margin-top: 1px; }
+
+/* Answer links to related screens */
+.ai-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.ai-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-text);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-subtle);
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  transition: background 0.14s ease;
+}
+.ai-link:hover { background: var(--surface-hover); }
+.ai-link svg { width: 13px; height: 13px; }
+
+/* Investigate entry (home) */
+.asst-investigate-entry {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+.asst-investigate-entry:hover { border-color: var(--brand-line); background: var(--surface-hover); }
+.asst-investigate-entry > svg:first-child { width: 17px; height: 17px; color: var(--brand-text); flex: none; }
+.asst-investigate-entry > svg:last-child { width: 16px; height: 16px; color: var(--text-3); margin-left: auto; flex: none; }
+.asst-investigate-entry__text { display: flex; flex-direction: column; gap: 1px; }
+.asst-investigate-entry__title { font-size: 13.5px; font-weight: 650; color: var(--text-1); }
+.asst-investigate-entry__sub { font-size: 12px; color: var(--text-3); }
+
+/* Investigate thread */
+.asst-inv { display: flex; flex-direction: column; gap: 8px; }
+.asst-inv__label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.asst-inv__row { display: flex; gap: 8px; }
+.asst-inv__row input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: 13.5px;
+}
+.asst-inv__row .btn { flex: none; }
+
+.asst-sim-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--violet);
+  background: var(--violet-subtle);
+  border: 1px solid rgba(155, 138, 212, 0.28);
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+}
+.asst-sim-tag svg { width: 13px; height: 13px; }
+
+.asst-findings { display: flex; flex-direction: column; gap: 8px; }
+.asst-findings li {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+.asst-conf {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  margin-right: 7px;
+  vertical-align: middle;
+}
+.asst-conf--inference { color: var(--warning); background: var(--warning-subtle); }
+.asst-conf--unverified { color: var(--text-2); background: var(--surface-3); }
+
+.asst-sources-sugg { display: flex; flex-direction: column; gap: 6px; }
+.asst-sugg {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.asst-sugg__name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+.asst-sugg__type { font-size: 12px; color: var(--text-3); flex: none; }
+
+/* =========================================================================
+   Focus chip (shown on affected screens)
+   ========================================================================= */
+.focus-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--r-md);
+  background: var(--brand-subtle);
+}
+.focus-chip__icon { width: 15px; height: 15px; color: var(--brand-text); flex: none; }
+.focus-chip__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--brand-text);
+}
+.focus-chip__value { font-size: 13px; font-weight: 650; color: var(--text-1); }
+.focus-chip__note { font-size: 12px; color: var(--text-3); }
+.focus-chip__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-text);
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  transition: background 0.14s ease;
+}
+.focus-chip__clear:hover { background: var(--surface-hover); }
+.focus-chip__clear svg { width: 13px; height: 13px; }

@@ -17,7 +17,6 @@ import {
   Info,
   Loader,
   Rocket,
-  Sparkles,
   Handshake,
   Compass,
   TrendingUp,
@@ -28,7 +27,6 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import { Segmented, type SegmentOption } from "../components/Segmented";
 import { FirstCallBrief } from "../components/FirstCallBrief";
-import { AskAIPanel } from "../components/AskAIPanel";
 import { ReadinessStepItem } from "../components/ReadinessStepItem";
 import { InsightItem } from "../components/InsightItem";
 import { QuestionPreview } from "../components/QuestionPreview";
@@ -90,24 +88,6 @@ function ProjectSwitcher({ currentId }: { currentId: string }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** Header trigger + panel for the lightweight project assistant. */
-function AskAI({ projectId }: { projectId: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        className="btn btn-sm ai-trigger"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-      >
-        <Sparkles aria-hidden /> Ask AI
-      </button>
-      <AskAIPanel open={open} onClose={() => setOpen(false)} projectId={projectId} />
-    </>
   );
 }
 
@@ -289,7 +269,6 @@ function FullOverview({
         actions={
           <div className="row" style={{ gap: 10 }}>
             <ReadinessBadge state={refreshed ? "ready" : project.readiness} withTip />
-            <AskAI projectId={projectId} />
             <OverflowMenu />
           </div>
         }
@@ -353,7 +332,7 @@ function IntroStage({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <FirstCallBrief />
+      <FirstCallBrief projectId={projectId} />
 
       {/* Kept, but de-emphasised — these lead once you move past an intro call */}
       <section className="card card-pad later-tools">
@@ -715,7 +694,6 @@ function GenericOverview({ project }: { project: Project }) {
         actions={
           <div className="row" style={{ gap: 10 }}>
             <ReadinessBadge state={project.readiness} withTip />
-            <AskAI projectId={project.id} />
             <OverflowMenu />
           </div>
         }

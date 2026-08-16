@@ -2,7 +2,15 @@ import { useEffect, useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
+import { ProjectAssistant } from "./ProjectAssistant";
 import { SidebarProvider, useSidebar } from "../hooks/useSidebar";
+
+/** Extract a project id from a project-screen path, else null.
+   Matches /projects/:id and its sub-screens, but not the /projects list. */
+function projectIdFromPath(pathname: string): string | null {
+  const m = pathname.match(/^\/projects\/([^/]+)/);
+  return m ? m[1] : null;
+}
 
 function Shell() {
   const {
@@ -15,6 +23,7 @@ function Shell() {
   } = useSidebar();
   const location = useLocation();
   const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const projectId = projectIdFromPath(location.pathname);
 
   // Process Map temporarily collapses the sidebar; leaving restores prior state.
   useEffect(() => {
@@ -97,6 +106,7 @@ function Shell() {
         </div>
         <Outlet />
       </main>
+      {projectId && <ProjectAssistant key={projectId} projectId={projectId} />}
     </div>
   );
 }

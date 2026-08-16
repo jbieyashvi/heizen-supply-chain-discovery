@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { AppShell } from "./components/AppShell";
 import { ToastProvider } from "./components/Toast";
 import { DiscoveryProvider } from "./hooks/useDiscovery";
+import { FocusProvider } from "./hooks/useFocus";
 import { AuthProvider } from "./hooks/useAuth";
 import { RequireAuth } from "./components/RequireAuth";
 import { SignInPage } from "./pages/SignInPage";
@@ -20,6 +21,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <DiscoveryProvider>
+          <FocusProvider>
           <Routes>
             {/* Public */}
             <Route path="sign-in" element={<SignInPage />} />
@@ -68,6 +70,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/projects" replace />} />
             </Route>
           </Routes>
+          </FocusProvider>
         </DiscoveryProvider>
       </ToastProvider>
     </AuthProvider>

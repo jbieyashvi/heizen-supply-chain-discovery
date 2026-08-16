@@ -20,9 +20,12 @@ import {
 } from "lucide-react";
 import { SidePanel } from "../SidePanel";
 import { Badge } from "../Badge";
+import { FocusChip } from "../FocusChip";
 import { OnThisPageNav } from "./OnThisPageNav";
 import type { ResearchData } from "../../data/research";
 import { questionById } from "../../data/discovery";
+import { useFocus } from "../../hooks/useFocus";
+import { scoreDomains, SIGNAL_DOMAINS, SIMILAR_DOMAINS } from "../../data/focus";
 import {
   fcBusinessContext,
   fcBusinessContextNote,
@@ -63,16 +66,36 @@ export function ResearchFirstCall({
   projectId: string;
 }) {
   const [signal, setSignal] = useState<FirstCallSignal | null>(null);
+  const { focus } = useFocus(projectId);
+
+  const byFocus = <T extends { id: string }>(
+    items: T[],
+    tags: Record<string, string[]>
+  ) =>
+    [...items]
+      .map((it, i) => ({ it, i }))
+      .sort(
+        (a, b) =>
+          scoreDomains((tags[b.it.id] as never) ?? [], focus) -
+            scoreDomains((tags[a.it.id] as never) ?? [], focus) || a.i - b.i
+      )
+      .map((x) => x.it);
+
+  const techInitiatives = byFocus(fcTechInitiatives, SIGNAL_DOMAINS);
+  const stakeholderSignals = byFocus(fcStakeholderSignals, SIGNAL_DOMAINS);
 
   const tech = data.brief.tech;
   const techStack = [...tech.record, ...tech.planning, ...tech.ot].slice(0, 5);
-  const similar = data.brief.similar.slice(0, 3);
+  // Related Heizen work re-ranked by focus (top 3 shown, all retained).
+  const similar = byFocus(data.brief.similar, SIMILAR_DOMAINS).slice(0, 3);
 
   return (
     <div className="brief">
       <OnThisPageNav sections={SECTIONS} />
 
       <div className="brief__content fcr">
+        <FocusChip projectId={projectId} />
+
         {/* 1 · Business context */}
         <section id="fc-context" className="brief-section">
           <SecHead icon={Building2} title="Business context" />
@@ -96,7 +119,7 @@ export function ResearchFirstCall({
             sub="Spend and initiative signals. Click any for detail."
           />
           <div className="fcr-signals">
-            {fcTechInitiatives.map((s) => (
+            {techInitiatives.map((s) => (
               <SignalCard key={s.id} signal={s} onOpen={() => setSignal(s)} />
             ))}
           </div>
@@ -110,7 +133,7 @@ export function ResearchFirstCall({
             sub="For Meera Iyer, VP Operations. Click any for detail."
           />
           <div className="fcr-signals">
-            {fcStakeholderSignals.map((s) => (
+            {stakeholderSignals.map((s) => (
               <SignalCard key={s.id} signal={s} onOpen={() => setSignal(s)} />
             ))}
           </div>

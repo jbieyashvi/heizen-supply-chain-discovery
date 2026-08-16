@@ -17,8 +17,11 @@ import {
 } from "lucide-react";
 import { SidePanel } from "./SidePanel";
 import { Badge } from "./Badge";
+import { FocusChip } from "./FocusChip";
 import { evidenceMeta } from "../lib/status";
 import { confLabel, confTone } from "../data/discovery";
+import { useFocus } from "../hooks/useFocus";
+import { scoreDomains, HYPOTHESIS_DOMAINS } from "../data/focus";
 import {
   businessContext,
   businessContextNote,
@@ -52,11 +55,23 @@ const sourceIcon: Record<BriefSource["kind"], typeof FileText> = {
 };
 
 /* ------------------------------------------------------------------ */
-export function FirstCallBrief() {
+export function FirstCallBrief({ projectId }: { projectId: string }) {
   const [item, setItem] = useState<DrawerItem | null>(null);
+  const { focus } = useFocus(projectId);
+
+  // Focus re-orders hypotheses by relevance (stable; nothing removed).
+  const rankedHypotheses = [...hypotheses]
+    .map((h, i) => ({ h, i }))
+    .sort(
+      (a, b) =>
+        scoreDomains(HYPOTHESIS_DOMAINS[b.h.id] ?? [], focus) -
+          scoreDomains(HYPOTHESIS_DOMAINS[a.h.id] ?? [], focus) || a.i - b.i
+    )
+    .map((x) => x.h);
 
   return (
     <div className="fcb">
+      <FocusChip projectId={projectId} />
       <header className="fcb__head">
         <span className="fcb__badge">
           <Clock aria-hidden /> 15-minute first-call brief
@@ -156,7 +171,7 @@ export function FirstCallBrief() {
           sub="Five unvalidated hypotheses, ranked by relevance to this stakeholder."
         />
         <div className="fcb-hyps">
-          {hypotheses.map((h) => (
+          {rankedHypotheses.map((h) => (
             <button
               key={h.id}
               className="fcb-item fcb-hyp"
