@@ -556,3 +556,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Stage-aware value display ---- */
+.opp-d__value--impact {
+  background: var(--brand-subtle);
+}
+.opp-d__value--impact svg { color: var(--brand-text); }
+.opp-d__value--pending {
+  background: var(--warning-subtle);
+  border-color: rgba(214, 163, 85, 0.3);
+}
+.opp-d__value--pending svg { color: var(--warning); }
+
+/* Estimated value line on expansion / discovery cards */
+.oppc__value p { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.oppc__value b { font-weight: 700; color: var(--text-1); }
+.oppc__value-hint { font-size: 12px; color: var(--text-3); }

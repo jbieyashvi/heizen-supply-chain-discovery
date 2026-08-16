@@ -1,4 +1,5 @@
 import type { EvidenceLevel } from "./types";
+import type { FocusDomain } from "./focus";
 
 /* ================================================================
    Clio Snacks — Opportunities
@@ -358,3 +359,39 @@ export const clioOpportunities: Opportunity[] = [
 
 /** Combined, indicative annual value range shown in the page summary. */
 export const OPP_EST_VALUE_TOTAL = "$1.3M–2.2M / yr";
+
+/* ---------------------------------------------------------------- */
+/* Stage-aware helpers (Introductory / Discovery / Account Expansion) */
+/* ---------------------------------------------------------------- */
+
+/** Domain tags — used to decide stakeholder relevance on a first call. */
+export const OPP_DOMAINS: Record<string, FocusDomain[]> = {
+  "opp-inventory": ["manufacturing", "supply-chain"],
+  "opp-traceability": ["quality", "supply-chain"],
+  "opp-planning": ["supply-chain", "manufacturing"],
+};
+
+/** Financial value is only shown once evidence is strong enough to
+   stand behind it — high confidence or a confirmed status. Before that
+   we show a qualitative "potential impact" instead of a number. */
+export function hasSufficientEvidence(o: Opportunity, status: OppStatus): boolean {
+  return status === "confirmed" || o.confidence === "high";
+}
+
+export type ImpactLevel = "high" | "moderate" | "emerging";
+
+export const impactMeta: Record<
+  ImpactLevel,
+  { label: string; tone: "amber" | "neutral" | "info" }
+> = {
+  high: { label: "High potential impact", tone: "amber" },
+  moderate: { label: "Moderate potential impact", tone: "neutral" },
+  emerging: { label: "Emerging — needs validation", tone: "info" },
+};
+
+/** Qualitative impact used on introductory calls (never a $ figure). */
+export function potentialImpact(o: Opportunity): ImpactLevel {
+  if (o.priority === "high" && o.confidence !== "low") return "high";
+  if (o.confidence === "low") return "emerging";
+  return "moderate";
+}
