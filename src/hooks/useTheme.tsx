@@ -34,7 +34,8 @@ function readChoice(): ThemeChoice {
   } catch {
     /* ignore */
   }
-  return "system";
+  // Light is the default — never fall back to the device/system theme.
+  return "light";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

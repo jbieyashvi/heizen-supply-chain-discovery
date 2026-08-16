@@ -10,20 +10,26 @@
     />
     <meta name="color-scheme" content="light dark" />
     <!-- Resolve theme before first paint to avoid a flash of the wrong theme.
-         Stores the *choice* (light|dark|system); resolves system via matchMedia. -->
+         Light is the default: a new visitor (or any invalid/absent saved
+         value) gets Light, never the device/system theme. Only an explicitly
+         saved choice of dark or system is honoured (system → matchMedia). -->
     <script>
       (function () {
         try {
-          var choice = localStorage.getItem("heizen-theme") || "system";
+          var saved = localStorage.getItem("heizen-theme");
+          var choice =
+            saved === "light" || saved === "dark" || saved === "system"
+              ? saved
+              : "light";
           var resolved =
-            choice === "light" || choice === "dark"
-              ? choice
-              : window.matchMedia("(prefers-color-scheme: light)").matches
-              ? "light"
-              : "dark";
+            choice === "system"
+              ? window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark"
+              : choice;
           document.documentElement.setAttribute("data-theme", resolved);
         } catch (e) {
-          document.documentElement.setAttribute("data-theme", "dark");
+          document.documentElement.setAttribute("data-theme", "light");
         }
       })();
     </script>
