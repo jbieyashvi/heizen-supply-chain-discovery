@@ -27,6 +27,7 @@ import { SidePanel } from "../components/SidePanel";
 import { EvidenceBadge } from "../components/StatusBadges";
 import { useToast } from "../components/Toast";
 import { useFocus } from "../hooks/useFocus";
+import { StageBadge } from "../components/StageBadge";
 import { stakeholderById } from "../data/focus";
 import { projects } from "../data/mock";
 import {
@@ -177,7 +178,12 @@ export function OpportunitiesPage() {
           { label: project?.name ?? "Clio Snacks", to: `/projects/${projectId}` },
           { label: stage === "intro" ? "Hypotheses" : "Opportunities" },
         ]}
-        title={<h1 className="page-title">{heading}</h1>}
+        title={
+          <>
+            <h1 className="page-title">{heading}</h1>
+            <StageBadge projectId={projectId} />
+          </>
+        }
         subtitle={subtitle}
         actions={
           stage === "intro" ? (

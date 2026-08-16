@@ -279,7 +279,19 @@ function FullOverview({
       <section className="stage-picker" aria-label="Preparation stage">
         <div className="stage-picker__label">
           <span className="stage-picker__title">Preparation stage</span>
-          <span className="stage-picker__blurb">{stageBlurb[stage]}</span>
+          {/* All three descriptions occupy the same cell so the header always
+              reserves the tallest — switching stage never shifts the layout. */}
+          <span className="stage-picker__blurbs">
+            {STAGE_OPTS.map((o) => (
+              <span
+                key={o.id}
+                className={`stage-picker__blurb${o.id === stage ? " is-active" : ""}`}
+                aria-hidden={o.id !== stage}
+              >
+                {stageBlurb[o.id]}
+              </span>
+            ))}
+          </span>
         </div>
         <Segmented
           value={stage}
@@ -289,20 +301,22 @@ function FullOverview({
         />
       </section>
 
-      {stage === "intro" ? (
-        <IntroStage projectId={projectId} />
-      ) : (
-        <DiscoveryStage
-          projectId={projectId}
-          detail={detail}
-          stage={stage}
-          refreshing={refreshing}
-          refreshed={refreshed}
-          readyCount={readyCount}
-          doRefresh={doRefresh}
-          notify={notify}
-        />
-      )}
+      <div className="stage-content" key={stage}>
+        {stage === "intro" ? (
+          <IntroStage projectId={projectId} />
+        ) : (
+          <DiscoveryStage
+            projectId={projectId}
+            detail={detail}
+            stage={stage}
+            refreshing={refreshing}
+            refreshed={refreshed}
+            readyCount={readyCount}
+            doRefresh={doRefresh}
+            notify={notify}
+          />
+        )}
+      </div>
     </div>
   );
 }

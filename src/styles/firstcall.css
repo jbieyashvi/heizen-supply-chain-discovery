@@ -3,13 +3,16 @@
    Reuses the shared design system: white surfaces, cool-grey bg, #5C95A8.
    ========================================================================= */
 
-/* ---- Stage selector ---------------------------------------------------- */
+/* ---- Stage selector ----------------------------------------------------
+   Stable two-column header: label + description on the left, stage tabs on
+   the right. The layout NEVER changes with the selected stage — the grid
+   columns are fixed and the description cell reserves the tallest of the
+   three descriptions, so switching stage cannot shift or resize anything. */
 .stage-picker {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s-5);
-  flex-wrap: wrap;
   background: var(--surface-1);
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-lg);
@@ -19,7 +22,7 @@
 .stage-picker__label {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 .stage-picker__title {
@@ -29,13 +32,60 @@
   text-transform: uppercase;
   color: var(--text-3);
 }
+/* All descriptions share one grid cell → the cell sizes to the tallest,
+   reserving space for the longest at any width. Only the active shows. */
+.stage-picker__blurbs {
+  display: grid;
+}
 .stage-picker__blurb {
+  grid-area: 1 / 1;
   font-size: 13px;
+  line-height: 1.45;
   color: var(--text-2);
-  max-width: 720px;
+  max-width: 640px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.stage-picker__blurb.is-active {
+  visibility: visible;
+  opacity: 1;
 }
 .stage-picker .segmented {
   flex: none;
+  justify-self: end;
+}
+
+/* Consistent stacking on small screens — same single-column layout for
+   every stage (never conditioned on which stage is selected). */
+@media (max-width: 760px) {
+  .stage-picker {
+    grid-template-columns: 1fr;
+  }
+  .stage-picker .segmented {
+    justify-self: stretch;
+    overflow-x: auto;
+  }
+}
+
+/* Subtle transition for the content that swaps below the stable header. */
+.stage-content {
+  animation: stage-fade 0.22s ease;
+}
+@keyframes stage-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-content {
+    animation: none;
+  }
 }
 
 /* ---- First-call brief container --------------------------------------- */
@@ -750,5 +800,33 @@
   }
   .stage-picker .segmented {
     overflow-x: auto;
+  }
+}
+
+/* ---- Current-stage badge (project header on sub-screens) ---- */
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand-text);
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-line);
+  white-space: nowrap;
+}
+.stage-badge svg {
+  width: 13px;
+  height: 13px;
+}
+@media (max-width: 560px) {
+  .stage-badge__label {
+    display: none;
+  }
+  .stage-badge {
+    padding: 4px;
   }
 }

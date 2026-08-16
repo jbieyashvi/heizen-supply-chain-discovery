@@ -30,6 +30,7 @@ import { ResearchBrief } from "../components/research/ResearchBrief";
 import { ResearchFull } from "../components/research/ResearchFull";
 import { ResearchFirstCall } from "../components/research/ResearchFirstCall";
 import { ClientReadyPreview } from "../components/research/ClientReadyPreview";
+import { StageBadge } from "../components/StageBadge";
 import { projects } from "../data/mock";
 import { researchByProject } from "../data/research";
 import { Lock, Globe } from "lucide-react";
@@ -208,7 +209,12 @@ export function ResearchPage() {
           { label: project.name, to: `/projects/${projectId}` },
           { label: "Research" },
         ]}
-        title={<h1 className="page-title">Research</h1>}
+        title={
+          <>
+            <h1 className="page-title">Research</h1>
+            <StageBadge projectId={projectId} />
+          </>
+        }
         subtitle={`Client preparation research for ${project.name}.`}
         actions={
           <div className="row" style={{ gap: 8 }}>

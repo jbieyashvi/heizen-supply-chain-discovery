@@ -17,6 +17,7 @@ import { SidePanel } from "../SidePanel";
 import { Modal } from "../Modal";
 import { EmptyState } from "../EmptyState";
 import { FocusChip } from "../FocusChip";
+import { StageBadge } from "../StageBadge";
 import { useDiscovery } from "../../hooks/useDiscovery";
 import { useFocus } from "../../hooks/useFocus";
 import { scoreDomains, type FocusDomain } from "../../data/focus";
@@ -126,7 +127,12 @@ export function IntroQuestionSet({
           { label: project.name, to: `/projects/${projectId}` },
           { label: "Discovery Questions" },
         ]}
-        title={<h1 className="page-title">Discovery Questions</h1>}
+        title={
+          <>
+            <h1 className="page-title">Discovery Questions</h1>
+            <StageBadge projectId={projectId} />
+          </>
+        }
         subtitle={`A broad, first-call talk track for ${possessive(project.name)} introductory call.`}
         actions={
           <button className="btn btn-primary btn-sm" onClick={() => setGuideOpen(true)}>

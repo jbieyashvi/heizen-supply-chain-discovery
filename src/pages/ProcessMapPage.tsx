@@ -35,6 +35,7 @@ import { Badge } from "../components/Badge";
 import { Segmented } from "../components/Segmented";
 import { SidePanel } from "../components/SidePanel";
 import { Modal } from "../components/Modal";
+import { StageBadge } from "../components/StageBadge";
 import { EvidenceBadge } from "../components/StatusBadges";
 import { Canvas, type MiniNode } from "../components/Canvas";
 import { useToast } from "../components/Toast";
@@ -205,7 +206,12 @@ export function ProcessMapPage() {
           { label: project?.name ?? "Clio Snacks", to: `/projects/${projectId}` },
           { label: isIntro ? "Areas to Explore" : "Process Map" },
         ]}
-        title={<h1 className="page-title">{isIntro ? "Areas to Explore" : "Process Map"}</h1>}
+        title={
+          <>
+            <h1 className="page-title">{isIntro ? "Areas to Explore" : "Process Map"}</h1>
+            <StageBadge projectId={projectId} />
+          </>
+        }
         subtitle={subtitle}
         actions={
           <div className="row" style={{ gap: 8 }}>

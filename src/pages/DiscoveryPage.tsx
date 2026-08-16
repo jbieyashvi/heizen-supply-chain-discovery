@@ -34,6 +34,7 @@ import { StartCallDialog } from "../components/discovery/StartCallDialog";
 import { IntroQuestionSet } from "../components/discovery/IntroQuestionSet";
 import { Segmented, type SegmentOption } from "../components/Segmented";
 import { FocusChip } from "../components/FocusChip";
+import { StageBadge } from "../components/StageBadge";
 import { useFocus } from "../hooks/useFocus";
 import { scoreDomains, AREA_DOMAIN } from "../data/focus";
 import { projects } from "../data/mock";
@@ -487,7 +488,12 @@ function DiscoveryQuestionSet({
           { label: project.name, to: `/projects/${projectId}` },
           { label: "Discovery Questions" },
         ]}
-        title={<h1 className="page-title">Discovery Questions</h1>}
+        title={
+          <>
+            <h1 className="page-title">Discovery Questions</h1>
+            <StageBadge projectId={projectId} />
+          </>
+        }
         subtitle={`Evidence-backed questions for ${possessive(
           project.name
         )} discovery call, grouped by confirmed problem area.`}
