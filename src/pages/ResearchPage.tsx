@@ -13,6 +13,7 @@ import {
   Layers,
   BookOpen,
   FlaskConical,
+  Handshake,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
@@ -27,12 +28,13 @@ import { SidePanel } from "../components/SidePanel";
 import { EvidencePanel, type EvidenceView } from "../components/research/EvidencePanel";
 import { ResearchBrief } from "../components/research/ResearchBrief";
 import { ResearchFull } from "../components/research/ResearchFull";
+import { ResearchFirstCall } from "../components/research/ResearchFirstCall";
 import { ClientReadyPreview } from "../components/research/ClientReadyPreview";
 import { projects } from "../data/mock";
 import { researchByProject } from "../data/research";
 import { Lock, Globe } from "lucide-react";
 
-type Mode = "brief" | "full";
+type Mode = "first-call" | "brief" | "full";
 const MODE_KEY = "heizen-research-mode";
 
 const REFRESH_STAGES = [
@@ -108,7 +110,7 @@ export function ResearchPage() {
 
   const [mode, setMode] = useState<Mode>(() => {
     const saved = sessionStorage.getItem(MODE_KEY);
-    return saved === "full" ? "full" : "brief";
+    return saved === "full" || saved === "brief" ? saved : "first-call";
   });
   const setModePersist = (m: Mode) => {
     setMode(m);
@@ -235,6 +237,7 @@ export function ResearchPage() {
           onChange={setModePersist}
           ariaLabel="Research mode"
           options={[
+            { id: "first-call", label: "First-call Brief", icon: <Handshake aria-hidden /> },
             { id: "brief", label: "Brief", icon: <BookOpen aria-hidden /> },
             { id: "full", label: "Full Research", icon: <Layers aria-hidden /> },
           ]}
@@ -283,7 +286,9 @@ export function ResearchPage() {
         </div>
       )}
 
-      {mode === "brief" ? (
+      {mode === "first-call" ? (
+        <ResearchFirstCall data={data} projectId={projectId!} />
+      ) : mode === "brief" ? (
         <ResearchBrief
           data={data}
           projectId={projectId!}
