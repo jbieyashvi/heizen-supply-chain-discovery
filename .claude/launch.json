@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "/Users/jbyashvi/.local/node-v22.14.0-darwin-arm64/bin/node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js"
+      ],
+      "autoPort": true
+    }
+  ]
+}
