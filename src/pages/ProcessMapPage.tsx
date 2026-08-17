@@ -1,4 +1,13 @@
-import { useMemo, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   Layers,
@@ -30,6 +39,9 @@ import {
   GitBranch,
   Boxes,
   MessageCircleQuestion,
+  Minus,
+  Maximize2,
+  RotateCcw,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
@@ -100,15 +112,19 @@ const handoffBadgeTone: Record<HandoffState, "neutral" | "accent" | "amber" | "r
     unexplored: "neutral",
   };
 
-/* ---- Current Process (executive) flow geometry ---- */
-/* Kept compact so all six stages fit within the available width at the
-   60% floor on first load — no zooming needed to read the flow. */
+/* ---- Current Process (executive) flow order ---- */
+/* Rendered as a native, readable horizontal strip — never zoom-to-shrink.
+   Cards keep their natural, readable size and the strip scrolls when all
+   six can't fit at once. */
 const FLOW = ["plan", "source", "make", "quality", "store", "deliver"];
-const STAGE_W = 158;
-const STAGE_H = 192;
-const LINK_W = 74;
 
-/* Short labels for the in-gap connector chips (full labels stay in the
+/* Readable-zoom bounds for the Current Process strip. The floor is 90% so
+   text never drops below a readable size; "Fit" only ever shrinks to this. */
+const CF_MIN_Z = 0.9;
+const CF_MAX_Z = 1.4;
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+/* Short labels for the in-strip handoff chips (full labels stay in the
    legend and the handoff drawer). */
 const handoffChipLabel: Record<HandoffState, string> = {
   confirmed: "Confirmed",
@@ -118,9 +134,11 @@ const handoffChipLabel: Record<HandoffState, string> = {
 };
 
 /* ---- Detailed Process (Level-0) geometry ---- */
-const NODE_W = 214;
-const NODE_H = 166;
-const GAP = 56;
+/* Larger nodes here — this is the detailed view, so cards carry full
+   information with room to breathe (no clipping) inside the pan/zoom canvas. */
+const NODE_W = 238;
+const NODE_H = 200;
+const GAP = 60;
 
 function isArea(n: NodeLike): n is ProcessArea {
   return (n as ProcessArea).subprocesses !== undefined;
@@ -537,6 +555,13 @@ function PmapLegend() {
 
 /* ================================================================
    Current Process — As Is (executive left-to-right flow)
+
+   A native, horizontally-scrolling strip of readable auto-height cards.
+   Text is never shrunk to fit: when all six stages can't fit at a
+   readable size the strip scrolls (with left/right fade cues) rather
+   than zooming down. Sticky zoom controls (top-right) enlarge to 140%
+   and shrink no further than 90%; "Fit" frames the whole flow at the
+   highest readable scale after the sidebar is accounted for.
    ================================================================ */
 function CurrentProcessView({
   onOpenStage,
@@ -546,56 +571,163 @@ function CurrentProcessView({
   onOpenHandoff: (h: Handoff) => void;
 }) {
   const stages = FLOW.map((id) => clioProcessAreas.find((a) => a.id === id)!);
-  const contentWidth = FLOW.length * STAGE_W + (FLOW.length - 1) * LINK_W;
-  const contentHeight = STAGE_H;
+  const linkFor = (fromId: string, toId: string) =>
+    clioHandoffs.find((h) => h.from === fromId && h.to === toId) ?? null;
 
-  const stageX = (i: number) => i * (STAGE_W + LINK_W);
+  const vpRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const didFit = useRef(false);
+  // Natural (unscaled) size of the flow — offsetWidth/Height ignore the
+  // CSS transform, so this stays the true content size at any zoom.
+  const [nat, setNat] = useState({ w: 1, h: 1 });
+  const [z, setZ] = useState(1);
+  const [fade, setFade] = useState({ left: false, right: false });
 
-  const miniNodes: MiniNode[] = stages.map((a, i) => ({
-    x: stageX(i),
-    y: 0,
-    w: STAGE_W,
-    h: STAGE_H,
-    tone: displayHealth(a).key,
-  }));
+  // The highest readable scale that frames the whole flow — the viewport
+  // width already excludes the sidebar. Never below 90%, never above 100%.
+  const fitZoom = useCallback(() => {
+    const el = vpRef.current;
+    if (!el || nat.w < 2) return 1;
+    return +clamp(el.clientWidth / nat.w, CF_MIN_Z, 1).toFixed(2);
+  }, [nat.w]);
+
+  const syncFades = useCallback(() => {
+    const el = vpRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setFade({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 });
+  }, []);
+
+  // Measure the natural content size and keep it current.
+  useLayoutEffect(() => {
+    const tr = trackRef.current;
+    if (!tr) return;
+    const measure = () => setNat({ w: tr.offsetWidth, h: tr.offsetHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(tr);
+    return () => ro.disconnect();
+  }, []);
+
+  // Re-evaluate fade cues whenever the frame or zoom changes.
+  useEffect(() => {
+    syncFades();
+    const el = vpRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(syncFades);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [syncFades, z, nat.w]);
+
+  // On first measure, frame the whole flow at the highest readable fit so
+  // wide screens show all six stages and narrower ones settle at the 90%
+  // floor (then scroll) — never the old, unreadable 70% default.
+  useEffect(() => {
+    if (didFit.current || nat.w < 2) return;
+    didFit.current = true;
+    setZ(fitZoom());
+  }, [nat.w, fitZoom]);
+
+  const zoomBy = (d: number) =>
+    setZ((v) => clamp(+(v + d).toFixed(2), CF_MIN_Z, CF_MAX_Z));
+
+  // Fit frames the whole flow at the highest readable scale, scrolled to
+  // the start (the same framing used as the default on load).
+  const fit = () => {
+    setZ(fitZoom());
+    vpRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  };
+  // Reset returns to actual 100% size, scrolled to the start.
+  const reset = () => {
+    setZ(1);
+    vpRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  };
+
+  const pct = Math.round(z * 100);
 
   return (
-    <Canvas
-      contentWidth={contentWidth}
-      contentHeight={contentHeight}
-      nodes={miniNodes}
-      fitKey="current-flow"
-      showMinimap={false}
-    >
-      {/* Handoff connectors sit in the gaps between consecutive stages. */}
-      {clioHandoffs.map((h) => {
-        const fromIdx = FLOW.indexOf(h.from);
-        if (fromIdx < 0 || FLOW.indexOf(h.to) !== fromIdx + 1) return null;
-        const left = stageX(fromIdx) + STAGE_W;
-        return (
-          <HandoffLink
-            key={h.id}
-            handoff={h}
-            left={left}
-            width={LINK_W}
-            height={STAGE_H}
-            onOpen={() => onOpenHandoff(h)}
-          />
-        );
-      })}
+    <div className="pmap-cf">
+      <div
+        className={`pmap-cf__scroll${fade.left ? " has-left" : ""}${
+          fade.right ? " has-right" : ""
+        }`}
+      >
+        <div className="pmap-cf__vp" ref={vpRef} onScroll={syncFades}>
+          <div
+            className="pmap-cf__sizer"
+            style={{ width: nat.w * z, height: nat.h * z }}
+          >
+            <div
+              className="pmap-cf__track"
+              ref={trackRef}
+              style={{ transform: `scale(${z})` }}
+            >
+              {stages.map((a, i) => {
+                const next = stages[i + 1];
+                const h = next ? linkFor(a.id, next.id) : null;
+                return (
+                  <Fragment key={a.id}>
+                    <FlowStageCard
+                      area={a}
+                      index={i}
+                      onOpen={() => onOpenStage(a)}
+                    />
+                    {h && (
+                      <FlowConnector handoff={h} onOpen={() => onOpenHandoff(h)} />
+                    )}
+                  </Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </div>
 
-      {stages.map((a, i) => (
-        <FlowStageNode
-          key={a.id}
-          area={a}
-          x={stageX(i)}
-          w={STAGE_W}
-          h={STAGE_H}
-          index={i}
-          onOpen={() => onOpenStage(a)}
-        />
-      ))}
-    </Canvas>
+        <span className="pmap-cf__fade pmap-cf__fade--left" aria-hidden />
+        <span className="pmap-cf__fade pmap-cf__fade--right" aria-hidden />
+      </div>
+
+      {/* Sticky controls (top-right): zoom out · % · zoom in · fit · reset */}
+      <div className="pmap-toolbar-map" role="toolbar" aria-label="Flow controls">
+        <button
+          className="pmap-ctrl"
+          onClick={() => zoomBy(-0.1)}
+          aria-label="Zoom out"
+          title="Zoom out"
+          disabled={pct <= CF_MIN_Z * 100 + 0.5}
+        >
+          <Minus />
+        </button>
+        <span className="pmap-zoom" aria-live="polite" title="Current zoom">
+          {pct}%
+        </span>
+        <button
+          className="pmap-ctrl"
+          onClick={() => zoomBy(0.1)}
+          aria-label="Zoom in"
+          title="Zoom in"
+          disabled={pct >= CF_MAX_Z * 100 - 0.5}
+        >
+          <Plus />
+        </button>
+        <span className="pmap-toolbar-sep" aria-hidden />
+        <button
+          className="pmap-ctrl"
+          onClick={fit}
+          aria-label="Fit to screen"
+          title="Fit to screen"
+        >
+          <Maximize2 />
+        </button>
+        <button
+          className="pmap-ctrl"
+          onClick={reset}
+          aria-label="Reset view"
+          title="Reset view"
+        >
+          <RotateCcw />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -606,75 +738,34 @@ const handoffChipIcon: Record<HandoffState, ReactNode> = {
   unexplored: <HelpCircle aria-hidden />,
 };
 
-function HandoffLink({
-  handoff,
-  left,
-  width,
-  height,
-  onOpen,
-}: {
-  handoff: Handoff;
-  left: number;
-  width: number;
-  height: number;
-  onOpen: () => void;
-}) {
-  return (
-    <div
-      className={`pmap-link state-${handoff.state}`}
-      style={{ left, top: 0, width, height }}
-    >
-      <span className="pmap-link__line" aria-hidden />
-      <button
-        className="pmap-link__chip"
-        onClick={onOpen}
-        aria-label={`Handoff ${handoff.from} to ${handoff.to}: ${handoffMeta[handoff.state].label}`}
-      >
-        <span className="pmap-link__ic">{handoffChipIcon[handoff.state]}</span>
-        {handoffChipLabel[handoff.state]}
-      </button>
-    </div>
-  );
-}
-
-function FlowStageNode({
+/** A readable, auto-height stage card. Deliberately shows only the
+    essentials — name + status, one "what happens today" line, the system,
+    and one primary owner. Everything else (input, output, evidence,
+    additional owners) lives in the stage detail drawer. */
+function FlowStageCard({
   area,
-  x,
-  w,
-  h,
   index,
   onOpen,
 }: {
   area: ProcessArea;
-  x: number;
-  w: number;
-  h: number;
   index: number;
   onOpen: () => void;
 }) {
   const explored = area.coverage !== "not-explored";
   const dh = displayHealth(area);
-  // Only surface a health flag where a client source backs it.
-  const knownIssue =
-    hasClientEvidence(area) &&
-    !dh.inferred &&
-    (dh.key === "friction" || dh.key === "critical");
+  const owner = area.owners[0] ?? area.responsible ?? null;
 
   return (
-    <div
-      data-node
-      className={`pmap-flow${explored ? "" : " is-unexplored"}`}
-      style={{ left: x, top: 0, width: w, height: h }}
-    >
+    <div data-node className={`pmap-cf-card h-${dh.key}${explored ? "" : " is-unexplored"}`}>
       <button
-        className="pmap-flow__open"
+        className="pmap-cf-card__open"
         aria-label={`Open ${flowName(area)} stage details`}
         onClick={onOpen}
       />
-      <div className="pmap-flow__content">
-        <div className="pmap-flow__head">
-          <span className="pmap-flow__step">{index + 1}</span>
-          <span className="pmap-flow__name">{flowName(area)}</span>
+      <div className="pmap-cf-card__body">
+        <div className="pmap-cf-card__head">
+          <span className="pmap-cf-card__step">{index + 1}</span>
+          <span className="pmap-cf-card__name">{flowName(area)}</span>
         </div>
 
         <span className={`pmap-node__coverage cov-${area.coverage}`}>
@@ -682,26 +773,27 @@ function FlowStageNode({
         </span>
 
         {explored ? (
-          <div className="pmap-flow__fields">
-            <p className="pmap-flow__today">{area.today}</p>
-            <FlowField icon={<User aria-hidden />} label="Who" value={area.responsible} />
-            <FlowField icon={<Server aria-hidden />} label="System" value={area.tool} />
-            <FlowField
-              icon={<ArrowRight aria-hidden />}
-              label="Output"
-              value={area.output}
-              output
-            />
-            {knownIssue && (
-              <span className={`pmap-flow__issue tone-${dh.key}`}>
-                <AlertTriangle aria-hidden /> Known issue here
-              </span>
-            )}
-          </div>
+          <>
+            <p className="pmap-cf-card__today">{area.today}</p>
+            <dl className="pmap-cf-card__facts">
+              <div className="pmap-cf-card__fact">
+                <dt>
+                  <Server aria-hidden /> System
+                </dt>
+                <dd>{area.tool ?? "—"}</dd>
+              </div>
+              <div className="pmap-cf-card__fact">
+                <dt>
+                  <User aria-hidden /> Owner
+                </dt>
+                <dd>{owner ?? "—"}</dd>
+              </div>
+            </dl>
+          </>
         ) : (
-          <div className="pmap-flow__empty">
-            <span className="pmap-flow__emptymsg">Not yet explored</span>
-            <span className="pmap-flow__ask">
+          <div className="pmap-cf-card__empty">
+            <span className="pmap-cf-card__emptymsg">Not yet explored</span>
+            <span className="pmap-cf-card__ask">
               <MessageCircleQuestion aria-hidden /> Ask about this step
             </span>
           </div>
@@ -711,22 +803,26 @@ function FlowStageNode({
   );
 }
 
-function FlowField({
-  icon,
-  label,
-  value,
-  output,
+/** The directional connector + handoff chip between two stages. Sits inline
+    in the strip so arrows and labels stay aligned while scrolling. */
+function FlowConnector({
+  handoff,
+  onOpen,
 }: {
-  icon: ReactNode;
-  label: string;
-  value?: string;
-  output?: boolean;
+  handoff: Handoff;
+  onOpen: () => void;
 }) {
   return (
-    <div className={`pmap-flow__field${output ? " is-output" : ""}`}>
-      <span className="pmap-flow__ficon">{icon}</span>
-      <span className="pmap-flow__flabel">{label}</span>
-      <span className="pmap-flow__fvalue">{value ?? "—"}</span>
+    <div className={`pmap-cf-link state-${handoff.state}`}>
+      <span className="pmap-cf-link__line" aria-hidden />
+      <button
+        className="pmap-cf-link__chip"
+        onClick={onOpen}
+        aria-label={`Handoff ${handoff.from} to ${handoff.to}: ${handoffMeta[handoff.state].label}`}
+      >
+        <span className="pmap-cf-link__ic">{handoffChipIcon[handoff.state]}</span>
+        {handoffChipLabel[handoff.state]}
+      </button>
     </div>
   );
 }
@@ -766,11 +862,11 @@ function DetailedProcessView({
     }));
     const width = 6 * NODE_W + 5 * GAP;
     const data = clioProcessAreas.find((a) => a.crossCutting)!;
-    const dataNode = { node: data, x: 0, y: NODE_H + 64, w: width, h: 104 };
+    const dataNode = { node: data, x: 0, y: NODE_H + 64, w: width, h: 120 };
     return {
       nodes: [...flow, dataNode],
       width,
-      height: NODE_H + 64 + 104,
+      height: NODE_H + 64 + 120,
       seq: flow,
     };
   }, [drillArea]);
