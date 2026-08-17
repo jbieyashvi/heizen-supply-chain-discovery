@@ -436,32 +436,61 @@
 }
 
 /* ---------- Controls / hint / minimap ---------- */
-.pmap-controls {
+/* Sticky in-map toolbar (top-right): always visible, never scrolls away. */
+.pmap-toolbar-map {
   position: absolute;
   top: 12px;
   right: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-1);
+  z-index: 6;
+}
+.pmap-zoom {
+  min-width: 46px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-1);
+  user-select: none;
+}
+.pmap-toolbar-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 2px;
+  background: var(--color-border);
 }
 .pmap-ctrl {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--r-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text-1);
-  box-shadow: var(--shadow-1);
   cursor: pointer;
-  transition: background 0.14s ease, border-color 0.14s ease;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
-.pmap-ctrl:hover {
+.pmap-ctrl:hover:not(:disabled) {
   background: var(--brand-subtle);
   border-color: var(--brand-line);
   color: var(--brand-text);
+}
+.pmap-ctrl:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.pmap-ctrl:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 .pmap-ctrl svg {
   width: 16px;
@@ -1277,3 +1306,297 @@
 }
 .pmap-healthsrc svg { width: 14px; height: 14px; flex: none; margin-top: 1px; color: var(--text-3); }
 .pmap-healthsrc b { color: var(--text-1); font-weight: 600; }
+
+/* =========================================================================
+   Current Process — As-Is executive flow (stage cards + handoff connectors)
+   ========================================================================= */
+
+/* ---- Flow legend (connector styles) ---- */
+.pmap-legend__line {
+  width: 22px;
+  height: 0;
+  flex: none;
+  border-top: 2px solid var(--brand);
+}
+.pmap-legend__line.is-confirmed { border-top: 2px solid var(--brand); }
+.pmap-legend__line.is-inferred { border-top: 2px dashed var(--text-3); }
+.pmap-legend__line.is-unexplored { border-top: 2px dotted var(--color-border-strong); }
+.pmap-legend__warn { width: 14px; height: 14px; color: var(--warning); flex: none; }
+
+/* ---- Stage card ---- */
+.pmap-flow {
+  position: absolute;
+  border-radius: var(--r-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  transition: box-shadow 0.14s ease, transform 0.1s ease, border-color 0.14s ease;
+}
+.pmap-flow:hover {
+  box-shadow: var(--shadow-2);
+  transform: translateY(-1px);
+}
+.pmap-flow.is-unexplored {
+  border-style: dashed;
+  background: var(--color-surface-subtle);
+}
+.pmap-flow__open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+}
+.pmap-flow__open:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -3px;
+}
+.pmap-flow__content {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px 12px;
+}
+.pmap-flow__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.pmap-flow__step {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--brand-subtle);
+  border: 1px solid var(--brand-line);
+  color: var(--brand-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+.pmap-flow__name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.pmap-flow .pmap-node__coverage {
+  font-size: 11px;
+  padding: 1px 8px;
+}
+.pmap-flow__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 1px;
+}
+.pmap-flow__today {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pmap-flow__field {
+  display: grid;
+  grid-template-columns: 13px 38px 1fr;
+  align-items: center;
+  gap: 5px;
+}
+.pmap-flow__ficon {
+  display: inline-flex;
+  color: var(--text-3);
+}
+.pmap-flow__ficon svg { width: 12px; height: 12px; }
+.pmap-flow__flabel {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-3);
+}
+.pmap-flow__fvalue {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pmap-flow__field.is-output .pmap-flow__fvalue { color: var(--brand-text); }
+.pmap-flow__issue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.pmap-flow__issue svg { width: 12px; height: 12px; }
+.pmap-flow__issue.tone-friction {
+  color: var(--warning);
+  background: var(--warning-subtle);
+}
+.pmap-flow__issue.tone-critical {
+  color: var(--critical);
+  background: var(--critical-subtle);
+}
+.pmap-flow__empty {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+.pmap-flow__emptymsg {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--text-3);
+}
+.pmap-flow__ask {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-subtle);
+  color: var(--brand-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+.pmap-flow__ask svg { width: 13px; height: 13px; }
+
+/* ---- Handoff connectors (in the gaps between stages) ---- */
+.pmap-link {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+.pmap-link__line {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 50%;
+  height: 0;
+  border-top: 2px solid var(--brand);
+}
+.pmap-link__line::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -5px;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--brand);
+}
+.pmap-link.state-confirmed .pmap-link__line { border-top: 2px solid var(--brand); }
+.pmap-link.state-confirmed .pmap-link__line::after { border-left-color: var(--brand); }
+.pmap-link.state-inferred .pmap-link__line { border-top: 2px dashed var(--text-3); }
+.pmap-link.state-inferred .pmap-link__line::after { border-left-color: var(--text-3); }
+.pmap-link.state-broken .pmap-link__line { border-top: 2px solid var(--warning); }
+.pmap-link.state-broken .pmap-link__line::after { border-left-color: var(--warning); }
+.pmap-link.state-unexplored .pmap-link__line { border-top: 2px dotted var(--color-border-strong); }
+.pmap-link.state-unexplored .pmap-link__line::after { border-left-color: var(--color-border-strong); }
+
+.pmap-link__chip {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 4px);
+  padding: 4px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+  color: var(--text-2);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.15;
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.1s ease;
+}
+.pmap-link__chip:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+.pmap-link__chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.pmap-link__ic { display: inline-flex; flex: none; }
+.pmap-link__ic svg { width: 13px; height: 13px; }
+.pmap-link.state-confirmed .pmap-link__ic { color: var(--brand-text); }
+.pmap-link.state-broken .pmap-link__chip {
+  border-color: color-mix(in srgb, var(--warning) 45%, transparent);
+  background: var(--warning-subtle);
+  color: var(--warning);
+}
+.pmap-link.state-unexplored .pmap-link__chip {
+  border-style: dashed;
+  color: var(--text-3);
+}
+
+/* ---- As-is snapshot block in the stage drawer ---- */
+.pmap-snap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 12px 0 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--color-surface-subtle);
+  overflow: hidden;
+}
+.pmap-snap__row {
+  display: grid;
+  grid-template-columns: 92px 1fr;
+  gap: 10px;
+  padding: 9px 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.pmap-snap__row:first-child { border-top: none; }
+.pmap-snap__k {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-3);
+}
+.pmap-snap__k svg { width: 13px; height: 13px; }
+.pmap-snap__v {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-1);
+}
+
+/* ---- Handoff drawer bits ---- */
+.pmap-d__handoff-label {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-1);
+  margin-bottom: 6px;
+}
+.pmap-d__impact {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-1);
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+  background: var(--warning-subtle);
+}

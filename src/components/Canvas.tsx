@@ -24,19 +24,23 @@ interface CanvasProps {
   nodes: MiniNode[];
   /** Change this to re-fit the view (e.g. on level / view change). */
   fitKey: string;
+  /** Minimap is only shown in the Detailed Process view. */
+  showMinimap?: boolean;
   children: ReactNode;
 }
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
-const MIN_SCALE = 0.3;
-const MAX_SCALE = 2;
-const PAD = 48;
+/* Zoom is capped to 60%–150% so the flow always stays legible. */
+const MIN_SCALE = 0.6;
+const MAX_SCALE = 1.5;
+const PAD = 40;
 
 export function Canvas({
   contentWidth,
   contentHeight,
   nodes,
   fitKey,
+  showMinimap = false,
   children,
 }: CanvasProps) {
   const vpRef = useRef<HTMLDivElement>(null);
@@ -49,13 +53,14 @@ export function Canvas({
   // sidebar collapsing on entry) without ever clipping nodes.
   const interacted = useRef(false);
 
+  /** Fit the whole diagram into the viewport, biased to fill the width. */
   const fitInto = useCallback(
     (w: number, h: number) => {
       if (w < 2 || h < 2) return;
       const scale = clamp(
         Math.min((w - PAD * 2) / contentWidth, (h - PAD * 2) / contentHeight),
         MIN_SCALE,
-        1.4
+        MAX_SCALE
       );
       const x = (w - contentWidth * scale) / 2;
       const y = (h - contentHeight * scale) / 2;
@@ -97,6 +102,7 @@ export function Canvas({
   }, [fitKey]);
 
   const zoomAt = useCallback((cx: number, cy: number, factor: number) => {
+    interacted.current = true;
     setT((prev) => {
       const scale = clamp(prev.scale * factor, MIN_SCALE, MAX_SCALE);
       const wx = (cx - prev.x) / prev.scale;
@@ -105,18 +111,24 @@ export function Canvas({
     });
   }, []);
 
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
+  // Wheel zoom needs a non-passive native listener so preventDefault() can
+  // stop the page from scrolling while zooming the canvas.
+  useEffect(() => {
+    const el = vpRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
       e.preventDefault();
-      const rect = vpRef.current!.getBoundingClientRect();
-      zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1.12 : 0.89);
-    },
-    [zoomAt]
-  );
+      const rect = el.getBoundingClientRect();
+      zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1.1 : 0.9);
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, [zoomAt]);
 
   const onPointerDown = (e: React.PointerEvent) => {
     // Only pan from the background, never from a node or control.
     if ((e.target as HTMLElement).closest("[data-node],button,a")) return;
+    interacted.current = true;
     pan.current = { px: e.clientX, py: e.clientY, ox: t.x, oy: t.y };
     vpRef.current?.setPointerCapture(e.pointerId);
   };
@@ -137,8 +149,18 @@ export function Canvas({
     }
   };
 
-  const fit = () => fitInto(vp.w, vp.h);
+  // Fit-to-screen frames the whole diagram; Reset returns to the default fit
+  // and clears the "user has taken control" flag so it re-frames on resize.
+  const fit = () => {
+    interacted.current = true;
+    fitInto(vp.w, vp.h);
+  };
+  const reset = () => {
+    interacted.current = false;
+    fitInto(vp.w, vp.h);
+  };
   const zoomButton = (factor: number) => zoomAt(vp.w / 2, vp.h / 2, factor);
+  const pct = Math.round(t.scale * 100);
 
   // Minimap geometry
   const MM_W = 176;
@@ -163,7 +185,6 @@ export function Canvas({
       <div
         className="pmap-vp"
         ref={vpRef}
-        onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endPan}
@@ -180,18 +201,44 @@ export function Canvas({
           {children}
         </div>
 
-        {/* Controls */}
-        <div className="pmap-controls">
-          <button className="pmap-ctrl" onClick={() => zoomButton(1.18)} aria-label="Zoom in">
-            <Plus />
-          </button>
-          <button className="pmap-ctrl" onClick={() => zoomButton(0.85)} aria-label="Zoom out">
+        {/* Sticky toolbar (top-right): zoom out · % · zoom in · fit · reset */}
+        <div className="pmap-toolbar-map" role="toolbar" aria-label="Map controls">
+          <button
+            className="pmap-ctrl"
+            onClick={() => zoomButton(0.9)}
+            aria-label="Zoom out"
+            title="Zoom out"
+            disabled={pct <= MIN_SCALE * 100 + 0.5}
+          >
             <Minus />
           </button>
-          <button className="pmap-ctrl" onClick={fit} aria-label="Fit view" title="Fit view">
+          <span className="pmap-zoom" aria-live="polite" title="Current zoom">
+            {pct}%
+          </span>
+          <button
+            className="pmap-ctrl"
+            onClick={() => zoomButton(1.1)}
+            aria-label="Zoom in"
+            title="Zoom in"
+            disabled={pct >= MAX_SCALE * 100 - 0.5}
+          >
+            <Plus />
+          </button>
+          <span className="pmap-toolbar-sep" aria-hidden />
+          <button
+            className="pmap-ctrl"
+            onClick={fit}
+            aria-label="Fit to screen"
+            title="Fit to screen"
+          >
             <Maximize2 />
           </button>
-          <button className="pmap-ctrl" onClick={fit} aria-label="Reset view" title="Reset view">
+          <button
+            className="pmap-ctrl"
+            onClick={reset}
+            aria-label="Reset view"
+            title="Reset view"
+          >
             <RotateCcw />
           </button>
         </div>
@@ -200,30 +247,36 @@ export function Canvas({
           <Move /> Drag to move · Scroll to zoom
         </div>
 
-        {/* Minimap */}
-        <div className="pmap-minimap" aria-hidden style={{ width: MM_W, height: MM_H }}>
-          {nodes.map((n, i) => (
+        {/* Minimap — Detailed Process view only */}
+        {showMinimap && (
+          <div
+            className="pmap-minimap"
+            aria-hidden
+            style={{ width: MM_W, height: MM_H }}
+          >
+            {nodes.map((n, i) => (
+              <span
+                key={i}
+                className={`pmap-mm-node tone-${n.tone}`}
+                style={{
+                  left: mmOffX + n.x * mmScale,
+                  top: mmOffY + n.y * mmScale,
+                  width: Math.max(3, n.w * mmScale),
+                  height: Math.max(3, n.h * mmScale),
+                }}
+              />
+            ))}
             <span
-              key={i}
-              className={`pmap-mm-node tone-${n.tone}`}
+              className="pmap-mm-view"
               style={{
-                left: mmOffX + n.x * mmScale,
-                top: mmOffY + n.y * mmScale,
-                width: Math.max(3, n.w * mmScale),
-                height: Math.max(3, n.h * mmScale),
+                left: clamp(viewRect.x, 0, MM_W),
+                top: clamp(viewRect.y, 0, MM_H),
+                width: clamp(viewRect.w, 6, MM_W),
+                height: clamp(viewRect.h, 6, MM_H),
               }}
             />
-          ))}
-          <span
-            className="pmap-mm-view"
-            style={{
-              left: clamp(viewRect.x, 0, MM_W),
-              top: clamp(viewRect.y, 0, MM_H),
-              width: clamp(viewRect.w, 6, MM_W),
-              height: clamp(viewRect.h, 6, MM_H),
-            }}
-          />
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

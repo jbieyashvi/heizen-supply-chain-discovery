@@ -84,6 +84,54 @@ export interface ProcessArea extends ProcessNodeDetail {
   suggestedQuestions?: string[];
   subprocesses: SubProcess[];
   comparison?: ProcessComparison;
+
+  /* ---- Executive "Current Process — As Is" flow fields ----
+     Kept deliberately short: one line each, so the left-to-right flow
+     reads without zooming. Left undefined on unexplored stages, which
+     render as a "Not yet explored" state instead. */
+  /** Label used in the flow (e.g. "Quality Check" for the Quality stage). */
+  flowLabel?: string;
+  /** What happens today, in one line. */
+  today?: string;
+  /** The person or team responsible for this stage. */
+  responsible?: string;
+  /** The primary system or tool used. */
+  tool?: string;
+  /** The output passed on to the next stage. */
+  output?: string;
+}
+
+/* ---------------- Stage-to-stage handoffs ----------------
+   The connectors between flow stages. State drives the connector style:
+   confirmed → solid, inferred → dashed, broken → solid + warning marker,
+   unexplored → faint dashed + "Not yet explored". */
+export type HandoffState = "confirmed" | "inferred" | "broken" | "unexplored";
+
+export const handoffMeta: Record<
+  HandoffState,
+  { label: string; tone: "brand" | "neutral" | "amber" | "red" }
+> = {
+  confirmed: { label: "Confirmed", tone: "brand" },
+  inferred: { label: "Inferred", tone: "neutral" },
+  broken: { label: "Delayed handoff", tone: "amber" },
+  unexplored: { label: "Not yet explored", tone: "neutral" },
+};
+
+export interface Handoff {
+  id: string;
+  from: string; // area id
+  to: string; // area id
+  /** Short "what moves" label, e.g. "Paper work order → NetSuite next morning". */
+  label: string;
+  detail: string;
+  state: HandoffState;
+  /** Business impact of the handoff, if evidenced. */
+  impact?: string;
+  /** What is unclear or unconfirmed about this handoff. */
+  uncertainty?: string;
+  /** A neutral introductory question to open this handoff on a call. */
+  suggestedQuestion: string;
+  evidence: NodeEvidence[];
 }
 
 const SRC_DISCOVERY = "Initial discovery call transcript · 10 Aug 2026";
@@ -112,6 +160,10 @@ export const clioProcessAreas: ProcessArea[] = [
     short: "Plan",
     coverage: "partial",
     health: "friction",
+    today: "Netstock builds a demand and constrained production plan from NetSuite data.",
+    responsible: "Planning lead · Rafael Rodas (COO)",
+    tool: "Netstock + NetSuite",
+    output: "Constrained production plan",
     description:
       "Demand and inventory planning is run in Netstock off NetSuite data. Because availability lags actual production by up to a day, the plan works from stale inputs and is corrected by manual overrides.",
     systems: ["Netstock", "NetSuite", "In-house data warehouse"],
@@ -242,6 +294,10 @@ export const clioProcessAreas: ProcessArea[] = [
     short: "Make",
     coverage: "validated",
     health: "critical",
+    today: "The line runs to a work order; completion is recorded on paper at shift end.",
+    responsible: "Shift supervisors · Warehouse Manager",
+    tool: "Paper work orders + PLC",
+    output: "Completed work order (on paper)",
     description:
       "Production is completed on paper at shift end and keyed into NetSuite the next morning. This manual, batched capture is the root cause of the 24-hour finished-goods inventory lag.",
     systems: ["NetSuite", "PLC / plant automation", "Paper work orders"],
@@ -388,8 +444,13 @@ export const clioProcessAreas: ProcessArea[] = [
     id: "quality",
     name: "Quality",
     short: "Quality",
+    flowLabel: "Quality Check",
     coverage: "partial",
     health: "critical",
+    today: "QA signs off finished lots; lot genealogy is stitched across systems.",
+    responsible: "Quality & Compliance lead",
+    tool: "TraceGains + NetSuite",
+    output: "Released lot + lineage record",
     description:
       "Lot genealogy is fragmented and the true source of truth is unconfirmed. FSMA 204 and GS1 traceability are pulling forward compliance work, but recall readiness is slow and manual.",
     systems: ["TraceGains", "NetSuite", "In-house data warehouse"],
@@ -520,6 +581,10 @@ export const clioProcessAreas: ProcessArea[] = [
     short: "Store",
     coverage: "validated",
     health: "healthy",
+    today: "Putaway and picking run in NetSuite WMS; availability updates after the morning posting.",
+    responsible: "Warehouse Manager",
+    tool: "NetSuite WMS",
+    output: "Available-to-promise stock",
     description:
       "Warehouse putaway and picking run in NetSuite WMS and work well operationally. The issue is upstream: availability is only current once production posts the next morning.",
     systems: ["NetSuite WMS", "NetSuite"],
@@ -755,6 +820,105 @@ export const clioProcessAreas: ProcessArea[] = [
     ],
   },
 ];
+
+/* ---------------- Stage handoffs (Current Process flow) ----------------
+   One connector between each consecutive stage. Most are unexplored on an
+   introductory call; the Make → Quality Check handoff is the confirmed,
+   evidenced pain point (the paper-to-NetSuite lag). */
+export const clioHandoffs: Handoff[] = [
+  {
+    id: "ho-plan-source",
+    from: "plan",
+    to: "source",
+    label: "Constrained plan → purchase orders",
+    detail:
+      "The constrained production plan should trigger procurement, but how purchase orders are raised and sent to suppliers has not been mapped.",
+    state: "unexplored",
+    uncertainty: "The procurement trigger and purchasing workflow are unmapped.",
+    suggestedQuestion:
+      "Once the production plan is set, how are purchase orders raised and sent to suppliers?",
+    evidence: [],
+  },
+  {
+    id: "ho-source-make",
+    from: "source",
+    to: "make",
+    label: "Materials received → production",
+    detail:
+      "Received materials are allocated to production runs, but goods-receipt and allocation are not yet captured.",
+    state: "unexplored",
+    uncertainty: "How received stock is booked in and allocated is unknown.",
+    suggestedQuestion:
+      "How do received materials get booked in and allocated to a production run?",
+    evidence: [],
+  },
+  {
+    id: "ho-make-quality",
+    from: "make",
+    to: "quality",
+    label: "Paper work order completed → keyed into NetSuite next morning",
+    detail:
+      "Supervisors complete work orders on paper at shift end; a clerk keys them into NetSuite the following morning before finished-goods and lot records update.",
+    state: "broken",
+    impact: "Finished-goods inventory and lot records lag actual production by ~24 hours.",
+    uncertainty: "Who owns the keying and correction when a posting is late or wrong.",
+    suggestedQuestion:
+      "Walk me through how a completed work order reaches NetSuite — who keys it, and when?",
+    evidence: [
+      {
+        finding:
+          "Production completion is recorded on paper and keyed the next morning",
+        level: "client-confirmed",
+        source: SRC_DISCOVERY,
+        date: "10 Aug 2026",
+      },
+      {
+        finding: "Paper-based work-order completion creates a 24-hour inventory lag",
+        level: "client-confirmed",
+        source: SRC_DISCOVERY,
+        date: "10 Aug 2026",
+      },
+    ],
+  },
+  {
+    id: "ho-quality-store",
+    from: "quality",
+    to: "store",
+    label: "Released lot → warehouse putaway",
+    detail:
+      "Once QA releases a lot it is put away in NetSuite WMS — but where sign-off is recorded and how release is triggered is unconfirmed.",
+    state: "inferred",
+    uncertainty: "Where QA sign-off is captured and how a lot is released is unclear.",
+    suggestedQuestion:
+      "How does a lot get released from quality into available stock, and where is that recorded?",
+    evidence: [
+      {
+        finding: "Lot genealogy is stitched across multiple systems",
+        level: "public-inference",
+        source: SRC_PUBLIC,
+        date: "12 Aug 2026",
+      },
+    ],
+  },
+  {
+    id: "ho-store-deliver",
+    from: "store",
+    to: "deliver",
+    label: "Available stock → outbound orders",
+    detail:
+      "Available stock feeds outbound fulfilment, but order release, shipping and carrier handoff are unmapped.",
+    state: "unexplored",
+    uncertainty: "Outbound fulfilment, shipping and carrier workflow are unmapped.",
+    suggestedQuestion:
+      "How are outbound orders released and shipped once stock is available?",
+    evidence: [],
+  },
+];
+
+export function handoffById(id: string | null | undefined): Handoff | null {
+  if (!id) return null;
+  return clioHandoffs.find((h) => h.id === id) ?? null;
+}
 
 /* ---------------- Entities ---------------- */
 export type EntityKind = "system" | "team" | "stakeholder" | "document";
