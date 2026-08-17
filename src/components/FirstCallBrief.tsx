@@ -18,6 +18,7 @@ import {
 import { SidePanel } from "./SidePanel";
 import { Badge } from "./Badge";
 import { FocusChip } from "./FocusChip";
+import { OperateToday } from "./OperateToday";
 import { SimilarWork } from "./SimilarWork";
 import { evidenceMeta } from "../lib/status";
 import { confLabel, confTone } from "../data/discovery";
@@ -163,11 +164,14 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         </div>
       </section>
 
-      {/* 4 · Unvalidated hypotheses ---------------------------------- */}
+      {/* 4 · How they operate today (current value chain, as-is) ----- */}
+      <OperateToday projectId={projectId} />
+
+      {/* 5 · Unvalidated hypotheses ---------------------------------- */}
       <section className="fcb-sec">
         <SecHead
           icon={FlaskConical}
-          n={4}
+          n={5}
           title="Hypotheses to test"
           sub="Five unvalidated hypotheses, ranked by relevance to this stakeholder."
         />
@@ -221,7 +225,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
       <section className="fcb-sec">
         <SecHead
           icon={Boxes}
-          n={5}
+          n={6}
           title="Tech stack"
           sub="Technology and supply-chain vendors we can speak to."
         />
@@ -263,7 +267,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
       <section className="fcb-sec">
         <SecHead
           icon={Sparkles}
-          n={6}
+          n={7}
           title="Similar Heizen work"
           sub="Delivered, safe-to-mention proof. Click any for overlap detail."
         />
@@ -272,7 +276,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
 
       {/* 7 · Conversation starters & outcome ------------------------- */}
       <section className="fcb-sec">
-        <SecHead icon={MessageSquareText} n={7} title="How to open — and where to land" />
+        <SecHead icon={MessageSquareText} n={8} title="How to open — and where to land" />
         <div className="fcb-open">
           <div className="fcb-starters">
             <span className="fcb-open__label">Three conversation starters</span>

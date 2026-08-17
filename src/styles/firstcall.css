@@ -830,3 +830,363 @@
     padding: 4px;
   }
 }
+
+/* ================================================================
+   "How they operate today" — compact value-chain strip (intro call)
+   ================================================================ */
+.opflow__headtext {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.opflow__full {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  align-self: center;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-subtle);
+  color: var(--brand-text);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.14s ease;
+}
+.opflow__full:hover {
+  background: var(--surface-hover);
+}
+.opflow__full svg {
+  width: 14px;
+  height: 14px;
+}
+
+.opflow__summary {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin-bottom: 14px;
+}
+
+/* Horizontal strip — six stages fit the width without scrolling. */
+.opflow {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+}
+.opflow__cell {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.opflow__stage {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 11px;
+  min-height: 128px;
+  text-align: left;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
+}
+.opflow__stage:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-1);
+}
+.opflow__stage:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.opflow__name {
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  color: var(--text-1);
+}
+.opflow__tool {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-2);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.opflow__statusrow {
+  margin-top: auto;
+}
+.opflow__statusrow .badge {
+  font-size: 10.5px;
+  padding: 2px 7px;
+}
+.opflow__issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--warning);
+  font-weight: 550;
+}
+.opflow__issue svg {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  margin-top: 1px;
+}
+.opflow__issue--none {
+  color: var(--text-3);
+  font-weight: 450;
+}
+
+/* Inline connectors — solid confirmed / dashed inferred / faint unexplored */
+.opflow__arrow {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  color: var(--brand);
+  position: relative;
+}
+.opflow__arrow svg {
+  width: 16px;
+  height: 16px;
+}
+.opflow__arrow::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: 50%;
+  height: 0;
+  border-top: 2px solid currentColor;
+  z-index: -1;
+}
+.opflow__arrow.is-inferred {
+  color: var(--text-3);
+}
+.opflow__arrow.is-inferred::before {
+  border-top-style: dashed;
+}
+.opflow__arrow.is-unexplored {
+  color: var(--color-border-strong);
+}
+.opflow__arrow.is-unexplored::before {
+  border-top-style: dotted;
+}
+
+/* The single highlighted broken handoff (Make → Store) */
+.opflow__broken {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 13px;
+  text-align: left;
+  border: 1px solid var(--warning);
+  border-radius: var(--r-md);
+  background: var(--warning-subtle);
+  cursor: pointer;
+  transition: box-shadow 0.14s ease;
+}
+.opflow__broken:hover {
+  box-shadow: var(--shadow-1);
+}
+.opflow__broken:focus-visible {
+  outline: 2px solid var(--warning);
+  outline-offset: 2px;
+}
+.opflow__broken-ic {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--warning);
+  color: #fff;
+}
+.opflow__broken-ic svg {
+  width: 17px;
+  height: 17px;
+}
+.opflow__broken-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.opflow__broken-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-1);
+}
+.opflow__broken-title svg {
+  width: 13px;
+  height: 13px;
+  color: var(--warning);
+}
+.opflow__broken-impact {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.opflow__broken-chev {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--text-3);
+}
+
+/* ---- shared drawer body (stage + broken handoff) ---- */
+.opflow-d {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.opflow-d__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.opflow-d__metaitem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+.opflow-d__k {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-3);
+  font-weight: 600;
+}
+.opflow-d__v {
+  font-size: 13.5px;
+  color: var(--text-1);
+  font-weight: 550;
+}
+.opflow-d__sec {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.opflow-d__h {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-3);
+  font-weight: 650;
+}
+.opflow-d__body {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+}
+.opflow-d__issue {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-1);
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--warning-subtle);
+  border: 1px solid var(--warning);
+}
+.opflow-d__issue svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 1px;
+  color: var(--warning);
+}
+.opflow-d__q {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-1);
+  font-style: italic;
+  padding: 10px 12px;
+  border-left: 3px solid var(--brand);
+  background: var(--brand-subtle);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.opflow-d__impact {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-1);
+  padding: 11px 13px;
+  border-radius: var(--r-md);
+  background: var(--warning-subtle);
+  border: 1px solid var(--warning);
+}
+.opflow-d__impact svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--warning);
+}
+.opflow-d__ev {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opflow-d__evrow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+.opflow-d__evfind {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-1);
+}
+.opflow-d__evsrc {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.opflow-d__foot {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .opflow {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .opflow__cell {
+    flex: 1 1 44%;
+  }
+  .opflow__arrow {
+    transform: rotate(90deg);
+  }
+  .opflow__arrow::before {
+    display: none;
+  }
+  .opflow__full {
+    align-self: flex-start;
+  }
+}
