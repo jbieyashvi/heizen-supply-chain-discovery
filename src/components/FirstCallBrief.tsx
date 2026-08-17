@@ -18,6 +18,7 @@ import {
 import { SidePanel } from "./SidePanel";
 import { Badge } from "./Badge";
 import { FocusChip } from "./FocusChip";
+import { FirstCallCompass } from "./FirstCallCompass";
 import { OperateToday } from "./OperateToday";
 import { SimilarWork } from "./SimilarWork";
 import { evidenceMeta } from "../lib/status";
@@ -85,9 +86,12 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         </p>
       </header>
 
-      {/* 1 · Business context ---------------------------------------- */}
+      {/* 1 · First-call compass -------------------------------------- */}
+      <FirstCallCompass />
+
+      {/* 2 · Business context ---------------------------------------- */}
       <section className="fcb-sec">
-        <SecHead icon={Building2} n={1} title="Business context" />
+        <SecHead icon={Building2} n={2} title="Business context" />
         <div className="fcb-facts">
           {businessContext.map((f) => (
             <div className="fcb-fact" key={f.label}>
@@ -100,11 +104,30 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         <p className="fcb-sec__note">{businessContextNote}</p>
       </section>
 
-      {/* 2 · Technology & AI signals --------------------------------- */}
+      {/* 3 · Stakeholder lens ---------------------------------------- */}
+      <section className="fcb-sec">
+        <SecHead
+          icon={UserSquare}
+          n={3}
+          title={`Stakeholder lens — ${stakeholderLens.name}`}
+          sub={`${stakeholderLens.title} · primary stakeholder for this call`}
+        />
+        <p className="fcb-sec__note fcb-sec__note--lead">{stakeholderLens.summary}</p>
+        <div className="fcb-lens">
+          <LensCol title="Responsibilities" items={stakeholderLens.responsibilities} />
+          <LensCol title="Relevant domains" items={stakeholderLens.domains} />
+          <LensCol title="Likely conversation areas" items={stakeholderLens.conversationAreas} />
+        </div>
+      </section>
+
+      {/* 4 · How they operate today (current value chain, as-is) ----- */}
+      <OperateToday projectId={projectId} />
+
+      {/* 5 · Technology & AI signals --------------------------------- */}
       <section className="fcb-sec">
         <SecHead
           icon={Cpu}
-          n={2}
+          n={5}
           title="Technology & AI initiatives"
           sub="Three source-backed spend and initiative signals. Click any for detail."
         />
@@ -148,30 +171,53 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         </div>
       </section>
 
-      {/* 3 · Stakeholder lens ---------------------------------------- */}
+      {/* 6 · Tech stack ---------------------------------------------- */}
       <section className="fcb-sec">
         <SecHead
-          icon={UserSquare}
-          n={3}
-          title={`Stakeholder lens — ${stakeholderLens.name}`}
-          sub={`${stakeholderLens.title} · primary stakeholder for this call`}
+          icon={Boxes}
+          n={6}
+          title="Tech stack"
+          sub="Technology and supply-chain vendors we can speak to."
         />
-        <p className="fcb-sec__note fcb-sec__note--lead">{stakeholderLens.summary}</p>
-        <div className="fcb-lens">
-          <LensCol title="Responsibilities" items={stakeholderLens.responsibilities} />
-          <LensCol title="Relevant domains" items={stakeholderLens.domains} />
-          <LensCol title="Likely conversation areas" items={stakeholderLens.conversationAreas} />
+        <div className="fcb-vendors">
+          {vendors.map((v) => (
+            <div className="fcb-vendor" key={v.name}>
+              <div className="fcb-vendor__top">
+                <span className="fcb-vendor__name">{v.name}</span>
+                <span className="fcb-vendor__cat">{vendorCategoryLabel[v.category]}</span>
+              </div>
+              <p className="fcb-vendor__role">{v.role}</p>
+              <p className="fcb-vendor__heizen">
+                <Sparkles aria-hidden /> {v.heizen}
+              </p>
+            </div>
+          ))}
         </div>
+
+        <details className="fcb-other">
+          <summary>
+            <AlertTriangle aria-hidden /> Other vendors ({otherVendors.length}) — not relevant to this
+            conversation
+          </summary>
+          <p className="fcb-other__warn">{otherVendorsWarning}</p>
+          <div className="fcb-other__list">
+            {otherVendors.map((v) => (
+              <div className="fcb-other__item" key={v.name}>
+                <span className="fcb-other__name">{v.name}</span>
+                <span className="fcb-other__role">
+                  {vendorCategoryLabel[v.category]} · {v.role}
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
       </section>
 
-      {/* 4 · How they operate today (current value chain, as-is) ----- */}
-      <OperateToday projectId={projectId} />
-
-      {/* 5 · Unvalidated hypotheses ---------------------------------- */}
+      {/* 7 · Unvalidated hypotheses ---------------------------------- */}
       <section className="fcb-sec">
         <SecHead
           icon={FlaskConical}
-          n={5}
+          n={7}
           title="Hypotheses to test"
           sub="Five unvalidated hypotheses, ranked by relevance to this stakeholder."
         />
@@ -221,62 +267,20 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
         </div>
       </section>
 
-      {/* 5 · Tech stack ---------------------------------------------- */}
-      <section className="fcb-sec">
-        <SecHead
-          icon={Boxes}
-          n={6}
-          title="Tech stack"
-          sub="Technology and supply-chain vendors we can speak to."
-        />
-        <div className="fcb-vendors">
-          {vendors.map((v) => (
-            <div className="fcb-vendor" key={v.name}>
-              <div className="fcb-vendor__top">
-                <span className="fcb-vendor__name">{v.name}</span>
-                <span className="fcb-vendor__cat">{vendorCategoryLabel[v.category]}</span>
-              </div>
-              <p className="fcb-vendor__role">{v.role}</p>
-              <p className="fcb-vendor__heizen">
-                <Sparkles aria-hidden /> {v.heizen}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        <details className="fcb-other">
-          <summary>
-            <AlertTriangle aria-hidden /> Other vendors ({otherVendors.length}) — not relevant to this
-            conversation
-          </summary>
-          <p className="fcb-other__warn">{otherVendorsWarning}</p>
-          <div className="fcb-other__list">
-            {otherVendors.map((v) => (
-              <div className="fcb-other__item" key={v.name}>
-                <span className="fcb-other__name">{v.name}</span>
-                <span className="fcb-other__role">
-                  {vendorCategoryLabel[v.category]} · {v.role}
-                </span>
-              </div>
-            ))}
-          </div>
-        </details>
-      </section>
-
-      {/* 6 · Similar Heizen work ------------------------------------- */}
+      {/* 8 · Similar Heizen work ------------------------------------- */}
       <section className="fcb-sec">
         <SecHead
           icon={Sparkles}
-          n={7}
+          n={8}
           title="Similar Heizen work"
           sub="Delivered, safe-to-mention proof. Click any for overlap detail."
         />
         <SimilarWork projectId={projectId} introOnly />
       </section>
 
-      {/* 7 · Conversation starters & outcome ------------------------- */}
+      {/* 9 · Conversation starters & outcome ------------------------- */}
       <section className="fcb-sec">
-        <SecHead icon={MessageSquareText} n={8} title="How to open — and where to land" />
+        <SecHead icon={MessageSquareText} n={9} title="How to open — and where to land" />
         <div className="fcb-open">
           <div className="fcb-starters">
             <span className="fcb-open__label">Three conversation starters</span>

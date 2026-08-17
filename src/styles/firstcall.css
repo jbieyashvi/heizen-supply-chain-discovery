@@ -192,6 +192,263 @@
   margin-bottom: 14px;
 }
 
+/* ---- 1 · First-call compass ------------------------------------------- */
+/* Four-step conversation journey — connected left-to-right on desktop,
+   stacked with a downward connector on smaller screens. */
+.compass-journey {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  list-style: none;
+  margin-bottom: 16px;
+}
+.compass-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.compass-step__head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.compass-step__node {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 8px;
+  background: var(--brand-subtle);
+  color: var(--brand-text);
+}
+.compass-step__node svg {
+  width: 16px;
+  height: 16px;
+}
+.compass-step__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.1px;
+  color: var(--text-1);
+}
+.compass-step__n {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.compass-step__prompt {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-1);
+  font-style: italic;
+  padding: 9px 11px;
+  border-left: 3px solid var(--brand);
+  background: var(--brand-subtle);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+.compass-step__prompt.is-land {
+  font-style: normal;
+  font-weight: 550;
+}
+.compass-step__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+}
+.compass-step__list li {
+  position: relative;
+  padding-left: 15px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-1);
+}
+.compass-step__list li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+/* Connector between steps — sits over the gap, aligned to the node row. */
+.compass-step__arrow {
+  position: absolute;
+  top: 28px;
+  right: -15px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  color: var(--brand);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: 50%;
+}
+.compass-step__arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Safe to say · Ask, don't assume · Avoid mentioning */
+.compass-bands {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.compass-band {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.compass-band__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.compass-band__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.compass-band--safe .compass-band__dot {
+  background: var(--success);
+}
+.compass-band--ask .compass-band__dot {
+  background: var(--warning);
+}
+.compass-band--avoid .compass-band__dot {
+  background: var(--text-3);
+}
+.compass-band__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.compass-band__desc {
+  font-size: 11.5px;
+  color: var(--text-3);
+}
+.compass-band__cues {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.compass-cue {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-1);
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.05s ease;
+}
+.compass-cue:hover {
+  border-color: var(--brand-line);
+  background: var(--surface-hover);
+}
+.compass-cue:active {
+  transform: translateY(1px);
+}
+.compass-cue:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.compass-cue__text {
+  font-size: 12.5px;
+  line-height: 1.4;
+  font-weight: 550;
+  color: var(--text-1);
+}
+.compass-cue__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.compass-cue__meta .badge {
+  font-size: 10.5px;
+  padding: 2px 7px;
+}
+.compass-cue__conf {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.compass-cue__confdot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+}
+.compass-cue__confdot.conf-high {
+  background: var(--success);
+}
+.compass-cue__confdot.conf-medium {
+  background: var(--warning);
+}
+.compass-cue__confdot.conf-low {
+  background: var(--text-3);
+}
+.compass-cue__chev {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-left: auto;
+  color: var(--text-3);
+}
+
+@media (max-width: 900px) {
+  .compass-journey {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  /* Downward connector between stacked steps. */
+  .compass-step__arrow {
+    top: auto;
+    bottom: -19px;
+    right: 50%;
+    transform: translateX(50%) rotate(90deg);
+  }
+  .compass-bands {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---- 1 · Business facts ------------------------------------------------ */
 .fcb-facts {
   display: grid;

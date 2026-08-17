@@ -440,3 +440,203 @@ export const conversationStarters: string[] = [
 
 export const desiredOutcome =
   "Leave the call with Meera's read on the single biggest operational pain, who owns it, and agreement to a focused follow-up — a short discovery on the inventory lag and traceability.";
+
+/* ================================================================
+   0 · First-call compass — a compact four-step conversation journey
+   (Start with → Learn → Validate → Land the call) plus a "safe to
+   say / ask, don't assume / avoid mentioning" cue strip. Every cue
+   carries its evidence + confidence and opens its underlying source.
+   ================================================================ */
+
+export interface CompassStep {
+  key: "start" | "learn" | "validate" | "land";
+  label: string;
+  /** A single conversational line, or a short bullet list. */
+  kind: "prompt" | "list";
+  prompt?: string;
+  items?: string[];
+}
+
+export const compassSteps: CompassStep[] = [
+  {
+    key: "start",
+    label: "Start with",
+    kind: "prompt",
+    prompt:
+      "You're scaling refrigerated volume — where is operational coordination getting hardest today?",
+  },
+  {
+    key: "learn",
+    label: "Learn",
+    kind: "list",
+    items: [
+      "Current production and inventory process",
+      "Systems and manual handoffs",
+      "Meera's operational priorities",
+    ],
+  },
+  {
+    key: "validate",
+    label: "Validate",
+    kind: "list",
+    items: [
+      "Whether production completion causes a 24-hour inventory delay",
+      "How lot traceability works today",
+    ],
+  },
+  {
+    key: "land",
+    label: "Land the call",
+    kind: "prompt",
+    prompt:
+      "Agree on the highest-priority operational pain, its owner and a focused follow-up session.",
+  },
+];
+
+export type CompassBand = "safe" | "ask" | "avoid";
+
+export const compassBandMeta: Record<
+  CompassBand,
+  { title: string; desc: string }
+> = {
+  safe: { title: "Safe to say", desc: "Client-confirmed facts" },
+  ask: { title: "Ask, don't assume", desc: "Unvalidated hypotheses" },
+  avoid: { title: "Avoid mentioning", desc: "Weak or irrelevant evidence" },
+};
+
+/** A single clickable cue in the compass strip — shows its evidence and
+   confidence, and opens the source it rests on. */
+export interface CompassCue {
+  id: string;
+  band: CompassBand;
+  text: string;
+  detail: string;
+  evidence: EvidenceLevel;
+  confidence: ConfLevel;
+  sources: BriefSource[];
+}
+
+export const compassCues: CompassCue[] = [
+  /* Safe to say — client-confirmed, high confidence */
+  {
+    id: "cue-paper-completion",
+    band: "safe",
+    text: "Production completion is recorded on paper and keyed into NetSuite the next morning.",
+    detail:
+      "The COO described this directly on the initial discovery call — shift supervisors complete work orders on paper and a clerk keys the results into NetSuite the following morning. Safe to reference as an observed fact.",
+    evidence: "client-document",
+    confidence: "high",
+    sources: [
+      {
+        label: "Initial discovery call transcript — 10 Aug 2026",
+        kind: "client",
+        excerpt:
+          "Shift supervisors complete work orders on paper; a clerk keys results into NetSuite the next morning — roughly a one-day delay before inventory reflects production.",
+      },
+    ],
+  },
+  {
+    id: "cue-acs-lapse",
+    band: "safe",
+    text: "NetSuite ACS support ends in October with no renewal owner.",
+    detail:
+      "The client-provided NetSuite support summary shows the Advanced Customer Support term ending in October with no renewal line item and no named owner for configuration changes — a dated, client-confirmed fact.",
+    evidence: "client-document",
+    confidence: "high",
+    sources: [
+      {
+        label: "NetSuite support summary — 11 Aug 2026",
+        kind: "client",
+        excerpt:
+          "ACS term ends October; no renewal line item, no named owner for configuration changes after the lapse.",
+      },
+    ],
+  },
+  /* Ask, don't assume — unvalidated hypotheses */
+  {
+    id: "cue-lag-constraint",
+    band: "ask",
+    text: "The paper-to-ERP lag is now a scaling constraint, not just an inconvenience.",
+    detail:
+      "It's reasonable to infer the ~24-hour inventory lag is starting to constrain the ability to promise availability as volume grows — but that's a hypothesis to test with Meera, not a confirmed fact. Ask how the delay actually costs the team.",
+    evidence: "public-inference",
+    confidence: "medium",
+    sources: [
+      {
+        label: "Initial discovery call transcript — 10 Aug 2026",
+        kind: "client",
+        excerpt:
+          "Roughly a one-day delay before inventory reflects production; the operational cost of that lag grows with volume.",
+      },
+    ],
+  },
+  {
+    id: "cue-traceability",
+    band: "ask",
+    text: "Lot traceability for FSMA 204 is stitched together manually across systems.",
+    detail:
+      "Lot lineage appears to be assembled across TraceGains and NetSuite with no single genealogy source, which would raise recall-speed and audit risk. Unconfirmed — ask how lot tracing works today rather than assuming a gap.",
+    evidence: "public-inference",
+    confidence: "medium",
+    sources: [
+      {
+        label: "Company website & public market context",
+        kind: "public",
+        excerpt:
+          "Refrigerated product mix subject to FSMA 204 traceability requirements; no public detail on the lot-tracking method.",
+      },
+    ],
+  },
+  {
+    id: "cue-planning-stale",
+    band: "ask",
+    text: "Demand planning may be running on day-stale availability.",
+    detail:
+      "If inventory posts a day late, Netstock planning could be consuming stale availability and driving avoidable expedites. This is an inference from the data flow — probe it, don't state it.",
+    evidence: "public-inference",
+    confidence: "low",
+    sources: [
+      {
+        label: "Initial discovery call transcript — 10 Aug 2026",
+        kind: "client",
+        excerpt:
+          "Planning is downstream of NetSuite inventory, which reflects production a day late.",
+      },
+    ],
+  },
+  /* Avoid mentioning — weak or irrelevant evidence */
+  {
+    id: "cue-ai-appetite",
+    band: "avoid",
+    text: "Peer appetite for AI / forecasting investment.",
+    detail:
+      "Only a directional market benchmark — peers at this revenue band commonly explore forecasting next. There's no confirmed Clio initiative, so don't lead with it; let the client raise AI if it matters to them.",
+    evidence: "market-benchmark",
+    confidence: "low",
+    sources: [
+      {
+        label: "Category technology benchmark — mid-market F&B",
+        kind: "market",
+        excerpt:
+          "Manufacturers at this revenue band commonly move from BI dashboards toward forecasting and anomaly detection next.",
+      },
+    ],
+  },
+  {
+    id: "cue-other-vendors",
+    band: "avoid",
+    text: "Audit & payroll vendors (Grant Thornton, ADP).",
+    detail:
+      "Detected in public sources but not relevant to a supply-chain or technology conversation. Verify before referencing — don't lead with these.",
+    evidence: "unverified",
+    confidence: "low",
+    sources: [
+      {
+        label: "Public vendor detection",
+        kind: "public",
+        excerpt:
+          "Grant Thornton (external audit) and ADP (payroll & HR) detected in public sources — outside the supply-chain and technology scope of this call.",
+      },
+    ],
+  },
+];
