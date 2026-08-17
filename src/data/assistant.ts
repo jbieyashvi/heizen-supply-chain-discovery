@@ -1,5 +1,5 @@
 import { clioWhatChanged, clioConfidence, STAKEHOLDER } from "./discovery";
-import type { Focus } from "./focus";
+import type { Focus, FocusDomain } from "./focus";
 
 /* ================================================================
    Lightweight in-product assistant (prototype)
@@ -181,7 +181,7 @@ const SRC_INTERNAL: AiSourceRef = {
 /** A link from an answer to a related project screen. */
 export interface AiLink {
   label: string;
-  screen: "research" | "discovery" | "opportunities" | "sources";
+  screen: "research" | "discovery" | "opportunities" | "sources" | "process-map";
 }
 
 export interface AiRichAnswer {
@@ -189,6 +189,14 @@ export interface AiRichAnswer {
   blocks: AiAnswerBlock[]; // tone: ok = confirmed, info = inference, warn = weak/caution
   sources: AiSourceRef[];
   links?: AiLink[];
+  /** Contextual follow-up prompts offered as chips under the answer. */
+  followUps?: string[];
+  /** If set, the answer can be focused on this domain (with confirmation). */
+  domain?: FocusDomain;
+  /** If set, offers "Add this question to shortlist" (review required). */
+  shortlistQuestion?: string;
+  /** Related opportunity label, surfaced as a review-gated action. */
+  relatedOpportunity?: string;
 }
 
 export type AssistantActionKind = "answer" | "focus" | "investigate";
@@ -245,6 +253,15 @@ export const ASSISTANT_ACTIONS: AssistantAction[] = [
         { label: "Open Research", screen: "research" },
         { label: "Prioritised questions", screen: "discovery" },
         { label: "Opportunities", screen: "opportunities" },
+      ],
+      domain: "manufacturing",
+      shortlistQuestion:
+        "Walk me through how a completed work order reaches NetSuite today — who posts it, and when?",
+      relatedOpportunity: "Real-time inventory & posting visibility",
+      followUps: [
+        "What can I safely mention to Meera?",
+        "What's the biggest operational risk?",
+        "Any similar work Heizen has delivered?",
       ],
     },
   },
@@ -304,6 +321,13 @@ export const ASSISTANT_ACTIONS: AssistantAction[] = [
         { label: "Check Research signals", screen: "research" },
         { label: "Review sources", screen: "sources" },
       ],
+      shortlistQuestion:
+        "Which of today's findings are you comfortable confirming, and which are still open?",
+      followUps: [
+        "Which assumptions have weak evidence?",
+        "What changed after the latest transcript?",
+        "What should I prepare before the call?",
+      ],
     },
   },
   {
@@ -339,6 +363,12 @@ export const ASSISTANT_ACTIONS: AssistantAction[] = [
       ],
       sources: [SRC_INTERNAL],
       links: [{ label: "Similar work in Research", screen: "research" }],
+      relatedOpportunity: "Traceability & recall readiness",
+      followUps: [
+        "How relevant is the traceability work to Clio?",
+        "What can I safely mention on the call?",
+        "What are the top operational risks?",
+      ],
     },
   },
   {
@@ -347,6 +377,447 @@ export const ASSISTANT_ACTIONS: AssistantAction[] = [
     kind: "investigate",
   },
 ];
+
+/* ================================================================
+   Free-text Q&A — grounded keyword matcher (prototype)
+
+   Answers are assembled from the same Clio Snacks research, so every
+   reply separates confirmed facts / inference / weak evidence, cites
+   project sources, and offers contextual follow-ups. Nothing here is
+   generative and nothing is ever written back to the project.
+   ================================================================ */
+
+function actionAnswer(id: string): AiRichAnswer {
+  const a = ASSISTANT_ACTIONS.find((x) => x.id === id)?.answer;
+  if (!a) throw new Error(`missing action answer ${id}`);
+  return a;
+}
+
+const ANS_INVENTORY: AiRichAnswer = {
+  summary:
+    "The ~24-hour inventory lag is the firmest problem on the table — client-confirmed and safe to open with. What it costs at peak is still unquantified.",
+  blocks: [
+    {
+      heading: "Confirmed — safe to state",
+      tone: "ok",
+      points: [
+        "Paper-based work-order completion creates a ~24-hour inventory lag (client, 10 Aug call).",
+        "The lag distorts availability-to-promise during peak periods (client-confirmed).",
+      ],
+    },
+    {
+      heading: "Inference — raise as a question",
+      tone: "info",
+      points: [
+        "Planning is likely running on day-stale availability as a knock-on effect (inference from the data flow).",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "The cost of the lag during peak hasn't been quantified — ask, don't estimate.",
+        "The exact hand-off from line clipboard to NetSuite is not yet mapped.",
+      ],
+    },
+  ],
+  sources: [SRC_DISCOVERY, SRC_NETSUITE],
+  links: [
+    { label: "Open Research", screen: "research" },
+    { label: "Related opportunity", screen: "opportunities" },
+  ],
+  domain: "supply-chain",
+  shortlistQuestion:
+    "How does a completed work order move from the line into NetSuite today, and how long does posting take?",
+  relatedOpportunity: "Real-time inventory & posting visibility",
+  followUps: [
+    "How much does the lag cost at peak?",
+    "What can I safely mention about this?",
+    "Is there similar Heizen work?",
+  ],
+};
+
+const ANS_NETSUITE: AiRichAnswer = {
+  summary:
+    "The NetSuite ACS support deadline is a concrete, client-documented risk with no named owner — worth pinning down early.",
+  blocks: [
+    {
+      heading: "Confirmed — safe to state",
+      tone: "ok",
+      points: [
+        "NetSuite ACS support lapses in October with no named owner (client document).",
+      ],
+    },
+    {
+      heading: "Inference — raise as a question",
+      tone: "info",
+      points: [
+        "Losing ACS could stall change requests and system fixes during peak (inference).",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "Who owns support after October, the replacement plan and its cost are all unknown.",
+      ],
+    },
+  ],
+  sources: [SRC_NETSUITE],
+  links: [
+    { label: "Opportunities", screen: "opportunities" },
+    { label: "Review sources", screen: "sources" },
+  ],
+  domain: "tech-ai",
+  shortlistQuestion:
+    "Who owns NetSuite support once ACS lapses in October, and what's the transition plan?",
+  followUps: [
+    "What are the top operational risks?",
+    "What can I safely mention on the call?",
+    "What should I prepare before the call?",
+  ],
+};
+
+const ANS_TRACE: AiRichAnswer = {
+  summary:
+    "Traceability is high-stakes but the evidence is contested — treat it as a question, not a finding. A follow-up call already contradicts the public picture.",
+  blocks: [
+    {
+      heading: "Confirmed — safe to state",
+      tone: "ok",
+      points: [
+        "FSMA 204 is a real, dated regulatory obligation for food producers (market context).",
+      ],
+    },
+    {
+      heading: "Inference — raise as a question",
+      tone: "info",
+      points: [
+        "Lot genealogy appears stitched manually across systems today (public inference).",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "The follow-up call suggests lineage lives in a standalone spreadsheet, not TraceGains — contradiction, validate first.",
+        "PLC / machine data linkage to lot records is unverified.",
+        "TraceGains is marked Unverified in Research — do not mention on the call until confirmed.",
+      ],
+    },
+  ],
+  sources: [SRC_PUBLIC, SRC_FOLLOWUP],
+  links: [
+    { label: "Check Research signals", screen: "research" },
+    { label: "Related opportunity", screen: "opportunities" },
+  ],
+  domain: "quality",
+  shortlistQuestion:
+    "Where does lot genealogy actually live today — a system of record or a spreadsheet?",
+  relatedOpportunity: "Traceability & recall readiness",
+  followUps: [
+    "Which assumptions have weak evidence?",
+    "What can I safely mention on the call?",
+    "Any similar traceability work Heizen has done?",
+  ],
+};
+
+const ANS_VENDORS: AiRichAnswer = {
+  summary:
+    "Only NetSuite is confirmed in use. The other tools are inferred or unverified — hold them back on the call until the client names them.",
+  blocks: [
+    {
+      heading: "Confirmed — safe to state",
+      tone: "ok",
+      points: ["NetSuite is the ERP in use (client, discovery call)."],
+    },
+    {
+      heading: "Inference — raise as a question",
+      tone: "info",
+      points: [
+        "TraceGains and Netstock may be in the stack, but this is inferred from public context.",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "Netstock, TraceGains and NetSuite WMS are marked Unverified in Research — do not mention on the call until verified.",
+      ],
+    },
+  ],
+  sources: [SRC_DISCOVERY, SRC_PUBLIC],
+  links: [
+    { label: "Vendors in Research", screen: "research" },
+    { label: "Review sources", screen: "sources" },
+  ],
+  domain: "tech-ai",
+  shortlistQuestion:
+    "Which planning, traceability and WMS tools are actually in use today?",
+  followUps: [
+    "What can I safely mention on the call?",
+    "Which assumptions have weak evidence?",
+    "Research the vendor landscape further",
+  ],
+};
+
+const ANS_PLANNING: AiRichAnswer = {
+  summary:
+    "There's no confirmed planning problem yet — the strongest thread is that day-stale availability may be feeding planning. Frame it as a question.",
+  blocks: [
+    {
+      heading: "Confirmed — safe to state",
+      tone: "ok",
+      points: [
+        "The ~24-hour inventory lag is confirmed and would naturally affect planning inputs (client).",
+      ],
+    },
+    {
+      heading: "Inference — raise as a question",
+      tone: "info",
+      points: [
+        "Demand and production planning may be running on stale availability (inference from the data flow).",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "No planning tool or S&OP cadence has been confirmed; Netstock is Unverified — do not name it on the call.",
+      ],
+    },
+  ],
+  sources: [SRC_DISCOVERY, SRC_PUBLIC],
+  links: [{ label: "Prioritised questions", screen: "discovery" }],
+  domain: "supply-chain",
+  shortlistQuestion:
+    "How is demand and production planning done today, and what data does it rely on?",
+  followUps: [
+    "How does the inventory lag affect planning?",
+    "Which vendors are actually in use?",
+    "What are the top operational risks?",
+  ],
+};
+
+const ANS_RISKS: AiRichAnswer = {
+  summary:
+    "Three risks stand out, ordered by how firm the evidence is and how soon they bite.",
+  blocks: [
+    {
+      heading: "Confirmed — firm evidence",
+      tone: "ok",
+      points: [
+        "NetSuite ACS support lapses in October with no named owner (client document).",
+        "The 24-hour inventory lag distorts availability-to-promise during peak (client-confirmed).",
+      ],
+    },
+    {
+      heading: "Inference — watch and validate",
+      tone: "info",
+      points: [
+        "FSMA 204 traceability work is likely competing with operational fixes for capacity (market benchmark).",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "Machine / PLC data linkage and the lot-genealogy source of truth remain unverified.",
+      ],
+    },
+  ],
+  sources: [SRC_NETSUITE, SRC_DISCOVERY, SRC_PUBLIC],
+  links: [{ label: "Opportunities", screen: "opportunities" }],
+  shortlistQuestion:
+    "Which of these risks is most urgent from your side before October?",
+  followUps: [
+    "Tell me more about the NetSuite deadline",
+    "Which assumptions have weak evidence?",
+    "What should I prepare before the call?",
+  ],
+};
+
+const ANS_WEAK: AiRichAnswer = {
+  summary:
+    "Three findings rest on public inference rather than client confirmation, and one is directly contradicted by the latest call.",
+  blocks: [
+    {
+      heading: "Confirmed — the firm ground",
+      tone: "ok",
+      points: [
+        "The inventory lag and the NetSuite ACS deadline are the only client-confirmed items — build from these.",
+      ],
+    },
+    {
+      heading: "Inference — public sources only",
+      tone: "info",
+      points: [
+        "Lot genealogy stitched across TraceGains, NetSuite and the warehouse store.",
+        "PLC / plant-automation data not linked to inventory or lot records.",
+        "A recent capacity expansion increased throughput.",
+      ],
+    },
+    {
+      heading: "Contradicted by the client — don't state",
+      tone: "warn",
+      points: [
+        "The follow-up call suggests lot genealogy sits in a standalone spreadsheet, not TraceGains. Validate before scoping traceability.",
+      ],
+    },
+  ],
+  sources: [SRC_PUBLIC, SRC_FOLLOWUP],
+  links: [{ label: "Review sources", screen: "sources" }],
+  shortlistQuestion:
+    "Can we confirm where lot genealogy lives and whether PLC data is linked?",
+  followUps: [
+    "What can I safely mention on the call?",
+    "What changed after the latest transcript?",
+    "What are the top operational risks?",
+  ],
+};
+
+const ANS_CHANGED: AiRichAnswer = {
+  summary:
+    "The 13 Aug follow-up call updated four discovery questions and strengthened two opportunities. It isn't in the written brief yet — refresh research to fold it in.",
+  blocks: [
+    { heading: "Confirmed", tone: "ok", points: clioWhatChanged.confirmed },
+    { heading: "New findings — inference", tone: "info", points: clioWhatChanged.newFindings },
+    {
+      heading: `Conflict · ${clioWhatChanged.conflict.opportunity}`,
+      tone: "warn",
+      points: [
+        `Research: ${clioWhatChanged.conflict.researchSaid}`,
+        `Client: ${clioWhatChanged.conflict.clientSaid}`,
+      ],
+    },
+  ],
+  sources: [SRC_FOLLOWUP],
+  links: [
+    { label: "Review sources", screen: "sources" },
+    { label: "Opportunities", screen: "opportunities" },
+  ],
+  followUps: [
+    "Which assumptions have weak evidence?",
+    "What can I safely mention on the call?",
+    "What should I prepare before the call?",
+  ],
+};
+
+const ANS_PREP: AiRichAnswer = {
+  summary:
+    "Lead with the four critical unknowns. The brief is usable, but two client sources added on 13–14 Aug aren't folded in yet — review them first.",
+  blocks: [
+    {
+      heading: "Confirmed — open with these",
+      tone: "ok",
+      points: [
+        "The ~24-hour inventory lag from paper-based completion (client-confirmed).",
+        "The NetSuite ACS support deadline in October (client document).",
+      ],
+    },
+    {
+      heading: "Inference — ask to confirm",
+      tone: "info",
+      points: [
+        "How a completed work order actually reaches NetSuite today.",
+        "Whether planning runs on day-stale availability.",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — verify first",
+      tone: "warn",
+      points: [
+        "Research needs a refresh — two new sources aren't in the written brief yet.",
+        "The lot-genealogy source of truth is contested.",
+      ],
+    },
+  ],
+  sources: [SRC_DISCOVERY, SRC_NETSUITE, SRC_PUBLIC],
+  links: [
+    { label: "Open Research", screen: "research" },
+    { label: "Prioritised questions", screen: "discovery" },
+  ],
+  shortlistQuestion:
+    "Confirm the ~24-hour inventory lag precisely and quantify its cost during peak.",
+  followUps: [
+    "What are the top operational risks?",
+    "Which assumptions have weak evidence?",
+    "What can I safely mention on the call?",
+  ],
+};
+
+interface Topic {
+  keys: string[];
+  answer: () => AiRichAnswer;
+}
+
+/** Ordered topic library — first match wins. */
+const TOPICS: Topic[] = [
+  { keys: ["meera", "iyer", "vp operations", "operations lead"], answer: () => actionAnswer("prep-meera") },
+  { keys: ["safe", "mention", "say on", "bring up", "raise on"], answer: () => actionAnswer("safe-mention") },
+  { keys: ["similar", "delivered", "done before", "proof", "case study", "reference"], answer: () => actionAnswer("similar-work") },
+  { keys: ["inventory", "lag", "posting", "24", "availability", "atp", "promise", "stock accuracy"], answer: () => ANS_INVENTORY },
+  { keys: ["netsuite", "acs", "erp support", "october", "license", "maintenance"], answer: () => ANS_NETSUITE },
+  { keys: ["trace", "lot", "genealogy", "recall", "fsma", "204", "lineage"], answer: () => ANS_TRACE },
+  { keys: ["vendor", "tool", "software", "system in use", "netstock", "tracegains", "wms", "stack"], answer: () => ANS_VENDORS },
+  { keys: ["plan", "demand", "forecast", "s&op", "sop", "replenish"], answer: () => ANS_PLANNING },
+  { keys: ["risk", "concern", "danger", "worst", "urgent"], answer: () => ANS_RISKS },
+  { keys: ["weak", "assumption", "unverified", "shaky", "uncertain", "evidence gap"], answer: () => ANS_WEAK },
+  { keys: ["changed", "transcript", "update", "latest call", "new since", "follow-up call"], answer: () => ANS_CHANGED },
+  { keys: ["prepare", "prep", "before the call", "get ready", "ahead of"], answer: () => ANS_PREP },
+];
+
+const ANS_FALLBACK: AiRichAnswer = {
+  summary:
+    "I can only answer from this project's research, so here's the grounded picture — treat the inferred and weak items as questions, not findings.",
+  blocks: [
+    {
+      heading: "Confirmed — client-verified",
+      tone: "ok",
+      points: [
+        "A ~24-hour inventory lag from paper-based work-order completion (client, 10 Aug call).",
+        "NetSuite ACS support lapses in October with no named owner (client document).",
+      ],
+    },
+    {
+      heading: "Inference — raise as a question",
+      tone: "info",
+      points: [
+        "Lot traceability and planning may be affected by the same data-flow gaps (inference).",
+      ],
+    },
+    {
+      heading: "Weak / missing evidence — don't assume",
+      tone: "warn",
+      points: [
+        "I couldn't map your question to confirmed evidence — narrow it, or check Research directly. Nothing here should be stated as fact without verifying.",
+      ],
+    },
+  ],
+  sources: [SRC_DISCOVERY, SRC_NETSUITE, SRC_PUBLIC],
+  links: [
+    { label: "Open Research", screen: "research" },
+    { label: "Prioritised questions", screen: "discovery" },
+  ],
+  followUps: [
+    "What should I prepare before the call?",
+    "What are the top operational risks?",
+    "What can I safely mention on the call?",
+  ],
+};
+
+/**
+ * Answer a free-text question, grounded in the Clio Snacks project data.
+ * Never generative: matches the question to a known topic and returns a
+ * pre-built grounded answer, or a safe fallback. Nothing is written back.
+ */
+export function answerQuestion(query: string): AiRichAnswer {
+  const q = query.toLowerCase();
+  for (const t of TOPICS) {
+    if (t.keys.some((k) => q.includes(k))) return t.answer();
+  }
+  return ANS_FALLBACK;
+}
 
 /* ---------- Simulated domain investigation ---------- */
 
