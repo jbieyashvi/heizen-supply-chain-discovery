@@ -8,6 +8,29 @@
 /* Wider canvas room (sidebar auto-collapses here) so nodes read larger. */
 .pmap-page {
   max-width: 1560px;
+  /* Fill the viewport as a vertical flex column so the playground can grow
+     to the bottom instead of ending right after the process cards. */
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding-bottom: 24px; /* close to the viewport bottom, with breathing room */
+}
+
+/* Header, summary, hypotheses and view tabs keep their natural height … */
+.pmap-page > .page-header,
+.pmap-page > .pmap-summary,
+.pmap-page > .pmap-hyps,
+.pmap-page > .pmap-expansion,
+.pmap-page > .pmap-toolbar {
+  flex: 0 0 auto;
+}
+/* … while the active playground (any of the three views) fills the rest,
+   never collapsing below a usable 420px. */
+.pmap-page > .pmap-cf,
+.pmap-page > .pmap-canvas,
+.pmap-page > .pmap-entities {
+  flex: 1 1 auto;
+  min-height: 420px;
 }
 
 /* ---------- Summary ---------- */
@@ -223,7 +246,8 @@
 /* ---------- Canvas ---------- */
 .pmap-canvas {
   position: relative;
-  height: clamp(440px, 62vh, 660px);
+  /* Height comes from the flex column (fills to the viewport bottom); the
+     grid background and inset viewport stretch with it. */
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
   background-color: var(--color-surface-subtle);
@@ -939,6 +963,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: start;
+  align-content: start; /* keep cards at the top when the view fills height */
 }
 .pmap-ent-ic {
   display: inline-flex;
@@ -1332,13 +1357,29 @@
    ========================================================================= */
 .pmap-cf {
   position: relative;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: var(--r-lg);
-  background: var(--color-surface-subtle);
+  background-color: var(--color-surface-subtle);
+  /* Same dotted grid as the Detailed canvas so the light-grey playground
+     reads intentionally and covers the whole enlarged area. */
+  background-image: radial-gradient(var(--color-border) 1px, transparent 1px);
+  background-size: 22px 22px;
   padding: 16px;
+  overflow: hidden;
 }
-.pmap-cf__scroll { position: relative; }
+/* Fills the playground height and vertically centres the flow strip. */
+.pmap-cf__scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+}
 .pmap-cf__vp {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   padding-bottom: 4px;
