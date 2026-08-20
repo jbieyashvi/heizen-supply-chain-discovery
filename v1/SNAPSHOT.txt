@@ -1,0 +1,2 @@
+Frozen build of 326b8e8 (branch v1-before-feedback), base /heizen-supply-chain-discovery/v1/.
+Do not edit by hand — rebuild from that commit if it ever needs regenerating.

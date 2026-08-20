@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Heizen · Supply Chain Discovery</title>
+    <meta
+      name="description"
+      content="Heizen consultant workspace for supply-chain discovery preparation."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <!-- Resolve theme before first paint to avoid a flash of the wrong theme.
+         Light is the default: a new visitor (or any invalid/absent saved
+         value) gets Light, never the device/system theme. Only an explicitly
+         saved choice of dark or system is honoured (system → matchMedia). -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("heizen-theme");
+          var choice =
+            saved === "light" || saved === "dark" || saved === "system"
+              ? saved
+              : "light";
+          var resolved =
+            choice === "system"
+              ? window.matchMedia("(prefers-color-scheme: light)").matches
+                ? "light"
+                : "dark"
+              : choice;
+          document.documentElement.setAttribute("data-theme", resolved);
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/heizen-supply-chain-discovery/assets/index-BMXHUFCS.js"></script>
+    <link rel="stylesheet" crossorigin href="/heizen-supply-chain-discovery/assets/index-CyHAbJu6.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
