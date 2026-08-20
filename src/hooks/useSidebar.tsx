@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 
-const KEY = "heizen-sidebar";
+const KEY = "heizen-v2-sidebar";
 type Pref = "expanded" | "collapsed";
 
 function readPref(): Pref | null {

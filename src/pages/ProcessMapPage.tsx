@@ -84,7 +84,7 @@ type NodeLike = ProcessArea | SubProcess;
 
 function readStage(projectId: string | undefined): Stage {
   try {
-    const s = localStorage.getItem(`heizen-stage-${projectId}`);
+    const s = localStorage.getItem(`heizen-v2-stage-${projectId}`);
     return s === "discovery" || s === "expansion" ? s : "intro";
   } catch {
     return "intro";

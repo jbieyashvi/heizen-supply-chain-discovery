@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 
-const KEY = "heizen-auth";
+const KEY = "heizen-v2-auth";
 
 interface AuthState {
   email: string | null;

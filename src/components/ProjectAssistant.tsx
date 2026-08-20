@@ -44,7 +44,7 @@ import {
 
 const TONE_ICON = { ok: CheckCircle2, warn: AlertTriangle, info: Info } as const;
 const MAX_TURNS = 12;
-const chatKey = (projectId: string) => `heizen-chat-${projectId}`;
+const chatKey = (projectId: string) => `heizen-v2-chat-${projectId}`;
 
 /* ---- One exchange in the conversation ---- */
 interface Turn {

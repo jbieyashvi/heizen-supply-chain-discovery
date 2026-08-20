@@ -36,7 +36,7 @@ import { researchByProject } from "../data/research";
 import { Lock, Globe } from "lucide-react";
 
 type Mode = "first-call" | "brief" | "full";
-const MODE_KEY = "heizen-research-mode";
+const MODE_KEY = "heizen-v2-research-mode";
 
 const REFRESH_STAGES = [
   "Queued",

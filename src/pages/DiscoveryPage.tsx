@@ -311,7 +311,7 @@ export function DiscoveryPage() {
   const project = projects.find((p) => p.id === projectId);
   const [qset, setQset] = useState<QSet>(() => {
     try {
-      const stage = localStorage.getItem(`heizen-stage-${projectId}`);
+      const stage = localStorage.getItem(`heizen-v2-stage-${projectId}`);
       return stage === "discovery" || stage === "expansion" ? "discovery" : "intro";
     } catch {
       return "intro";

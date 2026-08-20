@@ -1,7 +1,7 @@
 import { Handshake, Compass, TrendingUp } from "lucide-react";
 
 /* Per-project preparation stage. The Overview stage selector is the single
-   writer (localStorage `heizen-stage-<id>`); every other surface reads it. */
+   writer (localStorage `heizen-v2-stage-<id>`); every other surface reads it. */
 
 export type Stage = "intro" | "discovery" | "expansion";
 
@@ -16,7 +16,7 @@ export const stageMeta: Record<
 
 export function readStage(projectId: string | undefined): Stage {
   try {
-    const s = localStorage.getItem(`heizen-stage-${projectId}`);
+    const s = localStorage.getItem(`heizen-v2-stage-${projectId}`);
     return s === "discovery" || s === "expansion" ? s : "intro";
   } catch {
     return "intro";

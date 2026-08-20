@@ -30,7 +30,7 @@ type SortId = "updated" | "meeting" | "priority" | "name";
 
 /** Rows shown before "Show more". */
 const PAGE_SIZE = 5;
-const VIEW_KEY = "heizen-projects-view";
+const VIEW_KEY = "heizen-v2-projects-view";
 
 const scopes: { id: Scope; label: string }[] = [
   { id: "active", label: "Active" },

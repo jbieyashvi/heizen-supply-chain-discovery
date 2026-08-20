@@ -219,7 +219,7 @@ function FullOverview({
   const [refreshed, setRefreshed] = useState(false);
   const [stage, setStage] = useState<PrepStage>(() => {
     try {
-      return (localStorage.getItem(`heizen-stage-${projectId}`) as PrepStage) || "intro";
+      return (localStorage.getItem(`heizen-v2-stage-${projectId}`) as PrepStage) || "intro";
     } catch {
       return "intro";
     }
@@ -228,7 +228,7 @@ function FullOverview({
   const changeStage = (s: PrepStage) => {
     setStage(s);
     try {
-      localStorage.setItem(`heizen-stage-${projectId}`, s);
+      localStorage.setItem(`heizen-v2-stage-${projectId}`, s);
     } catch {
       /* prototype — no persistence guarantees */
     }

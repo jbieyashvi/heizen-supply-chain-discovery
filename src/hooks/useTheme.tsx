@@ -11,7 +11,7 @@ import {
 export type ThemeChoice = "light" | "dark" | "system";
 type Resolved = "light" | "dark";
 
-const STORAGE_KEY = "heizen-theme";
+const STORAGE_KEY = "heizen-v2-theme";
 
 interface ThemeCtx {
   choice: ThemeChoice;

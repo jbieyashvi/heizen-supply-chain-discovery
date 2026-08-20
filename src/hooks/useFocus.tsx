@@ -18,7 +18,7 @@ interface FocusCtx {
 }
 
 const Ctx = createContext<FocusCtx | null>(null);
-const KEY = "heizen-focus";
+const KEY = "heizen-v2-focus";
 
 function load(): Record<string, Focus> {
   try {
