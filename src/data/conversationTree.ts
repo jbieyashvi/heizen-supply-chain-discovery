@@ -5,9 +5,9 @@ import type { Stage } from "../lib/stage";
  *
  *  Five fixed threads — Production, Inventory, Traceability, Planning,
  *  Technology — each sequenced opening → clarifying → diagnostic → evidence.
- *  Nodes link back to the existing question banks wherever a record exists
- *  (questionId → clioQuestions, introId → clioIntroQuestions) so the call
- *  agenda, Call Mode and the detail panel keep working off the same records.
+ *  Every node links to a clioQuestions record (questionId) so the call
+ *  agenda, Call Mode and the detail panel work off the same records;
+ *  intro-sourced nodes also keep introId for the first-call phrasing.
  *  Captured answers are the intro-call / client-document record; the page
  *  decides per prep stage whether they are shown. */
 
@@ -56,7 +56,7 @@ export interface TreeNode {
   why: string;
   /** Linked record in clioQuestions — enables agenda, Call Mode and detail. */
   questionId?: string;
-  /** Linked record in clioIntroQuestions (no agenda wiring for intro items). */
+  /** Linked record in clioIntroQuestions (source of the first-call phrasing). */
   introId?: string;
   answer?: NodeAnswer;
   /** Research-based working assumption standing in while unanswered. */
@@ -99,7 +99,8 @@ function fromBank(
   };
 }
 
-/** Node backed by an intro-bank question, asked of Meera on the first call. */
+/** Node backed by an intro-bank question, asked of Meera on the first call.
+ *  A discovery-bank record with the same id powers agenda and Call Mode. */
 function fromIntro(
   id: string,
   introId: string,
@@ -113,6 +114,7 @@ function fromIntro(
     role,
     kind,
     introId,
+    questionId: introId,
     question: q.question,
     stakeholder: "Meera Iyer, VP Operations",
     why: q.intent,
@@ -202,6 +204,7 @@ export const CONVERSATION_THREADS: Thread[] = [
         id: "inventory-evidence",
         role: "evidence",
         kind: "technical",
+        questionId: "inventory-evidence",
         question:
           "Could you share a recent week of inventory adjustments and short-ship reports so we can size the drift?",
         stakeholder: "Warehouse Manager",
@@ -263,6 +266,7 @@ export const CONVERSATION_THREADS: Thread[] = [
         id: "planning-diagnostic",
         role: "diagnostic",
         kind: "business",
+        questionId: "planning-diagnostic",
         question:
           "How often does the weekly plan get overridden on the floor, and what usually triggers it?",
         stakeholder: "Rafael Rodas, COO",
@@ -272,6 +276,7 @@ export const CONVERSATION_THREADS: Thread[] = [
         id: "planning-evidence",
         role: "evidence",
         kind: "technical",
+        questionId: "planning-evidence",
         question:
           "Could you share last quarter's forecast-versus-actuals by SKU family?",
         stakeholder: "John Thompson, CFO",
@@ -310,6 +315,16 @@ export const CONVERSATION_THREADS: Thread[] = [
     ],
   },
 ];
+
+/** Bank ids of the tree's diagnostic and evidence asks — held off the
+ *  introductory-call agenda by default; users may add them manually. */
+export const HOLD_FOR_DISCOVERY_IDS: ReadonlySet<string> = new Set(
+  CONVERSATION_THREADS.flatMap((t) =>
+    t.nodes
+      .filter((n) => n.role === "diagnostic" || n.role === "evidence")
+      .map((n) => n.questionId!)
+  )
+);
 
 /** Captured answers only become visible once the intro call has happened —
  *  at the intro stage there is nothing on record yet. */

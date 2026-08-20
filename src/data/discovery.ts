@@ -617,6 +617,286 @@ export const clioQuestions: DiscoveryQuestion[] = [
     shortlisted: false,
     recommendedIndex: 12,
   },
+  /* --- Conversation-tree asks (Discovery Questions screen) ---------------
+     Bank records behind the tree nodes that had none, so every node can sit
+     on the call agenda and flow into Call Mode. Off the agenda by default. */
+  {
+    id: "i-mfg-context",
+    question:
+      "Walk me through what the plant makes and how production is set up today.",
+    priority: "medium",
+    type: "workflow",
+    area: "production",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Public signals point to added capacity and a fast-growing refrigerated range.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Opens the call on familiar ground and gives you the shape of the operation before probing.",
+    decision:
+      "Which line, shift or product family the discovery round should anchor on.",
+    listenFor: [
+      "Product mix and volumes",
+      "Number of lines / shifts",
+      "Recent capacity changes",
+    ],
+    evidenceToClose:
+      "A first-hand sketch of lines, shifts and where volume is growing fastest.",
+    partial: null,
+    followUps: [
+      "Which line or shift feels the strain first when volume steps up?",
+    ],
+    stakeholder: "Meera Iyer, VP Operations",
+    estMinutes: 3,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 13,
+  },
+  {
+    id: "i-mfg-priorities",
+    question:
+      "What are your biggest operational priorities as you scale over the next few quarters?",
+    priority: "medium",
+    type: "stakeholder",
+    area: "demand",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Growth and co-manufacturing announcements imply throughput targets without added headcount.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Surfaces what Meera is measured on, so you can frame value against it.",
+    decision:
+      "How the proposal's value story is framed against leadership's own targets.",
+    listenFor: [
+      "Throughput / service goals",
+      "Cost or quality pressure",
+      "Any board or growth targets",
+    ],
+    evidenceToClose:
+      "Priorities in the client's own words, ideally with a number attached.",
+    partial: null,
+    followUps: ["Which of those priorities has a number attached to it today?"],
+    stakeholder: "Meera Iyer, VP Operations",
+    estMinutes: 2,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 14,
+  },
+  {
+    id: "i-mfg-pain",
+    question:
+      "As volume grows, where does keeping production and inventory data accurate get hardest?",
+    priority: "high",
+    type: "workflow",
+    area: "production",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Hiring and capacity signals suggest manual capture is already under strain.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Gently surfaces the paper-to-ERP lag without leading with a solution.",
+    decision:
+      "Whether execution visibility is the lead pain the first phase should target.",
+    listenFor: [
+      "Manual data entry",
+      "Timing of inventory updates",
+      "Firefighting or reconciliation",
+    ],
+    evidenceToClose:
+      "The client naming where accuracy breaks first, unprompted.",
+    partial: null,
+    followUps: [
+      "Which decisions get made on numbers you already suspect are stale?",
+    ],
+    stakeholder: "Meera Iyer, VP Operations",
+    estMinutes: 3,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 15,
+  },
+  {
+    id: "i-sc-process",
+    question:
+      "How do you track inventory and lot information from production through to dispatch?",
+    priority: "high",
+    type: "workflow",
+    area: "quality",
+    relatedOpportunity: "Traceability & recall readiness",
+    relatedFinding:
+      "Research infers lot data is spread across TraceGains, NetSuite and warehouse records.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters: "Maps the visibility chain and where traceability could break.",
+    decision:
+      "Where the traceability workstream starts — systems integration or consolidating manual sources.",
+    listenFor: [
+      "Systems in the path",
+      "Manual steps",
+      "Where lot data is created",
+    ],
+    evidenceToClose:
+      "The end-to-end lot path named system by system, including any spreadsheets.",
+    partial: null,
+    followUps: [
+      "If a retailer called about a lot right now, how long would the full trace take?",
+    ],
+    stakeholder: "Meera Iyer, VP Operations",
+    estMinutes: 3,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 16,
+  },
+  {
+    id: "i-tech-process",
+    question:
+      "Which systems run operations day to day — NetSuite, Netstock, Power BI — and where do they not talk to each other?",
+    priority: "high",
+    type: "data",
+    area: "data-systems",
+    relatedOpportunity: "NetSuite operational support",
+    relatedFinding:
+      "The public stack — NetSuite, Netstock, Power BI — implies hand-built bridges between systems.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Confirms the stack and finds the integration seams to explore later.",
+    decision: "Which integration seams a build would close first.",
+    listenFor: [
+      "Named systems",
+      "Manual bridges between them",
+      "Reporting gaps",
+    ],
+    evidenceToClose: "A confirmed system map with the manual bridges named.",
+    partial: null,
+    followUps: ["Which of those hand-built bridges breaks most often?"],
+    stakeholder: "Meera Iyer, VP Operations",
+    estMinutes: 3,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 17,
+  },
+  {
+    id: "i-sc-impact",
+    question:
+      "When availability or traceability slips, what does that cost you operationally?",
+    priority: "high",
+    type: "commercial",
+    area: "demand",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Peak-season strain suggests short-ships and expedites are absorbing the drift.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Turns process gaps into business impact in the client's own words.",
+    decision:
+      "How the business case is sized — service, compliance or cost recovery.",
+    listenFor: [
+      "Short-ships or expedites",
+      "Recall / audit risk",
+      "Overtime or safety stock",
+    ],
+    evidenceToClose:
+      "A client-stated cost — orders shorted, hours reconciling, or expedite spend.",
+    partial: null,
+    followUps: [
+      "Which of those costs shows up on a report leadership already reads?",
+    ],
+    stakeholder: "Meera Iyer, VP Operations",
+    estMinutes: 3,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 18,
+  },
+  {
+    id: "planning-diagnostic",
+    question:
+      "How often does the weekly plan get overridden on the floor, and what usually triggers it?",
+    priority: "high",
+    type: "validation",
+    area: "demand",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Research suggests the plan consumes availability that is already a day stale.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Override frequency reveals whether planning or execution data is the weaker link.",
+    decision:
+      "Whether better planning inputs or floor-level execution data comes first.",
+    listenFor: [
+      "Override frequency per week",
+      "Who authorises changes",
+      "Stale availability as the trigger",
+    ],
+    evidenceToClose:
+      "A rough override count and the trigger named for the last one.",
+    partial: null,
+    followUps: [
+      "Walk me through the last override — what did the plan say, and what did the floor do?",
+    ],
+    stakeholder: "Rafael Rodas, COO",
+    estMinutes: 3,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 19,
+  },
+  {
+    id: "inventory-evidence",
+    question:
+      "Could you share a recent week of inventory adjustments and short-ship reports so we can size the drift?",
+    priority: "medium",
+    type: "data",
+    area: "production",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Morning reconciliation rituals imply a steady stream of inventory adjustments.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Adjustment volume is the hard number that turns “counts drift” into a cost the CFO recognises.",
+    decision:
+      "How the value of accurate, real-time inventory is quantified in the proposal.",
+    listenFor: [
+      "Willingness to share reports",
+      "Who pulls the data",
+      "Any sensitivity about sharing",
+    ],
+    evidenceToClose: "One week of adjustment and short-ship data in hand.",
+    partial: null,
+    followUps: ["Who on your side can pull that export, and in what format?"],
+    stakeholder: "Warehouse Manager",
+    estMinutes: 2,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 20,
+  },
+  {
+    id: "planning-evidence",
+    question:
+      "Could you share last quarter's forecast-versus-actuals by SKU family?",
+    priority: "medium",
+    type: "data",
+    area: "demand",
+    relatedOpportunity: "Manufacturing execution visibility",
+    relatedFinding:
+      "Netstock in the stack implies forecast-versus-actuals reporting already exists.",
+    relatedFindingEvidence: "public-inference",
+    whyItMatters:
+      "Forecast error by family shows where better inputs would move service or waste first.",
+    decision: "Which SKU families anchor the planning improvement story.",
+    listenFor: [
+      "Whether the report exists today",
+      "Which families miss worst",
+      "Who owns forecast accuracy",
+    ],
+    evidenceToClose:
+      "Forecast-versus-actuals for one quarter, split by SKU family.",
+    partial: null,
+    followUps: [
+      "Which family's misses hurt most — service penalties or write-offs?",
+    ],
+    stakeholder: "John Thompson, CFO",
+    estMinutes: 2,
+    criticalUnknown: false,
+    shortlisted: false,
+    recommendedIndex: 21,
+  },
 ];
 
 /* Discovery-Call detail guidance, merged into the questions above.

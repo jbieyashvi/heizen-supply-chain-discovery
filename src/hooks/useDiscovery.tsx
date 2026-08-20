@@ -15,6 +15,8 @@ import {
   type QOutcome,
   type QPriority,
 } from "../data/discovery";
+import { HOLD_FOR_DISCOVERY_IDS } from "../data/conversationTree";
+import { readStage } from "../lib/stage";
 
 export interface FollowUp {
   id: string;
@@ -95,12 +97,22 @@ interface DiscoveryCtx {
 
 const Ctx = createContext<DiscoveryCtx | null>(null);
 
+/** Seeded agenda membership. At the Introductory stage the tree's
+ *  diagnostics and evidence requests start off the agenda (the prototype
+ *  tracks one project); users may add them back manually. */
+function seedShortlisted(q: DiscoveryQuestion): boolean {
+  return (
+    q.shortlisted &&
+    !(readStage("clio-snacks") === "intro" && HOLD_FOR_DISCOVERY_IDS.has(q.id))
+  );
+}
+
 export function DiscoveryProvider({ children }: { children: ReactNode }) {
   const [states, setStates] = useState<Record<string, QState>>(() => {
     const init: Record<string, QState> = {};
     clioQuestions.forEach((q) => {
       init[q.id] = {
-        shortlisted: q.shortlisted,
+        shortlisted: seedShortlisted(q),
         outcome: null,
         answer: emptyAnswer(),
       };
@@ -110,7 +122,7 @@ export function DiscoveryProvider({ children }: { children: ReactNode }) {
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
   const [customOrder, setCustomOrder] = useState<string[]>(() =>
     clioQuestions
-      .filter((q) => q.shortlisted)
+      .filter(seedShortlisted)
       .sort((a, b) => a.recommendedIndex - b.recommendedIndex)
       .map((q) => q.id)
   );

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   Boxes,
+  CalendarMinus,
   CalendarPlus,
   CalendarRange,
   Check,
@@ -56,7 +57,7 @@ const THREAD_ICON: Record<ThreadId, typeof Factory> = {
 };
 
 type KindFilter = "all" | NodeKind;
-type StatusFilter = "all" | "answered" | "unanswered";
+type StatusFilter = "all" | "answered" | "unanswered" | "agenda";
 
 /** Per-node render state: the tree definition merged with live call state
  *  (answers given in Call Mode win over the seeded intro-call record) and
@@ -203,7 +204,12 @@ export function DiscoveryPage() {
   const matches = (v: NodeView) =>
     (stakeholder === "all" || v.node.stakeholder === stakeholder) &&
     (kind === "all" || v.node.kind === kind) &&
-    (status === "all" || (status === "answered" ? v.answered : !v.answered));
+    (status === "all" ||
+      (status === "agenda"
+        ? v.inAgenda
+        : status === "answered"
+          ? v.answered
+          : !v.answered));
 
   // Stage-appropriate default: intro starts broad at Production, discovery
   // opens the first thread with unclosed diagnostics/evidence, expansion
@@ -252,12 +258,12 @@ export function DiscoveryPage() {
     if (!v.node.questionId) return;
     toggleShortlist(v.node.questionId);
     if (v.inAgenda) {
-      notify({ title: "Removed from call agenda" });
+      notify({ title: "Removed from agenda" });
     } else {
       // Agenda order drives the call: switch the shortlist to custom order.
       setSortMode("custom");
       notify({
-        title: "Added to call agenda",
+        title: "Added to agenda",
         body: "Call Mode follows the agenda order.",
         tone: "success",
       });
@@ -268,6 +274,15 @@ export function DiscoveryPage() {
     const qid = v.node.questionId;
     if (qid) {
       setOutcome(qid, v.skipped ? null : "skipped");
+      // Skipping stands the question down for this round, so it also
+      // leaves the call agenda. Restoring does not re-add it.
+      if (!v.skipped && v.inAgenda) {
+        toggleShortlist(qid);
+        notify({
+          title: "Question skipped",
+          body: "Removed from the call agenda.",
+        });
+      }
     } else {
       setLocalSkipped((prev) => {
         const next = new Set(prev);
@@ -396,23 +411,29 @@ export function DiscoveryPage() {
             </p>
           )}
           <div className="ctnode__actions">
-            {node.questionId && (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() => toggleAgenda(v)}
-              >
-                {v.inAgenda ? (
-                  <>
-                    <Check aria-hidden /> In agenda
-                  </>
-                ) : (
-                  <>
-                    <CalendarPlus aria-hidden /> Add to call agenda
-                  </>
-                )}
-              </button>
-            )}
+            {node.questionId &&
+              (v.inAgenda ? (
+                <>
+                  <span className="ctnode__onagenda">
+                    <Check aria-hidden /> On agenda
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => toggleAgenda(v)}
+                  >
+                    <CalendarMinus aria-hidden /> Remove from agenda
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => toggleAgenda(v)}
+                >
+                  <CalendarPlus aria-hidden /> Add to agenda
+                </button>
+              ))}
             <button
               type="button"
               className="btn btn-ghost btn-sm"
@@ -543,6 +564,7 @@ export function DiscoveryPage() {
               { value: "all", label: "Answered + unanswered" },
               { value: "answered", label: "Answered" },
               { value: "unanswered", label: "Unanswered" },
+              { value: "agenda", label: "Agenda only" },
             ]}
           />
           {anyFilter && (
