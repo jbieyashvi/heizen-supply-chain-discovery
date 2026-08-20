@@ -13,7 +13,6 @@ import {
   Download,
   Archive,
   Bell,
-  CircleHelp,
   Info,
   Loader,
   Rocket,
@@ -30,23 +29,15 @@ import { FirstCallBrief } from "../components/FirstCallBrief";
 import { ReadinessStepItem } from "../components/ReadinessStepItem";
 import { InsightItem } from "../components/InsightItem";
 import { QuestionPreview } from "../components/QuestionPreview";
-import { OpportunityPreview } from "../components/OpportunityPreview";
 import { ActivityFeed } from "../components/ActivityFeed";
 import { ReadinessBadge, FreshnessBadge } from "../components/StatusBadges";
 import { EmptyState } from "../components/EmptyState";
-import { Tooltip } from "../components/Tooltip";
+import { RecommendedBuilds } from "../components/RecommendedBuilds";
 import { useToast } from "../components/Toast";
 import { useClickOutside } from "../hooks/useClickOutside";
 import { projects, projectDetails } from "../data/mock";
 import type { Project } from "../data/types";
 import { readinessMeta } from "../lib/status";
-import { Badge } from "../components/Badge";
-import {
-  clioConfidence,
-  confLabel,
-  confTone,
-  questionById,
-} from "../data/discovery";
 
 /* ------------------------------------------------------------------ */
 function ProjectSwitcher({ currentId }: { currentId: string }) {
@@ -301,6 +292,9 @@ function FullOverview({
         />
       </section>
 
+      {/* The decision layer — what to build, ahead of any preparation detail */}
+      <RecommendedBuilds projectId={projectId} />
+
       <div className="stage-content" key={stage}>
         {stage === "intro" ? (
           <IntroStage projectId={projectId} />
@@ -322,8 +316,9 @@ function FullOverview({
 }
 
 /* ---- Introductory Call: first-call brief + de-emphasised tools ---- */
-function IntroStage({ projectId }: { projectId: string }) {
-  const laterTools = [
+/** The three deep-dive tools, shared by both stages. */
+function deepTools(projectId: string) {
+  return [
     {
       icon: Gauge,
       title: "Discovery confidence",
@@ -343,6 +338,10 @@ function IntroStage({ projectId }: { projectId: string }) {
       to: `/projects/${projectId}/process-map`,
     },
   ];
+}
+
+function IntroStage({ projectId }: { projectId: string }) {
+  const laterTools = deepTools(projectId);
 
   return (
     <>
@@ -466,7 +465,7 @@ function DiscoveryStage({
         </div>
       )}
 
-      {/* Briefing area — fits the first viewport: left readiness, right action + findings */}
+      {/* Preparation detail — one column of status, one of progressive detail */}
       <div className="briefing">
         <section className="card card-pad briefing__left">
           <div className="section-head">
@@ -510,143 +509,105 @@ function DiscoveryStage({
         </section>
 
         <div className="briefing__right">
-          {/* Recommended next action — owns "what to do next" */}
-          <section className="nextcard">
-            <span className="nextcard__eyebrow">Recommended next action</span>
-            <p className="nextcard__headline">{detail.nextAction.headline}</p>
-            <p className="nextcard__detail">{detail.nextAction.detail}</p>
-            <div className="nextcard__actions">
-              <Link to={`/projects/${projectId}/discovery`} className="btn btn-primary">
-                {detail.nextAction.primary}
-                <ArrowRight />
-              </Link>
-              <Link to={`/projects/${projectId}/research`} className="btn btn-ghost">
-                {detail.nextAction.secondary}
-              </Link>
-            </div>
-          </section>
-
-          {/* Top findings preview — visible in the first viewport */}
+          {/* Everything that used to sit in its own card is folded in here —
+              open only what you need for the call you're about to run. */}
           <section className="card card-pad">
             <div className="section-head">
               <div>
-                <h2 className="block-title">Top findings</h2>
-                <p className="block-sub">The three that matter most. Expand for evidence.</p>
+                <h2 className="block-title">Supporting detail</h2>
+                <p className="block-sub">
+                  The evidence behind the recommendations above. Collapsed by default.
+                </p>
               </div>
-              <Tooltip label="Every finding is labelled by how it was established, from client-confirmed fact to unverified assumption.">
-                <span className="hint-chip">
-                  <CircleHelp aria-hidden /> Evidence
-                </span>
-              </Tooltip>
             </div>
-            <div className="insights">
-              {detail.insights.map((ins, i) => (
-                <InsightItem key={ins.id} insight={ins} rank={i + 1} />
+            <div className="sdets">
+              <Disclosure title="Top findings" meta={`${detail.insights.length} · evidence-labelled`}>
+                <div className="insights">
+                  {detail.insights.map((ins, i) => (
+                    <InsightItem key={ins.id} insight={ins} rank={i + 1} />
+                  ))}
+                </div>
+              </Disclosure>
+
+              <Disclosure
+                title="Critical questions"
+                meta={`${detail.questions.length} to review`}
+              >
+                <div className="questions questions--stack">
+                  {detail.questions.map((q) => (
+                    <QuestionPreview key={q.id} q={q} />
+                  ))}
+                </div>
+                <Link to={`/projects/${projectId}/discovery`} className="wlink">
+                  Continue call preparation <ArrowRight aria-hidden />
+                </Link>
+              </Disclosure>
+
+              <Disclosure
+                title="Recent activity"
+                meta={`${detail.activity.length} updates`}
+              >
+                <ActivityFeed items={detail.activity} />
+              </Disclosure>
+            </div>
+          </section>
+
+          {/* Confidence scoring, the opportunity list and the process map keep
+              their own pages — they're a click away rather than repeated here. */}
+          <section className="card card-pad later-tools">
+            <div className="section-head">
+              <div>
+                <h2 className="block-title">Go deeper</h2>
+                <p className="block-sub">
+                  Full scoring, the complete opportunity list and the mapped process.
+                </p>
+              </div>
+            </div>
+            <div className="later-tools__grid later-tools__grid--stack">
+              {deepTools(projectId).map((t) => (
+                <Link key={t.title} to={t.to} className="later-tool">
+                  <span className="later-tool__icon" aria-hidden>
+                    <t.icon />
+                  </span>
+                  <span className="later-tool__body">
+                    <span className="later-tool__title">{t.title}</span>
+                    <span className="later-tool__meta">{t.meta}</span>
+                  </span>
+                  <ArrowRight className="later-tool__chev" aria-hidden />
+                </Link>
               ))}
             </div>
           </section>
         </div>
       </div>
-
-      {/* Discovery confidence */}
-      <section className="card card-pad overview-block">
-        <div className="section-head">
-          <div>
-            <h2 className="block-title">Discovery confidence</h2>
-            <p className="block-sub">
-              How confident we are in each opportunity — and the question that
-              would move it most.
-            </p>
-          </div>
-        </div>
-        <div className="conf-grid">
-          {clioConfidence.map((c) => {
-            const nextQ = questionById(c.nextQuestionId);
-            return (
-              <div className="conf-card" key={c.id}>
-                <div className="conf-card__top">
-                  <h4 className="conf-card__name">{c.name}</h4>
-                  <Badge tone={confTone[c.level]} dot>
-                    {confLabel[c.level]} confidence
-                  </Badge>
-                </div>
-                <div className="conf-card__stats">
-                  <span className="conf-stat">
-                    <b>{c.evidenceCount}</b> supporting
-                    {c.evidenceCount === 1 ? " item" : " items"}
-                  </span>
-                  <span className="dotsep">·</span>
-                  <span className="conf-stat">
-                    <b>{c.openUnknowns}</b> open unknown
-                    {c.openUnknowns === 1 ? "" : "s"}
-                  </span>
-                </div>
-                <p className="conf-card__uncertainty">
-                  <span className="conf-card__label">Biggest uncertainty</span>
-                  {c.biggestUncertainty}
-                </p>
-                <Link
-                  to={`/projects/${projectId}/discovery`}
-                  className="conf-card__action"
-                  title={nextQ?.question}
-                >
-                  Review next question <ArrowRight aria-hidden />
-                </Link>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Lower detail */}
-      <section className="card card-pad overview-block">
-        <div className="section-head">
-          <div>
-            <h2 className="block-title">Critical questions</h2>
-            <p className="block-sub">Highest-value questions to ask on the next call.</p>
-          </div>
-          <Link to={`/projects/${projectId}/discovery`} className="btn btn-sm">
-            Continue call preparation
-            <ArrowRight />
-          </Link>
-        </div>
-        <div className="questions">
-          {detail.questions.map((q) => (
-            <QuestionPreview key={q.id} q={q} />
-          ))}
-        </div>
-      </section>
-
-      <div className="overview-lower">
-        <section className="card card-pad">
-          <div className="section-head">
-            <div>
-              <h2 className="block-title">Opportunities</h2>
-              <p className="block-sub">
-                Potential Heizen fits. Unconfirmed items are marked — treat them as
-                hypotheses, not facts.
-              </p>
-            </div>
-            <Link to={`/projects/${projectId}/opportunities`} className="btn btn-sm btn-ghost">
-              View all
-              <ArrowRight />
-            </Link>
-          </div>
-          <div className="opps">
-            {detail.opportunities.map((opp) => (
-              <OpportunityPreview key={opp.id} opp={opp} />
-            ))}
-          </div>
-        </section>
-
-        <section className="card card-pad">
-          <div className="section-head">
-            <h2 className="block-title">Recent activity</h2>
-          </div>
-          <ActivityFeed items={detail.activity} />
-        </section>
-      </div>
     </>
+  );
+}
+
+/* ---- Small local disclosure: reveals one block of detail at a time ---- */
+function Disclosure({
+  title,
+  meta,
+  children,
+}: {
+  title: string;
+  meta: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`sdet${open ? " is-open" : ""}`}>
+      <button
+        className="sdet__head"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span className="sdet__title">{title}</span>
+        <span className="sdet__meta">{meta}</span>
+        <ChevronDown className="sdet__chev" aria-hidden />
+      </button>
+      {open && <div className="sdet__body">{children}</div>}
+    </div>
   );
 }
 

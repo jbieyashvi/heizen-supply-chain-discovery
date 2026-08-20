@@ -5,6 +5,7 @@ import App from "./App";
 import { ThemeProvider } from "./hooks/useTheme";
 import "./styles/global.css";
 import "./styles/components.css";
+import "./styles/builds.css";
 import "./styles/research.css";
 import "./styles/discovery.css";
 import "./styles/auth.css";
