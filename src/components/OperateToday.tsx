@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Workflow,
@@ -8,7 +7,6 @@ import {
   HelpCircle,
   MapPinned,
 } from "lucide-react";
-import { SidePanel } from "./SidePanel";
 import { Badge } from "./Badge";
 import {
   clioProcessAreas,
@@ -25,6 +23,10 @@ import {
    Store, the 24-hour inventory lag). Deliberately fits without
    scrolling, dragging or zooming; the full canvas lives in the
    Process Map screen. No opportunities, solutions or expansion.
+
+   Clicking a stage (or the broken handoff) does NOT open its own
+   drawer — it asks the surrounding brief workspace, via onOpenDetail,
+   to show the detail in its single in-panel inspector.
    ================================================================ */
 
 /* Left-to-right stage order (the cross-cutting Data backbone is omitted). */
@@ -57,16 +59,24 @@ const coverageTone: Record<Coverage, "green" | "amber" | "neutral"> = {
 const OPERATE_SUMMARY =
   "Clio plans in Netstock, runs production through paper and plant systems, then records inventory and warehouse activity in NetSuite.";
 
-const flowName = (a: ProcessArea) => a.flowLabel ?? a.name;
+export const flowStageName = (a: ProcessArea) => a.flowLabel ?? a.name;
 
 /** The one broken handoff to highlight — Make → Store, the 24-hour lag.
-    Reuses the evidenced Make-side handoff detail for the drawer. */
+    Reuses the evidenced Make-side handoff detail for the inspector. */
 const brokenSource = handoffById("ho-make-quality");
 
-export function OperateToday({ projectId }: { projectId: string }) {
-  const [openStage, setOpenStage] = useState<ProcessArea | null>(null);
-  const [openBroken, setOpenBroken] = useState(false);
+/** What a click inside the section asks the surrounding workspace to show. */
+export type OperateDetail =
+  | { kind: "stage"; area: ProcessArea }
+  | { kind: "broken" };
 
+export function OperateToday({
+  projectId,
+  onOpenDetail,
+}: {
+  projectId: string;
+  onOpenDetail: (detail: OperateDetail) => void;
+}) {
   const areas = FLOW_IDS.map(
     (id) => clioProcessAreas.find((a) => a.id === id)!
   ).filter(Boolean);
@@ -106,10 +116,10 @@ export function OperateToday({ projectId }: { projectId: string }) {
             <div className="opflow__cell" key={a.id} role="listitem">
               <button
                 className="opflow__stage"
-                onClick={() => setOpenStage(a)}
-                aria-label={`${flowName(a)} — ${status}. Open detail`}
+                onClick={() => onOpenDetail({ kind: "stage", area: a })}
+                aria-label={`${flowStageName(a)} — ${status}. Open detail`}
               >
-                <span className="opflow__name">{flowName(a)}</span>
+                <span className="opflow__name">{flowStageName(a)}</span>
                 <span className="opflow__tool">{a.tool ?? "Not explored"}</span>
                 <span className="opflow__statusrow">
                   <Badge tone={coverageTone[a.coverage]} dot>
@@ -148,7 +158,10 @@ export function OperateToday({ projectId }: { projectId: string }) {
       </div>
 
       {/* The one highlighted broken handoff — Make → Store */}
-      <button className="opflow__broken" onClick={() => setOpenBroken(true)}>
+      <button
+        className="opflow__broken"
+        onClick={() => onOpenDetail({ kind: "broken" })}
+      >
         <span className="opflow__broken-ic" aria-hidden>
           <AlertTriangle />
         </span>
@@ -160,32 +173,12 @@ export function OperateToday({ projectId }: { projectId: string }) {
         </span>
         <ChevronRight className="opflow__broken-chev" aria-hidden />
       </button>
-
-      <StageDrawer
-        area={openStage}
-        projectId={projectId}
-        onClose={() => setOpenStage(null)}
-      />
-      <BrokenDrawer
-        open={openBroken}
-        projectId={projectId}
-        onClose={() => setOpenBroken(false)}
-      />
     </section>
   );
 }
 
-/* ---- stage detail drawer ----------------------------------------- */
-function StageDrawer({
-  area,
-  projectId,
-  onClose,
-}: {
-  area: ProcessArea | null;
-  projectId: string;
-  onClose: () => void;
-}) {
-  if (!area) return null;
+/* ---- stage detail (rendered in the workspace inspector) ----------- */
+export function StageDetailBody({ area }: { area: ProcessArea }) {
   const status = introCoverageLabel[area.coverage];
   const issue = STAGE_ISSUE[area.id];
   // The related introductory question: an open stage question, else a
@@ -196,156 +189,126 @@ function StageDrawer({
     area.questions[0]?.question;
 
   return (
-    <SidePanel
-      open={!!area}
-      onClose={onClose}
-      title={flowName(area)}
-      subtitle="Current process — as is"
-      footer={
-        <div className="opflow-d__foot">
-          <Link
-            to={`/projects/${projectId}/discovery`}
-            className="btn btn-primary btn-sm"
-            onClick={onClose}
-          >
-            <HelpCircle aria-hidden /> Ask about this step
-          </Link>
-          <Link
-            to={`/projects/${projectId}/process-map`}
-            className="btn btn-sm"
-            onClick={onClose}
-          >
-            View in process map
-          </Link>
+    <div className="opflow-d">
+      <div className="opflow-d__meta">
+        <div className="opflow-d__metaitem">
+          <span className="opflow-d__k">System / tool</span>
+          <span className="opflow-d__v">{area.tool ?? "Not explored"}</span>
         </div>
-      }
-    >
-      <div className="opflow-d">
-        <div className="opflow-d__meta">
-          <div className="opflow-d__metaitem">
-            <span className="opflow-d__k">System / tool</span>
-            <span className="opflow-d__v">{area.tool ?? "Not explored"}</span>
-          </div>
-          <div className="opflow-d__metaitem">
-            <span className="opflow-d__k">Status</span>
-            <Badge tone={coverageTone[area.coverage]} dot>
-              {status}
-            </Badge>
-          </div>
+        <div className="opflow-d__metaitem">
+          <span className="opflow-d__k">Status</span>
+          <Badge tone={coverageTone[area.coverage]} dot>
+            {status}
+          </Badge>
         </div>
+      </div>
 
+      <section className="opflow-d__sec">
+        <h4 className="opflow-d__h">What happens today</h4>
+        <p className="opflow-d__body">
+          {area.today ?? "Not yet explored — no captured workflow for this stage."}
+        </p>
+      </section>
+
+      {area.responsible && (
         <section className="opflow-d__sec">
-          <h4 className="opflow-d__h">What happens today</h4>
-          <p className="opflow-d__body">
-            {area.today ?? "Not yet explored — no captured workflow for this stage."}
+          <h4 className="opflow-d__h">Person / team responsible</h4>
+          <p className="opflow-d__body">{area.responsible}</p>
+        </section>
+      )}
+
+      {issue && (
+        <section className="opflow-d__sec">
+          <h4 className="opflow-d__h">Confirmed issue</h4>
+          <p className="opflow-d__issue">
+            <AlertTriangle aria-hidden /> {issue}
           </p>
         </section>
+      )}
 
-        {area.responsible && (
-          <section className="opflow-d__sec">
-            <h4 className="opflow-d__h">Person / team responsible</h4>
-            <p className="opflow-d__body">{area.responsible}</p>
-          </section>
-        )}
-
-        {issue && (
-          <section className="opflow-d__sec">
-            <h4 className="opflow-d__h">Confirmed issue</h4>
-            <p className="opflow-d__issue">
-              <AlertTriangle aria-hidden /> {issue}
-            </p>
-          </section>
-        )}
-
-        {question && (
-          <section className="opflow-d__sec">
-            <h4 className="opflow-d__h">Related introductory question</h4>
-            <p className="opflow-d__q">"{question}"</p>
-          </section>
-        )}
-      </div>
-    </SidePanel>
+      {question && (
+        <section className="opflow-d__sec">
+          <h4 className="opflow-d__h">Related introductory question</h4>
+          <p className="opflow-d__q">"{question}"</p>
+        </section>
+      )}
+    </div>
   );
 }
 
-/* ---- broken-handoff drawer --------------------------------------- */
-function BrokenDrawer({
-  open,
-  projectId,
-  onClose,
-}: {
-  open: boolean;
-  projectId: string;
-  onClose: () => void;
-}) {
-  if (!open) return null;
+/* ---- broken-handoff detail (rendered in the workspace inspector) -- */
+export function BrokenDetailBody() {
   return (
-    <SidePanel
-      open={open}
-      onClose={onClose}
-      title="Make → Store"
-      subtitle="Broken handoff"
-      footer={
-        <div className="opflow-d__foot">
-          <Link
-            to={`/projects/${projectId}/discovery`}
-            className="btn btn-primary btn-sm"
-            onClick={onClose}
-          >
-            <HelpCircle aria-hidden /> Ask about this step
-          </Link>
-          <Link
-            to={`/projects/${projectId}/process-map`}
-            className="btn btn-sm"
-            onClick={onClose}
-          >
-            View in process map
-          </Link>
-        </div>
-      }
-    >
-      <div className="opflow-d">
-        <div className="opflow-d__impact">
-          <AlertTriangle aria-hidden />
-          <span>24-hour inventory update delay</span>
-        </div>
-
-        <section className="opflow-d__sec">
-          <h4 className="opflow-d__h">What moves</h4>
-          <p className="opflow-d__body">
-            {brokenSource?.detail ??
-              "Production completion is recorded on paper at shift end and keyed into NetSuite the next morning, before finished-goods inventory updates."}
-          </p>
-        </section>
-
-        {brokenSource?.uncertainty && (
-          <section className="opflow-d__sec">
-            <h4 className="opflow-d__h">What's unclear</h4>
-            <p className="opflow-d__body">{brokenSource.uncertainty}</p>
-          </section>
-        )}
-
-        {brokenSource && brokenSource.evidence.length > 0 && (
-          <section className="opflow-d__sec">
-            <h4 className="opflow-d__h">Evidence</h4>
-            <div className="opflow-d__ev">
-              {brokenSource.evidence.map((e) => (
-                <div className="opflow-d__evrow" key={e.finding}>
-                  <p className="opflow-d__evfind">{e.finding}</p>
-                  <span className="opflow-d__evsrc">{e.source}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {brokenSource?.suggestedQuestion && (
-          <section className="opflow-d__sec">
-            <h4 className="opflow-d__h">Suggested introductory question</h4>
-            <p className="opflow-d__q">"{brokenSource.suggestedQuestion}"</p>
-          </section>
-        )}
+    <div className="opflow-d">
+      <div className="opflow-d__impact">
+        <AlertTriangle aria-hidden />
+        <span>24-hour inventory update delay</span>
       </div>
-    </SidePanel>
+
+      <section className="opflow-d__sec">
+        <h4 className="opflow-d__h">What moves</h4>
+        <p className="opflow-d__body">
+          {brokenSource?.detail ??
+            "Production completion is recorded on paper at shift end and keyed into NetSuite the next morning, before finished-goods inventory updates."}
+        </p>
+      </section>
+
+      {brokenSource?.uncertainty && (
+        <section className="opflow-d__sec">
+          <h4 className="opflow-d__h">What's unclear</h4>
+          <p className="opflow-d__body">{brokenSource.uncertainty}</p>
+        </section>
+      )}
+
+      {brokenSource && brokenSource.evidence.length > 0 && (
+        <section className="opflow-d__sec">
+          <h4 className="opflow-d__h">Evidence</h4>
+          <div className="opflow-d__ev">
+            {brokenSource.evidence.map((e) => (
+              <div className="opflow-d__evrow" key={e.finding}>
+                <p className="opflow-d__evfind">{e.finding}</p>
+                <span className="opflow-d__evsrc">{e.source}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {brokenSource?.suggestedQuestion && (
+        <section className="opflow-d__sec">
+          <h4 className="opflow-d__h">Suggested introductory question</h4>
+          <p className="opflow-d__q">"{brokenSource.suggestedQuestion}"</p>
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** The footer actions both process details share. `onNavigate` lets the
+    workspace close the whole panel when a link leaves the page. */
+export function OpflowDetailLinks({
+  projectId,
+  onNavigate,
+}: {
+  projectId: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <div className="opflow-d__foot">
+      <Link
+        to={`/projects/${projectId}/discovery`}
+        className="btn btn-primary btn-sm"
+        onClick={onNavigate}
+      >
+        <HelpCircle aria-hidden /> Ask about this step
+      </Link>
+      <Link
+        to={`/projects/${projectId}/process-map`}
+        className="btn btn-sm"
+        onClick={onNavigate}
+      >
+        View in process map
+      </Link>
+    </div>
   );
 }

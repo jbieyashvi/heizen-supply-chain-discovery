@@ -10,6 +10,13 @@ interface SidePanelProps {
   children: ReactNode;
   /** Wide layout for document-like content (e.g. the full first-call brief). */
   wide?: boolean;
+  /** The children own layout and scrolling — no body padding or scroll.
+      Used by the brief workspace to run its own panes. */
+  flush?: boolean;
+  /** Header content before the title (e.g. a "Back to brief" button). */
+  headerStart?: ReactNode;
+  /** Extra class(es) on the panel itself (e.g. drawer--has-detail). */
+  panelClassName?: string;
 }
 
 /** Right-side drawer with overlay, escape-to-close and basic focus handling.
@@ -23,6 +30,9 @@ export function SidePanel({
   footer,
   children,
   wide = false,
+  flush = false,
+  headerStart,
+  panelClassName,
 }: SidePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +95,9 @@ export function SidePanel({
   return (
     <div className="drawer-overlay" onMouseDown={onClose}>
       <div
-        className={`drawer${wide ? " drawer--wide" : ""}`}
+        className={`drawer${wide ? " drawer--wide" : ""}${
+          panelClassName ? ` ${panelClassName}` : ""
+        }`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -93,7 +105,8 @@ export function SidePanel({
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="drawer__head">
-          <div className="stack" style={{ gap: 3 }}>
+          {headerStart}
+          <div className="stack" style={{ gap: 3, flex: "1 1 auto", minWidth: 0 }}>
             <h2 className="drawer__title">{title}</h2>
             {subtitle && <p className="muted" style={{ fontSize: 13 }}>{subtitle}</p>}
           </div>
@@ -101,7 +114,9 @@ export function SidePanel({
             <X />
           </button>
         </header>
-        <div className="drawer__body">{children}</div>
+        <div className={`drawer__body${flush ? " drawer__body--flush" : ""}`}>
+          {children}
+        </div>
         {footer && <footer className="drawer__foot">{footer}</footer>}
       </div>
     </div>

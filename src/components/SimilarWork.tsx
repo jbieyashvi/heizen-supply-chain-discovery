@@ -24,16 +24,21 @@ import {
   type HeizenProject,
 } from "../data/heizenWork";
 
-/** Shared "Similar Heizen work" list + detail drawer.
-   introOnly → only top-2 delivered, safe-to-mention examples. */
+/** Shared "Similar Heizen work" list + detail.
+   introOnly → only top-2 delivered, safe-to-mention examples.
+   onOpenDetail → clicks are delegated to a surrounding workspace (the
+   first-call brief's in-panel inspector) instead of opening the
+   standalone drawer this component otherwise manages itself. */
 export function SimilarWork({
   projectId,
   introOnly = false,
   showPercent = true,
+  onOpenDetail,
 }: {
   projectId?: string;
   introOnly?: boolean;
   showPercent?: boolean;
+  onOpenDetail?: (project: HeizenProject) => void;
 }) {
   const [open, setOpen] = useState<HeizenProject | null>(null);
   const { focus } = useFocus(projectId);
@@ -48,6 +53,11 @@ export function SimilarWork({
     )
     .map((x) => x.p);
 
+  const handleOpen = (p: HeizenProject) => {
+    if (onOpenDetail) onOpenDetail(p);
+    else setOpen(p);
+  };
+
   return (
     <div className="simw">
       {introOnly && (
@@ -58,10 +68,10 @@ export function SimilarWork({
       )}
       <div className="simw__grid">
         {items.map((p) => (
-          <SimCard key={p.id} p={p} showPercent={showPercent} onOpen={() => setOpen(p)} />
+          <SimCard key={p.id} p={p} showPercent={showPercent} onOpen={() => handleOpen(p)} />
         ))}
       </div>
-      <SimDrawer project={open} onClose={() => setOpen(null)} />
+      {!onOpenDetail && <SimDrawer project={open} onClose={() => setOpen(null)} />}
     </div>
   );
 }
@@ -133,11 +143,81 @@ function OverlapBar({ label, value, icon: Icon }: { label: string; value: number
   );
 }
 
-function SimDrawer({ project, onClose }: { project: HeizenProject | null; onClose: () => void }) {
-  if (!project) return null;
+/** The full overlap breakdown for one project — the body of the standalone
+    drawer, and of the brief workspace's in-panel inspector. */
+export function SimilarWorkDetailBody({ project }: { project: HeizenProject }) {
   const prov = provenanceMeta[project.provenance];
   const pct = overallSimilarity(project.overlap);
   const lvl = similarityLevelMeta[similarityLevel(pct)];
+  return (
+    <div className="simw-d">
+      <div className="simw-d__badges">
+        <Badge tone={prov.tone} icon={project.provenance === "delivered" ? <ShieldCheck aria-hidden /> : undefined} dot={project.provenance !== "delivered"}>
+          {prov.label}
+        </Badge>
+        <Badge tone={lvl.tone}>
+          {pct}% · {lvl.label}
+        </Badge>
+      </div>
+
+      {/* Similarity breakdown */}
+      <section className="simw-d__sec">
+        <h4 className="simw-d__h">How similarity is calculated</h4>
+        <div className="simw-bars">
+          <OverlapBar label="Process" value={project.overlap.process} icon={Workflow} />
+          <OverlapBar label="Technology" value={project.overlap.technology} icon={Cpu} />
+          <OverlapBar label="Business context" value={project.overlap.business} icon={Building2} />
+          <div className="simw-bar simw-bar--total">
+            <span className="simw-bar__label">Overall</span>
+            <span className="simw-bar__track" aria-hidden>
+              <span className="simw-bar__fill simw-bar__fill--total" style={{ width: `${pct}%` }} />
+            </span>
+            <span className="simw-bar__val">{pct}%</span>
+          </div>
+        </div>
+        <p className="simw-d__explainer">
+          <Info aria-hidden /> {SIMILARITY_EXPLAINER}
+        </p>
+      </section>
+
+      <section className="simw-d__sec">
+        <h4 className="simw-d__h">
+          <Workflow aria-hidden /> Process overlap
+        </h4>
+        <p>{project.drawer.process}</p>
+      </section>
+      <section className="simw-d__sec">
+        <h4 className="simw-d__h">
+          <Cpu aria-hidden /> Technology overlap
+        </h4>
+        <p>{project.drawer.technology}</p>
+      </section>
+      <section className="simw-d__sec">
+        <h4 className="simw-d__h">
+          <Building2 aria-hidden /> Business-context overlap
+        </h4>
+        <p>{project.drawer.business}</p>
+      </section>
+      <section className="simw-d__sec simw-d__risks">
+        <h4 className="simw-d__h">
+          <AlertTriangle aria-hidden /> Important differences / risks
+        </h4>
+        <p>{project.drawer.differences}</p>
+      </section>
+
+      <section className={`simw-d__safe${prov.safe ? " is-safe" : " is-unsafe"}`}>
+        <h4 className="simw-d__safe-h">
+          {prov.safe ? <ShieldCheck aria-hidden /> : <AlertTriangle aria-hidden />}
+          Safe to say on call
+        </h4>
+        <p>{project.drawer.safeToSay}</p>
+      </section>
+    </div>
+  );
+}
+
+function SimDrawer({ project, onClose }: { project: HeizenProject | null; onClose: () => void }) {
+  if (!project) return null;
   return (
     <SidePanel
       open={!!project}
@@ -145,69 +225,7 @@ function SimDrawer({ project, onClose }: { project: HeizenProject | null; onClos
       title={project.name}
       subtitle={project.industry}
     >
-      <div className="simw-d">
-        <div className="simw-d__badges">
-          <Badge tone={prov.tone} icon={project.provenance === "delivered" ? <ShieldCheck aria-hidden /> : undefined} dot={project.provenance !== "delivered"}>
-            {prov.label}
-          </Badge>
-          <Badge tone={lvl.tone}>
-            {pct}% · {lvl.label}
-          </Badge>
-        </div>
-
-        {/* Similarity breakdown */}
-        <section className="simw-d__sec">
-          <h4 className="simw-d__h">How similarity is calculated</h4>
-          <div className="simw-bars">
-            <OverlapBar label="Process" value={project.overlap.process} icon={Workflow} />
-            <OverlapBar label="Technology" value={project.overlap.technology} icon={Cpu} />
-            <OverlapBar label="Business context" value={project.overlap.business} icon={Building2} />
-            <div className="simw-bar simw-bar--total">
-              <span className="simw-bar__label">Overall</span>
-              <span className="simw-bar__track" aria-hidden>
-                <span className="simw-bar__fill simw-bar__fill--total" style={{ width: `${pct}%` }} />
-              </span>
-              <span className="simw-bar__val">{pct}%</span>
-            </div>
-          </div>
-          <p className="simw-d__explainer">
-            <Info aria-hidden /> {SIMILARITY_EXPLAINER}
-          </p>
-        </section>
-
-        <section className="simw-d__sec">
-          <h4 className="simw-d__h">
-            <Workflow aria-hidden /> Process overlap
-          </h4>
-          <p>{project.drawer.process}</p>
-        </section>
-        <section className="simw-d__sec">
-          <h4 className="simw-d__h">
-            <Cpu aria-hidden /> Technology overlap
-          </h4>
-          <p>{project.drawer.technology}</p>
-        </section>
-        <section className="simw-d__sec">
-          <h4 className="simw-d__h">
-            <Building2 aria-hidden /> Business-context overlap
-          </h4>
-          <p>{project.drawer.business}</p>
-        </section>
-        <section className="simw-d__sec simw-d__risks">
-          <h4 className="simw-d__h">
-            <AlertTriangle aria-hidden /> Important differences / risks
-          </h4>
-          <p>{project.drawer.differences}</p>
-        </section>
-
-        <section className={`simw-d__safe${prov.safe ? " is-safe" : " is-unsafe"}`}>
-          <h4 className="simw-d__safe-h">
-            {prov.safe ? <ShieldCheck aria-hidden /> : <AlertTriangle aria-hidden />}
-            Safe to say on call
-          </h4>
-          <p>{project.drawer.safeToSay}</p>
-        </section>
-      </div>
+      <SimilarWorkDetailBody project={project} />
     </SidePanel>
   );
 }

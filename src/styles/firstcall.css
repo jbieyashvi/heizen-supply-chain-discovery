@@ -1256,3 +1256,94 @@
     gap: 14px;
   }
 }
+
+/* =========================================================================
+   Full-brief workspace — ONE dialog with an in-panel detail inspector.
+   Clicking a signal, hypothesis, stage or similar-work item never opens a
+   second drawer: at ≥1100px the detail docks right of the brief (which
+   stays visible and undimmed); below that it replaces the brief and a
+   "Back to brief" button appears in the panel header.
+   ========================================================================= */
+.fcbw {
+  display: flex;
+  align-items: stretch;
+  height: 100%;
+  min-height: 0;
+}
+.fcbw__brief {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 20px 22px;
+}
+.fcbw__detail {
+  flex: 0 0 400px;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-strong);
+  background: var(--surface-1);
+}
+.fcbw__detail-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.fcbw__detail-titles {
+  min-width: 0;
+}
+.fcbw__detail-title {
+  font-size: 14.5px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+  line-height: 1.35;
+}
+.fcbw__detail-title:focus {
+  outline: none;
+}
+.fcbw__detail-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.fcbw__detail-close {
+  flex: none;
+  white-space: nowrap;
+}
+.fcbw__detail-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px 24px;
+}
+.fcbw__detail-foot {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+}
+.fcbw__back {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Below the desktop breakpoint the detail replaces the brief inside the
+   same panel; its own close control gives way to "Back to brief" in the
+   panel header. Must match COMPACT_QUERY in FirstCallBrief.tsx. */
+@media (max-width: 1099px) {
+  .fcbw--detail .fcbw__brief {
+    display: none;
+  }
+  .fcbw__detail {
+    flex: 1 1 auto;
+    border-left: none;
+  }
+  .fcbw__detail-close {
+    display: none;
+  }
+}

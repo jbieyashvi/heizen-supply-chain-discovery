@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Clock,
   Building2,
@@ -8,6 +8,7 @@ import {
   Boxes,
   MessageSquareText,
   ChevronRight,
+  ArrowLeft,
   AlertTriangle,
   FileText,
   Globe,
@@ -18,8 +19,14 @@ import {
 import { SidePanel } from "./SidePanel";
 import { Badge } from "./Badge";
 import { FocusChip } from "./FocusChip";
-import { OperateToday } from "./OperateToday";
-import { SimilarWork } from "./SimilarWork";
+import {
+  OperateToday,
+  StageDetailBody,
+  BrokenDetailBody,
+  OpflowDetailLinks,
+  flowStageName,
+} from "./OperateToday";
+import { SimilarWork, SimilarWorkDetailBody } from "./SimilarWork";
 import { evidenceMeta } from "../lib/status";
 import { confLabel, confTone } from "../data/discovery";
 import { useFocus } from "../hooks/useFocus";
@@ -41,14 +48,24 @@ import {
   type BriefDetail,
   type BriefSource,
 } from "../data/firstcall";
+import type { ProcessArea } from "../data/processmap";
+import type { HeizenProject } from "../data/heizenWork";
 
-/* A normalised, drawer-ready view of a clickable brief item. */
+/* A normalised, inspector-ready view of a clickable brief item. */
 interface DrawerItem extends BriefDetail {
   title: string;
   kindLabel: string;
   lead?: string;
   chips?: { label: string; tone?: "amber" | "info" | "neutral" | "accent" }[];
 }
+
+/** Everything the brief's single in-panel inspector can show. Exactly one
+    of these is open at a time — never a second drawer on top. */
+export type BriefInspectorDetail =
+  | { kind: "item"; item: DrawerItem }
+  | { kind: "stage"; area: ProcessArea }
+  | { kind: "broken" }
+  | { kind: "work"; project: HeizenProject };
 
 const sourceIcon: Record<BriefSource["kind"], typeof FileText> = {
   client: FileText,
@@ -57,8 +74,13 @@ const sourceIcon: Record<BriefSource["kind"], typeof FileText> = {
 };
 
 /* ------------------------------------------------------------------ */
-export function FirstCallBrief({ projectId }: { projectId: string }) {
-  const [item, setItem] = useState<DrawerItem | null>(null);
+export function FirstCallBrief({
+  projectId,
+  onOpenDetail,
+}: {
+  projectId: string;
+  onOpenDetail: (detail: BriefInspectorDetail) => void;
+}) {
   const { focus } = useFocus(projectId);
 
   // Focus re-orders hypotheses by relevance (stable; nothing removed).
@@ -70,6 +92,8 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
           scoreDomains(HYPOTHESIS_DOMAINS[a.h.id] ?? [], focus) || a.i - b.i
     )
     .map((x) => x.h);
+
+  const openItem = (item: DrawerItem) => onOpenDetail({ kind: "item", item });
 
   return (
     <div className="fcb">
@@ -116,7 +140,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
                 key={s.id}
                 className="fcb-item"
                 onClick={() =>
-                  setItem({
+                  openItem({
                     title: s.title,
                     kindLabel: "Technology / AI signal",
                     lead: s.signal,
@@ -165,7 +189,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
       </section>
 
       {/* 4 · How they operate today (current value chain, as-is) ----- */}
-      <OperateToday projectId={projectId} />
+      <OperateToday projectId={projectId} onOpenDetail={onOpenDetail} />
 
       {/* 5 · Unvalidated hypotheses ---------------------------------- */}
       <section className="fcb-sec">
@@ -181,7 +205,7 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
               key={h.id}
               className="fcb-item fcb-hyp"
               onClick={() =>
-                setItem({
+                openItem({
                   title: h.statement,
                   kindLabel: "Unvalidated hypothesis",
                   lead: h.relevance,
@@ -271,7 +295,11 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
           title="Similar Heizen work"
           sub="Delivered, safe-to-mention proof. Click any for overlap detail."
         />
-        <SimilarWork projectId={projectId} introOnly />
+        <SimilarWork
+          projectId={projectId}
+          introOnly
+          onOpenDetail={(project) => onOpenDetail({ kind: "work", project })}
+        />
       </section>
 
       {/* 7 · Conversation starters & outcome ------------------------- */}
@@ -294,8 +322,6 @@ export function FirstCallBrief({ projectId }: { projectId: string }) {
           </div>
         </div>
       </section>
-
-      <BriefDrawer item={item} onClose={() => setItem(null)} />
     </div>
   );
 }
@@ -340,95 +366,211 @@ function LensCol({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-/* ---- detail drawer (shared by signals + hypotheses) -------------- */
-function BriefDrawer({ item, onClose }: { item: DrawerItem | null; onClose: () => void }) {
-  if (!item) return null;
+/* ---- signal / hypothesis detail (shared by both kinds) ------------ */
+function BriefItemDetail({ item }: { item: DrawerItem }) {
   const ev = evidenceMeta[item.evidence];
   return (
-    <SidePanel open={!!item} onClose={onClose} title={item.title} subtitle={item.kindLabel}>
-      <div className="fcb-d">
-        {item.chips && item.chips.length > 0 && (
-          <div className="fcb-d__chips">
-            {item.chips.map((c) => (
-              <Badge key={c.label} tone={c.tone ?? "neutral"}>
-                {c.label}
-              </Badge>
-            ))}
-          </div>
-        )}
-
-        <div className="fcb-d__conf">
-          <div className="fcb-d__confitem">
-            <span className="fcb-d__k">Confidence</span>
-            <Badge tone={confTone[item.confidence]} dot>
-              {confLabel[item.confidence]}
+    <div className="fcb-d">
+      {item.chips && item.chips.length > 0 && (
+        <div className="fcb-d__chips">
+          {item.chips.map((c) => (
+            <Badge key={c.label} tone={c.tone ?? "neutral"}>
+              {c.label}
             </Badge>
-          </div>
-          <div className="fcb-d__confitem">
-            <span className="fcb-d__k">Evidence</span>
-            <Badge tone={ev.tone as never}>{ev.label}</Badge>
-          </div>
+          ))}
         </div>
+      )}
 
-        <p className="fcb-d__detail">{item.detail}</p>
-
-        <section className="fcb-d__sec">
-          <h4 className="fcb-d__h">Sources</h4>
-          <div className="fcb-d__sources">
-            {item.sources.map((s) => {
-              const SIcon = sourceIcon[s.kind];
-              return (
-                <div className="fcb-d__source" key={s.label}>
-                  <span className="fcb-d__source-icon" aria-hidden>
-                    <SIcon />
-                  </span>
-                  <div>
-                    <div className="fcb-d__source-top">
-                      <span className="fcb-d__source-name">{s.label}</span>
-                      <span className="fcb-d__source-kind">{sourceKindLabel[s.kind]}</span>
-                    </div>
-                    <p className="fcb-d__source-excerpt">"{s.excerpt}"</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="fcb-d__sec">
-          <h4 className="fcb-d__h">
-            <Sparkles aria-hidden /> Related Heizen work
-          </h4>
-          <div className="fcb-d__heizen">
-            {item.heizen.map((h) => (
-              <div className="fcb-d__href" key={h.label}>
-                <span className="fcb-d__href-name">{h.label}</span>
-                <span className="fcb-d__href-rel">{h.relevance}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="fcb-d__sec">
-          <h4 className="fcb-d__h">Suggested questions</h4>
-          <ul className="fcb-d__qs">
-            {item.questions.map((q) => (
-              <li key={q}>{q}</li>
-            ))}
-          </ul>
-        </section>
+      <div className="fcb-d__conf">
+        <div className="fcb-d__confitem">
+          <span className="fcb-d__k">Confidence</span>
+          <Badge tone={confTone[item.confidence]} dot>
+            {confLabel[item.confidence]}
+          </Badge>
+        </div>
+        <div className="fcb-d__confitem">
+          <span className="fcb-d__k">Evidence</span>
+          <Badge tone={ev.tone as never}>{ev.label}</Badge>
+        </div>
       </div>
-    </SidePanel>
+
+      <p className="fcb-d__detail">{item.detail}</p>
+
+      <section className="fcb-d__sec">
+        <h4 className="fcb-d__h">Sources</h4>
+        <div className="fcb-d__sources">
+          {item.sources.map((s) => {
+            const SIcon = sourceIcon[s.kind];
+            return (
+              <div className="fcb-d__source" key={s.label}>
+                <span className="fcb-d__source-icon" aria-hidden>
+                  <SIcon />
+                </span>
+                <div>
+                  <div className="fcb-d__source-top">
+                    <span className="fcb-d__source-name">{s.label}</span>
+                    <span className="fcb-d__source-kind">{sourceKindLabel[s.kind]}</span>
+                  </div>
+                  <p className="fcb-d__source-excerpt">"{s.excerpt}"</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="fcb-d__sec">
+        <h4 className="fcb-d__h">
+          <Sparkles aria-hidden /> Related Heizen work
+        </h4>
+        <div className="fcb-d__heizen">
+          {item.heizen.map((h) => (
+            <div className="fcb-d__href" key={h.label}>
+              <span className="fcb-d__href-name">{h.label}</span>
+              <span className="fcb-d__href-rel">{h.relevance}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="fcb-d__sec">
+        <h4 className="fcb-d__h">Suggested questions</h4>
+        <ul className="fcb-d__qs">
+          {item.questions.map((q) => (
+            <li key={q}>{q}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }
+
+/* ---- workspace plumbing ------------------------------------------- */
+
+/** Below this width the inspector replaces the brief instead of docking
+    beside it. Must match the breakpoint in firstcall.css. */
+const COMPACT_QUERY = "(max-width: 1099px)";
+
+function useCompactBrief() {
+  const [compact, setCompact] = useState(
+    () => window.matchMedia(COMPACT_QUERY).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(COMPACT_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setCompact(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return compact;
+}
+
+function inspectorHeader(d: BriefInspectorDetail): { title: string; subtitle: string } {
+  switch (d.kind) {
+    case "item":
+      return { title: d.item.title, subtitle: d.item.kindLabel };
+    case "stage":
+      return { title: flowStageName(d.area), subtitle: "Current process — as is" };
+    case "broken":
+      return { title: "Make → Store", subtitle: "Broken handoff" };
+    case "work":
+      return { title: d.project.name, subtitle: d.project.industry };
+  }
+}
+
+/* A stable identity per selection, so switching remounts the inspector
+   (fresh scroll, focus back to its heading). */
+const detailKey = (d: BriefInspectorDetail) =>
+  d.kind === "item"
+    ? `item:${d.item.title}`
+    : d.kind === "stage"
+    ? `stage:${d.area.id}`
+    : d.kind === "work"
+    ? `work:${d.project.id}`
+    : "broken";
 
 /**
  * Compact stand-in for the brief on the Overview: who the call is with, what
  * it should achieve, and the top conversation areas — with the complete
  * eight-section brief one click away in a wide side panel.
+ *
+ * The panel is a single dialog. Clicking a signal, hypothesis, process stage
+ * or similar-work item opens an inspector INSIDE it — docked right of the
+ * brief on desktop, replacing the brief (with "Back to brief") below 1100px.
+ * One overlay, one focus trap, at most one inspector at a time.
  */
 export function FirstCallBriefPreview({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState<BriefInspectorDetail | null>(null);
+  const compact = useCompactBrief();
+
+  const briefPaneRef = useRef<HTMLDivElement>(null);
+  const detailTitleRef = useRef<HTMLHeadingElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const briefScroll = useRef(0);
+  const hadDetail = useRef(false);
+
+  const openDetail = (d: BriefInspectorDetail) => {
+    // Capture the brief's scroll position while the pane is still visible —
+    // hiding it (compact replace-mode) resets scrollTop to 0.
+    const pane = briefPaneRef.current;
+    if (pane && pane.offsetParent !== null) briefScroll.current = pane.scrollTop;
+    const el = document.activeElement;
+    triggerRef.current = el instanceof HTMLElement && el !== document.body ? el : null;
+    setDetail(d);
+  };
+  const closeDetail = () => setDetail(null);
+  /* Stable identity: SidePanel re-runs its focus/key effect when onClose
+     changes, which would steal focus every time the inspector opens. */
+  const closeAll = useCallback(() => {
+    setOpen(false);
+    setDetail(null);
+  }, []);
+
+  /* Escape closes the inspector first; only with no inspector open does it
+     reach SidePanel and close the whole panel. Capture phase, so it runs
+     before SidePanel's bubble-phase document listener. */
+  useEffect(() => {
+    if (!open || !detail) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      e.stopPropagation();
+      setDetail(null);
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [open, detail]);
+
+  /* Move focus into the inspector when it opens or switches; when it closes,
+     restore the brief's scroll position (compact mode replaced the pane) and
+     hand focus back to the element that opened it. */
+  useEffect(() => {
+    const had = hadDetail.current;
+    hadDetail.current = !!detail;
+    if (!open) return;
+    let raf = 0;
+    if (detail) {
+      raf = requestAnimationFrame(() => detailTitleRef.current?.focus());
+    } else if (had) {
+      raf = requestAnimationFrame(() => {
+        // Focus first, restore scroll last — refocusing the trigger can
+        // scroll it into view, which must not override the saved position.
+        triggerRef.current?.focus({ preventScroll: true });
+        if (compact) briefPaneRef.current?.scrollTo({ top: briefScroll.current });
+      });
+    }
+    return () => cancelAnimationFrame(raf);
+  }, [detail, open, compact]);
+
+  /* Coming back from compact replace-mode to the two-pane layout, the brief
+     pane re-appears at scroll 0 — put it back where it was. */
+  useEffect(() => {
+    if (!compact && detail) {
+      briefPaneRef.current?.scrollTo({ top: briefScroll.current });
+    }
+  }, [compact, detail]);
+
+  const header = detail ? inspectorHeader(detail) : null;
 
   return (
     <>
@@ -443,7 +585,13 @@ export function FirstCallBriefPreview({ projectId }: { projectId: string }) {
               context, hypotheses, tech stack and how to open.
             </p>
           </div>
-          <button className="btn btn-primary" onClick={() => setOpen(true)}>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              briefScroll.current = 0;
+              setOpen(true);
+            }}
+          >
             Open full brief
             <ChevronRight aria-hidden />
           </button>
@@ -476,12 +624,59 @@ export function FirstCallBriefPreview({ projectId }: { projectId: string }) {
 
       <SidePanel
         wide
+        flush
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={closeAll}
         title="15-minute first-call brief"
         subtitle={`Introductory call with ${stakeholderLens.name}, ${stakeholderLens.title}`}
+        panelClassName={detail ? "drawer--has-detail" : undefined}
+        headerStart={
+          compact && detail ? (
+            <button className="btn btn-sm fcbw__back" onClick={closeDetail}>
+              <ArrowLeft aria-hidden /> Back to brief
+            </button>
+          ) : undefined
+        }
       >
-        <FirstCallBrief projectId={projectId} />
+        <div className={`fcbw${detail ? " fcbw--detail" : ""}`}>
+          <div className="fcbw__brief" ref={briefPaneRef}>
+            <FirstCallBrief projectId={projectId} onOpenDetail={openDetail} />
+          </div>
+
+          {detail && header && (
+            <aside
+              key={detailKey(detail)}
+              className="fcbw__detail"
+              role="region"
+              aria-label={`${header.title} — detail`}
+            >
+              <header className="fcbw__detail-head">
+                <div className="fcbw__detail-titles">
+                  <h3 className="fcbw__detail-title" tabIndex={-1} ref={detailTitleRef}>
+                    {header.title}
+                  </h3>
+                  <p className="fcbw__detail-sub">{header.subtitle}</p>
+                </div>
+                <button className="btn btn-sm fcbw__detail-close" onClick={closeDetail}>
+                  Close detail
+                </button>
+              </header>
+
+              <div className="fcbw__detail-body">
+                {detail.kind === "item" && <BriefItemDetail item={detail.item} />}
+                {detail.kind === "stage" && <StageDetailBody area={detail.area} />}
+                {detail.kind === "broken" && <BrokenDetailBody />}
+                {detail.kind === "work" && <SimilarWorkDetailBody project={detail.project} />}
+              </div>
+
+              {(detail.kind === "stage" || detail.kind === "broken") && (
+                <div className="fcbw__detail-foot">
+                  <OpflowDetailLinks projectId={projectId} onNavigate={closeAll} />
+                </div>
+              )}
+            </aside>
+          )}
+        </div>
       </SidePanel>
     </>
   );

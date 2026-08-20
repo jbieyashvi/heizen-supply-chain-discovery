@@ -1908,6 +1908,19 @@
 /* Document-like content (e.g. the full first-call brief) gets a wider panel. */
 .drawer--wide {
   width: min(980px, 94vw);
+  transition: width 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* With the in-panel detail inspector open, the workspace widens so the
+   brief and the inspector fit side by side (desktop only). */
+@media (min-width: 1100px) {
+  .drawer--wide.drawer--has-detail {
+    width: min(1280px, 96vw);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer--wide {
+    transition: none;
+  }
 }
 @keyframes slidein {
   from { transform: translateX(24px); opacity: 0.6; }
@@ -1942,6 +1955,12 @@
 /* Clearance so the last field never sits flush under the sticky footer. */
 .drawer:has(.drawer__foot) .drawer__body {
   padding-bottom: 28px;
+}
+/* Flush body — a workspace child owns all layout and scrolling. */
+.drawer__body--flush {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
 }
 .drawer__foot {
   flex: 0 0 auto; /* sticky at the bottom, never shrinks */
