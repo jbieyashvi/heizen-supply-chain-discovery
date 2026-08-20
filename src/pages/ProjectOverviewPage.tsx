@@ -293,7 +293,7 @@ function FullOverview({
       </section>
 
       {/* The decision layer — what to build, ahead of any preparation detail */}
-      <RecommendedBuilds projectId={projectId} />
+      <RecommendedBuilds projectId={projectId} stage={stage} />
 
       <div className="stage-content" key={stage}>
         {stage === "intro" ? (

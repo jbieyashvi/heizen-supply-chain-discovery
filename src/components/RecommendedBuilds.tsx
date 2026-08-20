@@ -7,28 +7,44 @@ import {
   CircleAlert,
   FileSearch,
   HelpCircle,
+  History,
   Network,
   Quote,
 } from "lucide-react";
 import { Tooltip } from "./Tooltip";
 import { evidenceMeta } from "../lib/status";
 import { provenanceMeta } from "../data/heizenWork";
+import type { Stage } from "../lib/stage";
 import {
-  clioBuilds,
+  buildsForStage,
   buildConfidenceMeta,
   signalMeta,
-  RANKING_EXPLAINER,
+  rankingExplainer,
+  rankingShift,
   type RecommendedBuild,
 } from "../data/builds";
 
-/** The five layers "View why" reveals, in the order they unfold. */
-const LAYERS = [
-  "Customer evidence",
-  "Important unknowns",
-  "Questions to validate",
-  "Related process",
-  "Similar Heizen work",
-] as const;
+/** The five layers "View why" reveals, in the order they unfold. The first
+    two titles follow the stage: before the first call nothing is customer
+    evidence yet, and the unknowns are the first-call agenda itself. */
+const layerTitles = (stage: Stage) =>
+  [
+    stage === "intro" ? "Evidence before the call" : "Customer evidence",
+    stage === "intro" ? "Validate on the first call" : "Important unknowns",
+    "Questions to validate",
+    "Related process",
+    "Similar Heizen work",
+  ] as const;
+
+/** One line under the section title, in the language of the current stage. */
+const stageSub: Record<Stage, string> = {
+  intro:
+    "A preliminary read of what to build for Clio Snacks — ranked from external research, industry benchmarks and similar Heizen work, ahead of any client conversation.",
+  discovery:
+    "What to build for Clio Snacks — ranked on call evidence, client documents and what Heizen has delivered before.",
+  expansion:
+    "What to build next in this account — ranked on confirmed evidence, delivery feasibility and time-to-value.",
+};
 
 /* ---------- One ranking signal: three segments + a level word ---------- */
 function Signal({
@@ -134,14 +150,17 @@ function WhyPanel({
   rank,
   projectId,
   panelId,
+  stage,
 }: {
   build: RecommendedBuild;
   rank: number;
   projectId: string;
   panelId: string;
+  stage: Stage;
 }) {
   /* 1–5 = how many layers have been revealed so far. */
   const [step, setStep] = useState(1);
+  const LAYERS = layerTitles(stage);
   const primary = rank === 1;
   const { evidence, unknowns, questions, process, priorWork } = build.why;
 
@@ -305,16 +324,22 @@ function BuildCard({
   projectId,
   open,
   onToggle,
+  stage,
 }: {
   build: RecommendedBuild;
   rank: number;
   projectId: string;
   open: boolean;
   onToggle: () => void;
+  stage: Stage;
 }) {
   const panelId = useId();
   const primary = rank === 1;
   const conf = buildConfidenceMeta[build.confidence];
+  /* Before the first call every recommendation is explicitly preliminary. */
+  const prelim = stage === "intro" && (
+    <span className="build__prelim">Preliminary</span>
+  );
 
   const whyButton = (
     <button
@@ -333,6 +358,7 @@ function BuildCard({
       <article className="build build--primary">
         <div className="build__top">
           <span className="build__rank">Primary recommendation</span>
+          {prelim}
         </div>
 
         <h3 className="build__name">{build.name}</h3>
@@ -341,7 +367,7 @@ function BuildCard({
         {whyButton}
 
         {open && (
-          <WhyPanel build={build} rank={rank} projectId={projectId} panelId={panelId} />
+          <WhyPanel build={build} rank={rank} projectId={projectId} panelId={panelId} stage={stage} />
         )}
       </article>
     );
@@ -358,6 +384,7 @@ function BuildCard({
           {rank}
         </span>
         <h3 className="build__name build__name--row">{build.name}</h3>
+        {prelim}
         <dl className="build__rowmeta">
           <div className="brm">
             <dt>Impact</dt>
@@ -379,7 +406,7 @@ function BuildCard({
       </div>
 
       {open && (
-        <WhyPanel build={build} rank={rank} projectId={projectId} panelId={panelId} />
+        <WhyPanel build={build} rank={rank} projectId={projectId} panelId={panelId} stage={stage} />
       )}
     </article>
   );
@@ -390,11 +417,18 @@ function BuildCard({
  * recommendation, two compact alternates, each explainable on demand.
  * At most one recommendation is expanded at a time.
  */
-export function RecommendedBuilds({ projectId }: { projectId: string }) {
+export function RecommendedBuilds({
+  projectId,
+  stage,
+}: {
+  projectId: string;
+  stage: Stage;
+}) {
   const [openId, setOpenId] = useState<string | null>(null);
   const toggle = (id: string) => setOpenId((cur) => (cur === id ? null : id));
-  const [primary, ...rest] = clioBuilds;
+  const [primary, ...rest] = buildsForStage(stage);
   const secondary = rest.slice(0, 2);
+  const shift = rankingShift[stage];
 
   return (
     <section className="builds" aria-labelledby="builds-heading">
@@ -403,12 +437,14 @@ export function RecommendedBuilds({ projectId }: { projectId: string }) {
           <h2 className="block-title" id="builds-heading">
             Recommended builds
           </h2>
-          <p className="block-sub">
-            What to build for Clio Snacks — ranked on research evidence, customer context
-            and what Heizen has delivered before.
-          </p>
+          <p className="block-sub">{stageSub[stage]}</p>
+          {shift && (
+            <p className="builds__shift">
+              <History aria-hidden /> {shift}
+            </p>
+          )}
         </div>
-        <Tooltip label={RANKING_EXPLAINER}>
+        <Tooltip label={rankingExplainer[stage]}>
           <span className="hint-chip">
             <CircleHelp aria-hidden /> How ranking works
           </span>
@@ -421,6 +457,7 @@ export function RecommendedBuilds({ projectId }: { projectId: string }) {
         projectId={projectId}
         open={openId === primary.id}
         onToggle={() => toggle(primary.id)}
+        stage={stage}
       />
 
       <div className="builds__secondary">
@@ -432,6 +469,7 @@ export function RecommendedBuilds({ projectId }: { projectId: string }) {
             projectId={projectId}
             open={openId === b.id}
             onToggle={() => toggle(b.id)}
+            stage={stage}
           />
         ))}
       </div>
