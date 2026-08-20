@@ -3,8 +3,9 @@ import react from "@vitejs/plugin-react";
 import { copyFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
-// GitHub Pages serves this project from a repository subpath.
-const BASE = "/heizen-supply-chain-discovery/";
+// GitHub Pages serves V2 from its own repository subpath; the original
+// repository's root URL now serves the frozen V1 (pre-feedback) prototype.
+const BASE = "/heizen-supply-chain-discovery-v2/";
 
 /**
  * SPA fallback for GitHub Pages: copy the built index.html to 404.html.
