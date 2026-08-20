@@ -1907,3 +1907,435 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   Conversation tree (Discovery Questions redesign)
+   ========================================================= */
+
+.ctree-stagenote {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border-subtle));
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-2);
+  max-width: 72ch;
+}
+
+.ctree-status {
+  margin-bottom: 20px;
+}
+.ctree-status__meet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.ctree-status__meet svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-3);
+}
+
+.ctree-toolbar {
+  margin-bottom: 20px;
+}
+
+/* ---------- Threads (one expanded at a time) ---------- */
+.ctree-threads {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.ctree-thread {
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  transition: border-color 0.14s ease;
+}
+.ctree-thread:hover,
+.ctree-thread.is-open {
+  border-color: var(--border);
+}
+
+.ctree-thread__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-1);
+  font: inherit;
+}
+.ctree-thread__icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.ctree-thread__icon svg {
+  width: 15px;
+  height: 15px;
+}
+.ctree-thread__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ctree-thread__label {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ctree-thread__blurb {
+  font-size: 13px;
+  color: var(--text-3);
+}
+.ctree-thread__meta {
+  font-size: 12px;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.ctree-thread__caret {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  transition: transform 0.16s ease;
+}
+.ctree-thread.is-open .ctree-thread__caret {
+  transform: rotate(180deg);
+}
+
+.ctree-thread__body {
+  padding: 4px 16px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* ---------- Sequenced nodes with connector rail ---------- */
+.ctree-seq {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.ctree-seq::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: var(--border-subtle);
+}
+
+.ctnode {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+}
+.ctnode__marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 14px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.ctnode.is-answered .ctnode__marker {
+  background: var(--green-soft);
+  border-color: color-mix(in srgb, var(--green) 55%, transparent);
+  color: var(--green);
+}
+
+.ctnode__main {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  transition: border-color 0.14s ease;
+}
+.ctnode:hover .ctnode__main,
+.ctnode.is-open .ctnode__main {
+  border-color: var(--border);
+}
+.ctnode.is-later,
+.ctnode.is-skipped {
+  opacity: 0.55;
+}
+.ctnode.is-later:hover,
+.ctnode.is-skipped:hover,
+.ctnode.is-later.is-open,
+.ctnode.is-skipped.is-open {
+  opacity: 0.85;
+}
+
+.ctnode__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.ctnode__role {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.ctnode__who {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.ctnode__flags {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.ctnode__q {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 550;
+  color: var(--text-1);
+  max-width: 65ch;
+}
+.ctnode__q:hover {
+  color: var(--accent);
+}
+
+.ctnode__answer {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--green) 6%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--green) 45%, transparent);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.ctnode__caplabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.ctnode__answer p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-1);
+  max-width: 65ch;
+}
+
+.ctnode__fu {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.ctnode__fu-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.ctnode__fu-label svg {
+  width: 12px;
+  height: 12px;
+}
+.ctnode__fu-q {
+  margin: 0 0 3px;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 550;
+  color: var(--text-1);
+  max-width: 65ch;
+}
+.ctnode__fu-why {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  max-width: 65ch;
+}
+
+.ctnode__assume {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+  border-left: 2px solid color-mix(in srgb, var(--amber) 50%, transparent);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.ctnode__assume-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+.ctnode__assume p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  max-width: 65ch;
+}
+
+.ctnode__why {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  max-width: 65ch;
+}
+.ctnode__why strong {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+/* Secondary actions stay hidden until the card is opened (or focused). */
+.ctnode__actions {
+  display: none;
+  margin-top: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ctnode.is-open .ctnode__actions,
+.ctnode:focus-within .ctnode__actions {
+  display: flex;
+}
+
+.ctree-empty {
+  margin: 16px 0 4px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+/* ---------- Account-expansion prompt ---------- */
+.ctree-expand {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: var(--r-md);
+}
+.ctree-expand__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.ctree-expand__label svg {
+  width: 13px;
+  height: 13px;
+}
+.ctree-expand__q {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-1);
+  max-width: 65ch;
+}
+
+@media (max-width: 720px) {
+  .ctree-thread__blurb {
+    display: none;
+  }
+  /* Meta drops under the label so long counts never squeeze the title. */
+  .ctree-thread__head {
+    grid-template-columns: auto 1fr auto;
+    row-gap: 2px;
+  }
+  .ctree-thread__icon {
+    grid-row: 1 / span 2;
+  }
+  .ctree-thread__titles {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .ctree-thread__meta {
+    grid-column: 2;
+    grid-row: 2;
+    white-space: normal;
+  }
+  .ctree-thread__caret {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+  .ctree-seq::before {
+    left: 10px;
+  }
+  .ctnode {
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+  }
+  .ctnode__marker {
+    width: 22px;
+    height: 22px;
+    margin-top: 12px;
+    font-size: 11px;
+  }
+  .ctnode__main {
+    padding: 12px;
+  }
+  .ctnode__flags {
+    margin-left: 0;
+    width: 100%;
+  }
+  .ctree-status__meet {
+    margin-left: 0;
+  }
+}

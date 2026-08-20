@@ -23,7 +23,8 @@ export function StartCallDialog({
   onStart: (mode: "recommended" | "selected") => void;
   fromQuestion?: { id: string; label: string } | null;
 }) {
-  const { shortlisted } = useDiscovery();
+  const { shortlisted, sortMode } = useDiscovery();
+  const agendaOrdered = sortMode === "custom";
   const [startFrom, setStartFrom] = useState<"recommended" | "selected">(
     "recommended"
   );
@@ -81,9 +82,11 @@ export function StartCallDialog({
             onChange={() => setStartFrom("recommended")}
           />
           <span>
-            <strong>Recommended order</strong>
+            <strong>{agendaOrdered ? "Agenda order" : "Recommended order"}</strong>
             <span className="startcall__hint">
-              Current process → business impact → evidence → decisions
+              {agendaOrdered
+                ? "The questions you added, in the order you added them"
+                : "Current process → business impact → evidence → decisions"}
             </span>
           </span>
         </label>
