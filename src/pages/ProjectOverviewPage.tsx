@@ -219,7 +219,10 @@ function FullOverview({
   const [refreshed, setRefreshed] = useState(false);
   const [stage, setStage] = useState<PrepStage>(() => {
     try {
-      return (localStorage.getItem(`heizen-v2-stage-${projectId}`) as PrepStage) || "intro";
+      // The key holds a raw stage string; stage-keyed lookups downstream crash
+      // on anything else, so unknown stored values fall back to "intro".
+      const stored = localStorage.getItem(`heizen-v2-stage-${projectId}`);
+      return stored === "intro" || stored === "discovery" || stored === "expansion" ? stored : "intro";
     } catch {
       return "intro";
     }
