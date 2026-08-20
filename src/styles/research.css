@@ -207,7 +207,7 @@
   border-radius: 999px;
 }
 .otp__label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -294,7 +294,7 @@
 }
 .situation__whynow-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--brand-text);
@@ -314,7 +314,7 @@
 }
 .situation__stat { display: flex; flex-direction: column; gap: 6px; }
 .situation__stat-label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -356,7 +356,7 @@
   font-weight: 700;
   flex: none;
 }
-.signal__finding { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.4; }
+.signal__finding { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.5; }
 .signal__right { display: flex; align-items: center; gap: 10px; flex: none; }
 .signal__chev { width: 17px; height: 17px; color: var(--text-3); transition: transform 0.18s ease; }
 .signal.is-open .signal__chev { transform: rotate(180deg); }
@@ -364,7 +364,7 @@
 .signal__why { font-size: 13px; line-height: 1.55; color: var(--text-2); }
 .signal__why-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -424,7 +424,7 @@
 }
 .thesis__validate { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--text-2); line-height: 1.45; }
 .thesis__k-label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -463,7 +463,7 @@
 .module__name { font-size: 14px; font-weight: 680; line-height: 1.3; }
 .module__grid { display: flex; flex-direction: column; gap: 10px; }
 .module__grid dt {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -482,7 +482,7 @@
 }
 .module__works-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -552,7 +552,7 @@
   flex-wrap: wrap;
 }
 .handoff__flow svg { width: 14px; height: 14px; color: var(--text-3); }
-.handoff__problem { font-size: 13px; color: var(--text-2); line-height: 1.45; }
+.handoff__problem { font-size: 13px; color: var(--text-2); line-height: 1.5; }
 
 .tech-groups {
   display: grid;
@@ -609,7 +609,7 @@
   border-top: 1px solid var(--border-subtle);
 }
 .stake__focus-label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   color: var(--text-3);
@@ -772,7 +772,7 @@
   width: 100%;
   text-align: left;
 }
-.finding__text { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.45; color: var(--text-1); }
+.finding__text { flex: 1; font-size: 14px; font-weight: 600; line-height: 1.5; color: var(--text-1); }
 .finding__eye { width: 16px; height: 16px; color: var(--text-3); flex: none; margin-top: 2px; transition: color 0.14s; }
 .finding__main:hover .finding__eye { color: var(--brand-text); }
 .finding__main:hover .finding__text { color: var(--brand-text); }
@@ -900,7 +900,7 @@
 .ev__list li {
   font-size: 13px;
   color: var(--text-2);
-  line-height: 1.45;
+  line-height: 1.5;
   padding-left: 12px;
   position: relative;
 }
@@ -933,7 +933,7 @@
 .pending__meta { font-size: 12px; color: var(--text-3); margin-top: 2px; }
 .pending__block { display: flex; flex-direction: column; gap: 6px; }
 .pending__label {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
   font-weight: 700;
@@ -1222,7 +1222,7 @@
 }
 .fcr-signal__summary {
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-2);
 }
 .fcr-signal__chev {
@@ -1293,7 +1293,7 @@
 }
 .fcr-vendor__rel {
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-1);
 }
 .fcr-vendor__evi {
@@ -1514,7 +1514,7 @@
   gap: 8px;
   padding: 10px 12px;
   font-size: 13.5px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-1);
   background: var(--surface-2);
   border: 1px solid var(--border-subtle);
@@ -1553,7 +1553,7 @@
 }
 .fcr-d__href-rel {
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-2);
 }
 

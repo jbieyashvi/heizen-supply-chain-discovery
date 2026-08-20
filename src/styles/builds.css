@@ -6,16 +6,16 @@
    ========================================================================= */
 
 .builds {
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
 .builds__head {
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 .builds__secondary {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 /* ---------- Card ---------- */
@@ -30,7 +30,7 @@
 .build--primary {
   border-color: var(--border);
   border-left: 2px solid var(--brand);
-  padding: 22px 22px 20px;
+  padding: 24px 24px 22px;
 }
 
 .build__top {
@@ -41,7 +41,7 @@
   flex-wrap: wrap;
 }
 .build__rank {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -59,7 +59,7 @@
   color: var(--text-1);
 }
 .build--primary .build__name {
-  font-size: 21px;
+  font-size: 19px;
   letter-spacing: -0.35px;
 }
 .build__problem {
@@ -67,10 +67,10 @@
   font-size: 13px;
   line-height: 1.55;
   color: var(--text-2);
+  max-width: 65ch;
 }
 .build--primary .build__problem {
   font-size: 14px;
-  max-width: 68ch;
 }
 
 /* ---------- Compact single-row alternates ---------- */
@@ -118,7 +118,7 @@
   min-width: 0;
 }
 .brm dt {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -150,8 +150,8 @@
 .build__facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 20px;
-  margin-top: 16px;
+  gap: 14px 24px;
+  margin-top: 18px;
   padding-top: 15px;
   border-top: 1px solid var(--border-subtle);
 }
@@ -162,7 +162,7 @@
   min-width: 0;
 }
 .bfact dt {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -173,7 +173,7 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-1);
-  line-height: 1.4;
+  line-height: 1.5;
 }
 .bfact__dot {
   display: inline-block;
@@ -193,10 +193,40 @@
   line-height: 1.45;
 }
 
+/* The sentences behind the primary card's headline numbers — the collapsed
+   card shows values only; the explanations live inside "View why". */
+.build__whyintro > .build__rankwhy-label {
+  display: block;
+  margin-bottom: 10px;
+}
+.build__factnotes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+.build__factnotes > div {
+  min-width: 0;
+}
+.build__factnotes dt {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.build__factnotes dd {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2);
+  max-width: 65ch;
+}
+
 /* ---------- Why it ranks here (inside the "View why" panel) ---------- */
 .build__rankwhy {
-  margin-top: 16px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 16px;
   border-top: 1px solid var(--border-subtle);
 }
 /* The panel already draws a divider — don't double it on its first block. */
@@ -207,7 +237,7 @@
 }
 .build__rankwhy-label {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -260,7 +290,7 @@
 }
 .build__ranknote {
   margin-top: 12px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.55;
   color: var(--text-2);
 }
@@ -291,7 +321,7 @@
 .build__why {
   margin-top: 6px;
   border-top: 1px solid var(--border-subtle);
-  padding-top: 14px;
+  padding-top: 16px;
   animation: bwhy-in 0.2s ease;
 }
 @keyframes bwhy-in {
@@ -335,7 +365,7 @@
   background: var(--brand-subtle);
   border: 1px solid var(--brand-line);
   color: var(--brand-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   flex: none;
 }
@@ -418,7 +448,7 @@
 .wq__q {
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.45;
+  line-height: 1.5;
   color: var(--text-1);
 }
 .wq__why {
@@ -447,7 +477,7 @@
   gap: 8px;
   flex-wrap: wrap;
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
 }
 .wproc__where {
   font-weight: 600;
@@ -656,7 +686,10 @@
   .build__facts,
   .build--primary .build__facts {
     grid-template-columns: 1fr;
-    gap: 11px;
+    gap: 12px;
+  }
+  .build__factnotes {
+    grid-template-columns: 1fr;
   }
   .build--primary .build__name {
     font-size: 18px;
@@ -685,7 +718,7 @@
   border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
   background: color-mix(in srgb, var(--amber) 10%, transparent);
   color: var(--amber);
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;

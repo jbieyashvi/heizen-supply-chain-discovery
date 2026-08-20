@@ -99,7 +99,13 @@ function Layer({
 }
 
 /* ---------- The four headline facts on a recommendation ---------- */
-function BuildFacts({ build }: { build: RecommendedBuild }) {
+function BuildFacts({
+  build,
+  notes = true,
+}: {
+  build: RecommendedBuild;
+  notes?: boolean;
+}) {
   const conf = buildConfidenceMeta[build.confidence];
   const prov = provenanceMeta[build.builtBefore.provenance];
   const { priorWork } = build.why;
@@ -109,14 +115,14 @@ function BuildFacts({ build }: { build: RecommendedBuild }) {
         <dt>Impact</dt>
         <dd>
           {build.impactValue}
-          <span className="bfact__note">{build.impact}</span>
+          {notes && <span className="bfact__note">{build.impact}</span>}
         </dd>
       </div>
       <div className="bfact">
         <dt>Est. delivery</dt>
         <dd>
           {build.delivery}
-          <span className="bfact__note">{build.deliveryNote}</span>
+          {notes && <span className="bfact__note">{build.deliveryNote}</span>}
         </dd>
       </div>
       <div className="bfact">
@@ -124,7 +130,7 @@ function BuildFacts({ build }: { build: RecommendedBuild }) {
         <dd>
           <span className={`bfact__dot tone-${conf.tone}`} aria-hidden />
           {conf.label}
-          <span className="bfact__note">{build.confidenceNote}</span>
+          {notes && <span className="bfact__note">{build.confidenceNote}</span>}
         </dd>
       </div>
       <div className="bfact">
@@ -132,9 +138,11 @@ function BuildFacts({ build }: { build: RecommendedBuild }) {
         <dd>
           <span className={`bfact__dot tone-${prov.tone}`} aria-hidden />
           {build.builtBefore.label}
-          <span className="bfact__note">
-            {build.builtBefore.detail} · {priorWork.overlap}% process overlap
-          </span>
+          {notes && (
+            <span className="bfact__note">
+              {build.builtBefore.detail} · {priorWork.overlap}% process overlap
+            </span>
+          )}
         </dd>
       </div>
     </dl>
@@ -171,9 +179,36 @@ function WhyPanel({
       role="region"
       aria-label={`Why ${build.name} ranks here`}
     >
-      {/* Secondary rows keep their collapsed state to a single line, so the
+      {/* Primary: the collapsed card shows headline values only, so the metric
+          sentences move here. Secondary rows collapse to a single line, so the
           problem statement and full facts surface here instead. */}
-      {!primary && (
+      {primary ? (
+        // The collapsed card shows only the headline values; each metric's
+        // explanatory sentence surfaces here with the reasoning.
+        <div className="build__whyintro">
+          <span className="build__rankwhy-label">Behind the numbers</span>
+          <dl className="build__factnotes">
+            <div>
+              <dt>Impact</dt>
+              <dd>{build.impact}</dd>
+            </div>
+            <div>
+              <dt>Est. delivery</dt>
+              <dd>{build.deliveryNote}</dd>
+            </div>
+            <div>
+              <dt>Confidence</dt>
+              <dd>{build.confidenceNote}</dd>
+            </div>
+            <div>
+              <dt>Built before</dt>
+              <dd>
+                {build.builtBefore.detail} · {priorWork.overlap}% process overlap
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : (
         <div className="build__whyintro">
           <p className="build__problem">{build.problem}</p>
           <BuildFacts build={build} />
@@ -363,7 +398,7 @@ function BuildCard({
 
         <h3 className="build__name">{build.name}</h3>
         <p className="build__problem">{build.problem}</p>
-        <BuildFacts build={build} />
+        <BuildFacts build={build} notes={false} />
         {whyButton}
 
         {open && (

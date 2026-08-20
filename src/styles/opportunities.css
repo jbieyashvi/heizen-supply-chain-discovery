@@ -145,7 +145,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -207,7 +207,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -423,7 +423,7 @@
 .opp-ev__finding {
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--text-1);
 }
 .opp-ev__excerpt {
@@ -475,7 +475,7 @@
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.5;
   color: var(--text-1);
 }
 .opp-qa__ic {
