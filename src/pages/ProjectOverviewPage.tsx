@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { Segmented, type SegmentOption } from "../components/Segmented";
-import { FirstCallBrief } from "../components/FirstCallBrief";
+import { FirstCallBriefPreview } from "../components/FirstCallBrief";
 import { ReadinessStepItem } from "../components/ReadinessStepItem";
 import { InsightItem } from "../components/InsightItem";
 import { QuestionPreview } from "../components/QuestionPreview";
@@ -345,7 +345,7 @@ function IntroStage({ projectId }: { projectId: string }) {
 
   return (
     <>
-      <FirstCallBrief projectId={projectId} />
+      <FirstCallBriefPreview projectId={projectId} />
 
       {/* Kept, but de-emphasised — these lead once you move past an intro call */}
       <section className="card card-pad later-tools">

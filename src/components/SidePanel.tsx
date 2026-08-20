@@ -8,9 +8,13 @@ interface SidePanelProps {
   subtitle?: string;
   footer?: ReactNode;
   children: ReactNode;
+  /** Wide layout for document-like content (e.g. the full first-call brief). */
+  wide?: boolean;
 }
 
-/** Right-side drawer with overlay, escape-to-close and basic focus handling. */
+/** Right-side drawer with overlay, escape-to-close and basic focus handling.
+ *  Panels can nest (a drawer opened from inside another drawer); keyboard
+ *  handling only ever acts on the top-most one. */
 export function SidePanel({
   open,
   onClose,
@@ -18,12 +22,20 @@ export function SidePanel({
   subtitle,
   footer,
   children,
+  wide = false,
 }: SidePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const prevFocus = document.activeElement as HTMLElement | null;
+
+    // A nested drawer renders after (inside) its parent, so the last .drawer
+    // in document order is the top-most open panel.
+    const isTop = () => {
+      const drawers = document.querySelectorAll(".drawer");
+      return drawers[drawers.length - 1] === panelRef.current;
+    };
 
     const focusables = () =>
       Array.from(
@@ -33,6 +45,7 @@ export function SidePanel({
       ).filter((el) => el.offsetParent !== null || el === document.activeElement);
 
     const onKey = (e: KeyboardEvent) => {
+      if (!isTop()) return;
       if (e.key === "Escape") {
         onClose();
         return;
@@ -55,12 +68,13 @@ export function SidePanel({
     };
 
     document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const t = setTimeout(() => focusables()[0]?.focus(), 60);
 
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
       clearTimeout(t);
       prevFocus?.focus?.(); // restore focus to the trigger
     };
@@ -71,7 +85,7 @@ export function SidePanel({
   return (
     <div className="drawer-overlay" onMouseDown={onClose}>
       <div
-        className="drawer"
+        className={`drawer${wide ? " drawer--wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

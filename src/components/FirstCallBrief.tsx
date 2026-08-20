@@ -421,3 +421,68 @@ function BriefDrawer({ item, onClose }: { item: DrawerItem | null; onClose: () =
     </SidePanel>
   );
 }
+
+/**
+ * Compact stand-in for the brief on the Overview: who the call is with, what
+ * it should achieve, and the top conversation areas — with the complete
+ * eight-section brief one click away in a wide side panel.
+ */
+export function FirstCallBriefPreview({ projectId }: { projectId: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <section className="card card-pad fcbp" aria-labelledby="fcbp-title">
+        <div className="section-head">
+          <div>
+            <h2 className="block-title" id="fcbp-title">
+              15-minute first-call brief
+            </h2>
+            <p className="block-sub">
+              The essentials for the introductory call — open the full brief for
+              context, hypotheses, tech stack and how to open.
+            </p>
+          </div>
+          <button className="btn btn-primary" onClick={() => setOpen(true)}>
+            Open full brief
+            <ChevronRight aria-hidden />
+          </button>
+        </div>
+
+        <dl className="fcbp__grid">
+          <div className="fcbp__cell">
+            <dt>Stakeholder</dt>
+            <dd>
+              {stakeholderLens.name}
+              <span className="fcbp__sub">{stakeholderLens.title}</span>
+            </dd>
+          </div>
+          <div className="fcbp__cell">
+            <dt>Meeting goal</dt>
+            <dd>{desiredOutcome}</dd>
+          </div>
+          <div className="fcbp__cell">
+            <dt>Top conversation areas</dt>
+            <dd>
+              <ol className="fcbp__areas">
+                {stakeholderLens.conversationAreas.slice(0, 3).map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ol>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <SidePanel
+        wide
+        open={open}
+        onClose={() => setOpen(false)}
+        title="15-minute first-call brief"
+        subtitle={`Introductory call with ${stakeholderLens.name}, ${stakeholderLens.title}`}
+      >
+        <FirstCallBrief projectId={projectId} />
+      </SidePanel>
+    </>
+  );
+}

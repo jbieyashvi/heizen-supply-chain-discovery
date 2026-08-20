@@ -1,7 +1,8 @@
 /* =========================================================================
    Recommended builds — the decision layer at the top of a project overview.
-   One emphasised card, up to two alternates, each with a progressive
-   "View why" that unfolds five layers of reasoning.
+   One emphasised card and two compact single-row alternates. All reasoning
+   (ranking signals + the five evidence layers) hides behind "View why";
+   only one recommendation is expanded at a time.
    ========================================================================= */
 
 .builds {
@@ -11,11 +12,10 @@
   margin-bottom: 12px;
 }
 .builds__secondary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 14px;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 /* ---------- Card ---------- */
@@ -73,6 +73,79 @@
   max-width: 68ch;
 }
 
+/* ---------- Compact single-row alternates ---------- */
+.build--row {
+  padding: 12px 16px;
+  transition: border-color 0.16s ease;
+}
+.build--row:hover,
+.build--row.is-open {
+  border-color: var(--border);
+}
+.build__row {
+  display: flex;
+  align-items: center;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.build__rank-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.build__name--row {
+  margin-top: 0;
+  font-size: 14px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.build__rowmeta {
+  display: flex;
+  align-items: center;
+  gap: 8px 22px;
+  flex-wrap: wrap;
+}
+.brm {
+  min-width: 0;
+}
+.brm dt {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.brm dd {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+}
+.build--row .build__why-btn {
+  margin-top: 0;
+  margin-left: auto;
+}
+.build--row .build__why {
+  margin-top: 12px;
+}
+
+/* Problem + full facts for an expanded alternate — its row stays compact. */
+.build__whyintro .build__facts {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 12px;
+}
+
 /* ---------- The six facts ---------- */
 .build__facts {
   display: grid;
@@ -120,11 +193,17 @@
   line-height: 1.45;
 }
 
-/* ---------- Why it ranks here ---------- */
+/* ---------- Why it ranks here (inside the "View why" panel) ---------- */
 .build__rankwhy {
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid var(--border-subtle);
+}
+/* The panel already draws a divider — don't double it on its first block. */
+.build__why > .build__rankwhy:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 .build__rankwhy-label {
   display: block;
@@ -137,9 +216,6 @@
 }
 .build__signals {
   display: grid;
-  gap: 9px;
-}
-.build--primary .build__signals {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   align-items: start;
@@ -216,12 +292,30 @@
   margin-top: 6px;
   border-top: 1px solid var(--border-subtle);
   padding-top: 14px;
+  animation: bwhy-in 0.2s ease;
+}
+@keyframes bwhy-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .build__why {
+    animation: none;
+  }
+  .build--row {
+    transition: none;
+  }
 }
 .wlayers {
   display: flex;
   flex-direction: column;
   gap: 16px;
   list-style: none;
+}
+.build__why .wlayers {
+  margin-top: 18px;
 }
 .wlayer {
   min-width: 0;
@@ -539,10 +633,7 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {
-  .builds__secondary {
-    grid-template-columns: 1fr;
-  }
-  .build--primary .build__signals {
+  .build__signals {
     grid-template-columns: 1fr;
     gap: 9px;
   }
@@ -569,6 +660,13 @@
   }
   .build--primary .build__name {
     font-size: 18px;
+  }
+  /* Rows wrap: rank + title on the first line, meta beneath, button after. */
+  .build__name--row {
+    flex-basis: calc(100% - 40px);
+  }
+  .build--row .build__why-btn {
+    margin-left: 0;
   }
   .wlayer__body {
     padding-left: 0;

@@ -1905,6 +1905,10 @@
   box-shadow: var(--shadow-pop);
   animation: slidein 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
+/* Document-like content (e.g. the full first-call brief) gets a wider panel. */
+.drawer--wide {
+  width: min(980px, 94vw);
+}
 @keyframes slidein {
   from { transform: translateX(24px); opacity: 0.6; }
 }
