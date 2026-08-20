@@ -20,7 +20,7 @@ export function Skeleton({
 /** A project-row skeleton used while the work queue "loads". */
 export function ProjectRowSkeleton() {
   return (
-    <div className="project-row project-row--skeleton" aria-hidden>
+    <div className="prow prow--skeleton" aria-hidden>
       <div className="stack" style={{ gap: 10, flex: 1 }}>
         <Skeleton w={180} h={16} />
         <Skeleton w={120} h={12} />

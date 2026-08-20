@@ -588,51 +588,6 @@
   opacity: 0.6;
 }
 
-/* ---------- Summary strip ---------- */
-.summary-strip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--r-lg);
-  background: var(--surface-1);
-  overflow: hidden;
-  margin-bottom: 28px;
-}
-.summary-cell {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  align-items: center;
-  gap: 4px 12px;
-  padding: 16px 20px;
-  position: relative;
-}
-.summary-cell + .summary-cell {
-  border-left: 1px solid var(--border-subtle);
-}
-.summary-cell__icon {
-  grid-row: 1 / span 2;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--surface-3);
-}
-.summary-cell__icon svg {
-  width: 19px;
-  height: 19px;
-}
-.summary-cell__value {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  grid-column: 2 / span 2;
-}
-.summary-cell__label {
-  grid-column: 2 / span 2;
-  font-size: 13px;
-  color: var(--text-2);
-}
 .tone-info {
   color: var(--info);
 }
@@ -790,238 +745,328 @@
   text-decoration: underline;
 }
 
-/* ---------- Project list rows ---------- */
-.project-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ---------- Projects toolbar (search · status · filter · sort · view) ---
+   Extends the shared .toolbar; every control is one row high so the queue
+   starts as close to the top of the page as possible. */
+.ptoolbar {
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.project-row {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  position: relative;
-  transition: border-color 0.16s ease, transform 0.08s ease,
-    background 0.16s ease;
+.ptoolbar .searchbox {
+  order: 0; /* search leads the row (the shared rule pushes it last) */
+  flex: 1 1 240px;
 }
-.project-row::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-}
-.stripe-green::before { background: var(--green); }
-.stripe-amber::before { background: var(--amber); }
-.stripe-info::before { background: var(--info); }
-.stripe-violet::before { background: var(--violet); }
-.stripe-red::before { background: var(--red); }
-.stripe-neutral::before { background: var(--text-3); }
 
-.project-row.is-clickable {
+/* Low-chrome toggle used for Active/Inactive/All and List/Card. */
+.tgl {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  flex: 0 0 auto;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.tgl__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--text-2);
+  white-space: nowrap;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+.tgl__btn:hover {
+  color: var(--text-1);
+}
+.tgl__btn.is-active {
+  background: var(--color-surface);
+  color: var(--text-1);
+  box-shadow: var(--shadow-2);
+}
+.tgl__btn--icon {
+  width: 34px;
+  padding: 0;
+}
+.tgl__btn--icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Quiet select — same height and hairline as the search field. */
+.pselect {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.pselect select {
+  appearance: none;
+  height: 38px;
+  padding: 0 30px 0 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-1);
+  font-size: 13px;
+  font-weight: 550;
   cursor: pointer;
 }
-.project-row.is-clickable:hover {
+.pselect select:hover {
   border-color: var(--border-strong);
-  background: var(--surface-hover);
 }
-.project-row.is-clickable:hover .nextaction__go {
-  color: var(--accent-strong);
-  gap: 8px;
+.pselect svg {
+  position: absolute;
+  right: 10px;
+  width: 15px;
+  height: 15px;
+  color: var(--text-3);
+  pointer-events: none;
 }
 
-.project-row__main {
-  padding: 18px 20px 18px 22px;
-  min-width: 0;
+/* ---------- Compact project list ----------
+   Header + rows share one column template so the list reads as a table
+   without the weight of table borders. */
+.plist {
+  /* Widths sized to the longest real value in each column, so nothing
+     ellipsizes until the list is genuinely short on room. */
+  --plist-cols: minmax(180px, 1.5fr) minmax(160px, 1fr) 116px 92px 100px 132px
+    152px;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  /* No overflow clipping — a row's 3-dot menu has to escape the list.
+     The edge rows round their own corners instead. */
 }
-.project-row__head {
+.plist__head,
+.prow {
+  display: grid;
+  grid-template-columns: var(--plist-cols);
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+}
+.plist__head {
+  height: 36px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.plist__head > * {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prow {
+  min-height: 52px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+.plist__head + .prow {
+  border-top: none;
+}
+.prow:last-child {
+  border-bottom-left-radius: calc(var(--r-lg) - 1px);
+  border-bottom-right-radius: calc(var(--r-lg) - 1px);
+}
+.prow:hover {
+  background: var(--surface-hover);
+}
+.prow.is-inactive .pcell__name,
+.pcard.is-inactive .pcard__name {
+  color: var(--text-2);
+}
+
+.prow__meta {
+  display: contents;
+}
+.pcell {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pcell__name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pcell__name:hover {
+  color: var(--brand-text);
+}
+/* Row-label + industry echo: only shown once the columns collapse. */
+.pcell__k,
+.pcell__sub--inline {
+  display: none;
+}
+.pcell__sub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.pcell--actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  overflow: visible;
+}
+
+/* Readiness — one colour per row, carried by the dot. */
+.pstate {
+  /* No colour of its own: the tone-* class colours the dot via currentColor. */
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 550;
+}
+.pstate__dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.pstate__label {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The single primary action. */
+.popen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-text);
+  white-space: nowrap;
+  transition: gap 0.14s ease;
+}
+.popen svg {
+  width: 14px;
+  height: 14px;
+}
+.prow:hover .popen,
+.pcard:hover .popen {
+  gap: 8px;
+}
+.popen:hover {
+  text-decoration: underline;
+}
+.icon-btn--sm {
+  width: 30px;
+  height: 30px;
+}
+.icon-btn--sm svg {
+  width: 16px;
+  height: 16px;
+}
+.menu__pop button.is-danger {
+  color: var(--critical);
+}
+.menu__pop button.is-danger svg {
+  color: var(--critical);
+}
+
+.pmore {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* ---------- Card view ---------- */
+.pcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px;
+}
+.pcard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+.pcard:hover {
+  border-color: var(--border);
+  background: var(--surface-hover);
+}
+.pcard__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
 }
-.project-row__id {
+.pcard__id {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
 }
-.project-row__name {
+.pcard__name {
   font-size: 15px;
-  font-weight: 680;
+  font-weight: 650;
   letter-spacing: -0.2px;
 }
-.project-row__industry {
-  font-size: 13px;
-  color: var(--text-3);
-}
-
-/* PRIMARY: next meeting */
-.project-row__meeting {
-  margin-top: 12px;
+.pcard__meta {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 7px;
   font-size: 13px;
-  color: var(--text-2);
 }
-.project-row__meeting svg {
-  width: 16px;
-  height: 16px;
-  color: var(--text-3);
-}
-.project-row__meeting-rel {
-  font-weight: 650;
-  color: var(--text-1);
-}
-.project-row__meeting-abs {
-  color: var(--text-3);
-}
-.project-row__meeting.is-soon svg {
-  color: var(--brand-text);
-}
-.project-row__meeting.is-soon .project-row__meeting-rel {
-  color: var(--brand-text);
-}
-
-/* SECONDARY: research / questions / opportunities */
-.project-row__stats {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
-  gap: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-subtle);
-}
-
-/* TERTIARY: owner / stakeholder / last activity */
-.project-row__tertiary {
-  margin-top: 12px;
+.pcard__meta > div {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.pcard__meta dt {
+  flex: none;
+  width: 88px;
   font-size: 12px;
   color: var(--text-3);
 }
-.project-row__tertiary b {
-  color: var(--text-2);
-  font-weight: 600;
-}
-.pstat {
-  display: flex;
-  gap: 9px;
+.pcard__meta dd {
   min-width: 0;
-}
-.pstat__icon {
-  color: var(--text-3);
-  margin-top: 1px;
-}
-.pstat__icon svg {
-  width: 16px;
-  height: 16px;
-}
-.pstat__body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.pstat__label {
-  font-size: 11px;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--text-3);
-  font-weight: 600;
-}
-.pstat__value {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-1);
-}
-.pstat__value.is-critical {
-  color: var(--red);
-}
-.pstat__value.is-good {
-  color: var(--green);
-}
-.pstat__value.is-muted {
-  font-weight: 500;
   color: var(--text-2);
-}
-.pstat__soft {
-  color: var(--text-3);
-  font-weight: 450;
-}
-.research-fresh,
-.research-running {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.minibar {
-  width: 54px;
-  height: 5px;
-  border-radius: 999px;
-  background: var(--surface-3);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.minibar__fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-}
-.minibar__fill.info { background: var(--info); }
-
-/* Next-action column */
-.project-row__action {
+.pcard__foot {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 18px 20px;
-  border-left: 1px solid var(--border-subtle);
-  background: color-mix(in srgb, var(--color-text) 3%, transparent);
-}
-.nextaction {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.nextaction__label {
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--text-3);
-  font-weight: 650;
-}
-.nextaction__text {
-  font-size: 13px;
-  font-weight: 550;
-  color: var(--text-1);
-  line-height: 1.45;
-}
-.nextaction__go {
-  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--brand-text);
-  transition: gap 0.15s ease, color 0.15s ease;
-}
-.nextaction__go svg {
-  width: 16px;
-  height: 16px;
-}
-.nextaction__go.is-disabled {
-  color: var(--text-3);
-  font-weight: 500;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* ---------- Empty state ---------- */
@@ -1080,12 +1125,13 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-.project-row--skeleton {
-  grid-template-columns: 1fr;
-  padding: 20px;
+.prow--skeleton {
   display: flex;
   align-items: center;
   gap: 16px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-subtle);
+  cursor: default;
 }
 
 /* ---------- Compact notice (research status) ---------- */
@@ -2277,43 +2323,72 @@ textarea.field-control {
 
 /* ---------- Responsive: laptop widths ---------- */
 @media (max-width: 1320px) {
-  .project-row {
-    grid-template-columns: 1fr 270px;
+  .plist {
+    --plist-cols: minmax(120px, 1fr) minmax(110px, 1fr) 108px 90px 84px 128px
+      150px;
+  }
+  .plist__head,
+  .prow {
+    gap: 12px;
   }
 }
-@media (max-width: 1080px) {
-  .project-row {
-    grid-template-columns: 1fr;
+
+/* Below the table breakpoint each project becomes a two-line block:
+   name + readiness + action, then one wrapped meta line. */
+@media (max-width: 1200px) {
+  .plist__head {
+    display: none;
   }
-  .project-row__action {
-    border-left: none;
-    border-top: 1px solid var(--border-subtle);
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+  /* The head still occupies child 1, so row two is the visual first row. */
+  .prow:nth-child(2) {
+    border-top-left-radius: calc(var(--r-lg) - 1px);
+    border-top-right-radius: calc(var(--r-lg) - 1px);
+  }
+  .prow {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 6px 12px;
+    padding: 12px 14px;
+  }
+  .pcell--name {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .pcell--state {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .pcell--actions {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .pcell--industry {
+    display: none; /* echoed under the project name instead */
+  }
+  .pcell__sub--inline {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .prow__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px 14px;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .prow__meta .pcell {
+    font-size: 12px;
+  }
+  .pcell__k {
+    display: inline;
+    margin-right: 5px;
+    color: var(--text-3);
   }
 }
 
 /* Compact laptop / tablet landscape */
 @media (max-width: 1024px) {
-  /* Keep the four summary metrics in one compact row where space permits */
-  .summary-strip {
-    margin-bottom: 14px;
-  }
-  .summary-cell {
-    padding: 12px 12px;
-    gap: 2px 9px;
-  }
-  .summary-cell__icon {
-    width: 32px;
-    height: 32px;
-  }
-  .summary-cell__value {
-    font-size: 20px;
-  }
-  .summary-cell__label {
-    font-size: 12px;
-  }
   /* Tighter vertical rhythm around search / filters / sort / count */
   .toolbar {
     gap: 8px;
@@ -2322,29 +2397,11 @@ textarea.field-control {
   .results-meta {
     margin-bottom: 10px;
   }
-  /* Slightly darker secondary metadata for readability */
-  .project-row__tertiary {
-    color: var(--text-2);
-  }
   .opps {
     grid-template-columns: 1fr;
   }
   .proj-meta {
     font-size: 13px;
-  }
-}
-
-/* Summary metrics fall back to two rows only when four no longer fit */
-@media (max-width: 720px) {
-  .summary-strip {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .summary-cell:nth-child(2) {
-    border-left: none;
-  }
-  .summary-cell:nth-child(3),
-  .summary-cell:nth-child(4) {
-    border-top: 1px solid var(--border-subtle);
   }
 }
 
@@ -2381,9 +2438,9 @@ textarea.field-control {
   .sort-control select {
     width: auto;
   }
-  .project-row__stats {
-    grid-template-columns: 1fr 1fr;
-    row-gap: 14px;
+  /* Projects: search on its own row, controls share the next one */
+  .ptoolbar .searchbox {
+    flex: 1 0 100%;
   }
   .questions {
     grid-template-columns: 1fr;
@@ -2408,14 +2465,21 @@ textarea.field-control {
 
 /* Small tablet / large phone */
 @media (max-width: 640px) {
-  .summary-strip {
-    grid-template-columns: 1fr;
+  .prow {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
-  .summary-cell + .summary-cell {
-    border-left: none;
-    border-top: 1px solid var(--border-subtle);
+  .pcell--state {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
-  .project-row__stats {
+  .pcell--actions {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .prow__meta {
+    grid-row: 3;
+  }
+  .pcards {
     grid-template-columns: 1fr;
   }
   .page-header__row {
@@ -2431,8 +2495,8 @@ textarea.field-control {
    disabled states. Scoped to light so the dark theme is unchanged.
    ========================================================================= */
 :root[data-theme="light"] .card,
-:root[data-theme="light"] .project-row,
-:root[data-theme="light"] .summary-strip,
+:root[data-theme="light"] .plist,
+:root[data-theme="light"] .pcard,
 :root[data-theme="light"] .prep-strip,
 :root[data-theme="light"] .qrow,
 :root[data-theme="light"] .answer,
@@ -2643,7 +2707,6 @@ textarea.field-control {
    ========================================================================= */
 
 /* Stronger metric hierarchy — larger, tighter KPI values. */
-.summary-cell__value,
 .opp-stat__value,
 .pmap-stat__value,
 .src-stat__value,
@@ -2652,7 +2715,6 @@ textarea.field-control {
 .conf-card__name {
   letter-spacing: -0.5px;
 }
-.summary-cell__value,
 .opp-stat__value,
 .pmap-stat__value,
 .src-stat__value,
@@ -2665,7 +2727,6 @@ textarea.field-control {
 }
 
 /* Compact uppercase labels with slight tracking, applied consistently. */
-.summary-cell__label,
 .opp-stat__label,
 .pmap-stat__label,
 .src-stat__label,
@@ -2689,7 +2750,8 @@ textarea.field-control {
 
 /* Flatten remaining heavy card shadows to the token (thin borders instead). */
 .card,
-.summary-strip,
+.plist,
+.pcard,
 .oppc,
 .pmap-node {
   box-shadow: none;

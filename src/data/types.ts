@@ -31,6 +31,8 @@ export interface Project {
   owner: string;
   ownerInitials: string;
   isMine: boolean;
+  /** Active/inactive scope on the Projects list. Absent = active. */
+  active?: boolean;
   stakeholder: Stakeholder;
   /** ISO-ish display; null when unscheduled */
   meeting: { date: string; time: string; relative: string } | null;

@@ -1,170 +1,235 @@
-import { useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
+  Archive,
+  ArchiveRestore,
   ArrowRight,
-  CalendarClock,
-  CalendarOff,
+  FileStack,
   FlaskConical,
   HelpCircle,
+  MoreHorizontal,
+  Pencil,
   Target,
+  Trash2,
 } from "lucide-react";
 import type { Project } from "../data/types";
-import { ReadinessBadge, FreshnessBadge } from "./StatusBadges";
 import { readinessMeta } from "../lib/status";
+import { readStage, stageMeta } from "../lib/stage";
+import { useClickOutside } from "../hooks/useClickOutside";
 
-const researchLabel: Record<Project["research"], string> = {
-  complete: "Complete",
-  running: "Running",
-  "not-started": "Not started",
-};
+export type ProjectView = "list" | "card";
 
-function Stat({
-  icon,
-  label,
-  children,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-  tone?: "critical" | "good" | "muted";
-}) {
+export interface ProjectActions {
+  onEdit: (p: Project) => void;
+  onToggleActive: (p: Project) => void;
+  onDelete: (p: Project) => void;
+}
+
+/** "Transcript processed · 2h ago" → "2h ago" (full text stays in the title). */
+function activityWhen(text: string): string {
+  const parts = text.split("·");
+  return (parts.length > 1 ? parts[parts.length - 1] : text).trim();
+}
+
+/** Readiness as a single coloured dot + label — the one status colour per row. */
+function Readiness({ state }: { state: Project["readiness"] }) {
+  const m = readinessMeta[state];
   return (
-    <div className="pstat">
-      <span className="pstat__icon" aria-hidden>
-        {icon}
-      </span>
-      <span className="pstat__body">
-        <span className="pstat__label">{label}</span>
-        <span className={`pstat__value${tone ? ` is-${tone}` : ""}`}>
-          {children}
-        </span>
-      </span>
+    <span className={`pstate tone-${m.tone}`} title={m.help}>
+      <span className="pstate__dot" aria-hidden />
+      <span className="pstate__label">{m.label}</span>
+    </span>
+  );
+}
+
+/* ---------- Secondary actions ---------- */
+function RowMenu({
+  project,
+  actions,
+}: {
+  project: Project;
+  actions: ProjectActions;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  useClickOutside(ref, () => setOpen(false), open);
+
+  const inactive = project.active === false;
+  const run = (fn: () => void) => () => {
+    setOpen(false);
+    fn();
+  };
+  const go = (sub: string) => () => navigate(`/projects/${project.id}/${sub}`);
+
+  return (
+    <div className="menu" ref={ref} onClick={(e) => e.stopPropagation()}>
+      <button
+        className="icon-btn icon-btn--sm"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`More actions for ${project.name}`}
+      >
+        <MoreHorizontal />
+      </button>
+      {open && (
+        <div className="menu__pop" role="menu">
+          <button role="menuitem" onClick={run(go("research"))}>
+            <FlaskConical /> Research brief
+          </button>
+          <button role="menuitem" onClick={run(go("discovery"))}>
+            <HelpCircle /> Discovery questions
+          </button>
+          <button role="menuitem" onClick={run(go("opportunities"))}>
+            <Target /> Opportunities
+          </button>
+          <button role="menuitem" onClick={run(go("sources"))}>
+            <FileStack /> Sources
+          </button>
+          <div className="menu__sep" />
+          <button role="menuitem" onClick={run(() => actions.onEdit(project))}>
+            <Pencil /> Edit details
+          </button>
+          <button
+            role="menuitem"
+            onClick={run(() => actions.onToggleActive(project))}
+          >
+            {inactive ? <ArchiveRestore /> : <Archive />}
+            {inactive ? "Mark active" : "Mark inactive"}
+          </button>
+          <div className="menu__sep" />
+          <button
+            role="menuitem"
+            className="is-danger"
+            onClick={run(() => actions.onDelete(project))}
+          >
+            <Trash2 /> Delete project
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
-export function ProjectItem({ project }: { project: Project }) {
-  const navigate = useNavigate();
-  const tone = readinessMeta[project.readiness].tone;
-  const soon = project.meeting?.relative === "Tomorrow";
+/** The single primary action on a project. */
+function OpenAction({ project }: { project: Project }) {
+  return (
+    <Link
+      to={`/projects/${project.id}`}
+      className="popen"
+      onClick={(e) => e.stopPropagation()}
+    >
+      Open project
+      <ArrowRight aria-hidden />
+    </Link>
+  );
+}
 
+export function ProjectItem({
+  project,
+  view = "list",
+  actions,
+}: {
+  project: Project;
+  view?: ProjectView;
+  actions: ProjectActions;
+}) {
+  const navigate = useNavigate();
+  const stage = stageMeta[readStage(project.id)];
+  const inactive = project.active === false;
   const open = () => navigate(`/projects/${project.id}`);
 
-  return (
-    <article
-      className={`project-row stripe-${tone} is-clickable`}
-      onClick={open}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          open();
-        }
-      }}
-      role="button"
-      tabIndex={0}
-      aria-label={`Open ${project.name} overview`}
-    >
-      <div className="project-row__main">
-        {/* PRIMARY: client + status */}
-        <div className="project-row__head">
-          <div className="project-row__id">
-            <h3 className="project-row__name">{project.name}</h3>
-            <span className="project-row__industry">{project.industry}</span>
+  if (view === "card") {
+    return (
+      <article
+        className={`pcard${inactive ? " is-inactive" : ""}`}
+        onClick={open}
+      >
+        <div className="pcard__head">
+          <div className="pcard__id">
+            <h3 className="pcard__name">{project.name}</h3>
+            <span className="pcell__sub">{project.industry}</span>
           </div>
-          <ReadinessBadge state={project.readiness} />
+          <RowMenu project={project} actions={actions} />
         </div>
 
-        {/* PRIMARY: next meeting */}
-        <div className={`project-row__meeting${soon ? " is-soon" : ""}`}>
-          {project.meeting ? (
-            <>
-              {soon ? <CalendarClock aria-hidden /> : <CalendarClock aria-hidden />}
-              <span className="project-row__meeting-rel">
-                {project.meeting.relative}
-              </span>
-              <span className="project-row__meeting-abs">
-                {project.meeting.date}, {project.meeting.time}
-              </span>
-            </>
-          ) : (
-            <>
-              <CalendarOff aria-hidden />
-              <span className="project-row__meeting-abs">No meeting scheduled</span>
-            </>
-          )}
+        <dl className="pcard__meta">
+          <div>
+            <dt>Stage</dt>
+            <dd>{stage.label}</dd>
+          </div>
+          <div>
+            <dt>Owner</dt>
+            <dd>{project.owner}</dd>
+          </div>
+          <div>
+            <dt>Last activity</dt>
+            <dd>{project.lastActivity}</dd>
+          </div>
+        </dl>
+
+        <div className="pcard__foot">
+          <Readiness state={project.readiness} />
+          <OpenAction project={project} />
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <div
+      className={`prow${inactive ? " is-inactive" : ""}`}
+      onClick={open}
+      role="row"
+    >
+      <div className="pcell pcell--name" role="cell">
+        <Link
+          to={`/projects/${project.id}`}
+          className="pcell__name"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {project.name}
+        </Link>
+        {/* Industry rides under the name below the table breakpoint. */}
+        <span className="pcell__sub pcell__sub--inline">{project.industry}</span>
+      </div>
+
+      <div className="pcell pcell--industry" role="cell" title={project.industry}>
+        {project.industry}
+      </div>
+
+      {/* display:contents on wide screens — the three cells stay table
+          columns, and regroup into one meta line once the table collapses. */}
+      <div className="prow__meta">
+        <div className="pcell pcell--stage" role="cell">
+          <span className="pcell__k">Stage</span>
+          {stage.label}
         </div>
 
-        {/* SECONDARY: research / questions / opportunities */}
-        <div className="project-row__stats">
-          <Stat icon={<FlaskConical />} label="Research">
-            {project.research === "running" ? (
-              <span className="research-running">
-                {researchLabel[project.research]}
-                <span className="minibar">
-                  <span
-                    className="minibar__fill info"
-                    style={{ width: `${project.researchProgress ?? 0}%` }}
-                  />
-                </span>
-                <span className="pstat__soft">{project.researchProgress}%</span>
-              </span>
-            ) : project.research === "not-started" ? (
-              <span className="pstat__soft">Not started</span>
-            ) : (
-              <span className="research-fresh">
-                {researchLabel[project.research]}
-                <FreshnessBadge state={project.freshness} />
-              </span>
-            )}
-          </Stat>
-
-          <Stat
-            icon={<HelpCircle />}
-            label="Critical questions"
-            tone={project.criticalOpenQuestions > 0 ? "critical" : "muted"}
-          >
-            {project.criticalOpenQuestions > 0
-              ? `${project.criticalOpenQuestions} open`
-              : "None open"}
-          </Stat>
-
-          <Stat
-            icon={<Target />}
-            label="Opportunities"
-            tone={project.confirmedOpportunities > 0 ? "good" : "muted"}
-          >
-            {project.confirmedOpportunities > 0
-              ? `${project.confirmedOpportunities} identified`
-              : "—"}
-          </Stat>
+        <div
+          className="pcell pcell--activity"
+          role="cell"
+          title={project.lastActivity}
+        >
+          <span className="pcell__k">Last activity</span>
+          {activityWhen(project.lastActivity)}
         </div>
 
-        {/* TERTIARY: owner / stakeholder / last activity */}
-        <div className="project-row__tertiary">
-          <span>
-            Owner <b>{project.owner}</b>
-          </span>
-          <span className="dotsep">·</span>
-          <span>
-            {project.stakeholder.name === "—"
-              ? "Stakeholder not identified"
-              : `${project.stakeholder.name}, ${project.stakeholder.role}`}
-          </span>
-          <span className="dotsep">·</span>
-          <span>{project.lastActivity}</span>
+        <div className="pcell pcell--owner" role="cell">
+          <span className="pcell__k">Owner</span>
+          {project.owner}
         </div>
       </div>
 
-      {/* PRIMARY: recommended next action */}
-      <div className={`project-row__action tone-${tone}`}>
-        <div className="nextaction">
-          <span className="nextaction__label">Recommended next</span>
-          <span className="nextaction__text">{project.nextAction}</span>
-        </div>
-        <span className="nextaction__go" aria-hidden>
-          Open <ArrowRight />
-        </span>
+      <div className="pcell pcell--state" role="cell">
+        <Readiness state={project.readiness} />
       </div>
-    </article>
+
+      <div className="pcell pcell--actions" role="cell">
+        <OpenAction project={project} />
+        <RowMenu project={project} actions={actions} />
+      </div>
+    </div>
   );
 }
