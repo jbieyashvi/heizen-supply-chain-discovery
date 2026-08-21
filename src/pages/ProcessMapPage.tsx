@@ -2,7 +2,6 @@ import {
   Fragment,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -11,6 +10,8 @@ import {
 import { Link, useParams } from "react-router-dom";
 import {
   Layers,
+  Move,
+  X,
   FileText,
   HelpCircle,
   Target,
@@ -29,8 +30,6 @@ import {
   ArrowRight,
   GitCompare,
   Cpu,
-  Layers3,
-  Clock3,
   Search,
   Sparkles,
   FlaskConical,
@@ -72,6 +71,7 @@ import {
   clientEvidenceSource,
   FLOW_ORDER,
   snapshotStatus,
+  type SnapshotStatus,
   type ProcessArea,
   type SubProcess,
   type Handoff,
@@ -116,24 +116,36 @@ const handoffBadgeTone: Record<HandoffState, "neutral" | "accent" | "amber" | "r
   };
 
 /* ---- Current Process (executive) flow order ---- */
-/* Rendered as a native, readable horizontal strip — never zoom-to-shrink.
-   Cards keep their natural, readable size and the strip scrolls when all
-   six can't fit at once. */
 const FLOW = FLOW_ORDER;
 
-/* Readable-zoom bounds for the Current Process strip. The floor is 90% so
-   text never drops below a readable size; "Fit" only ever shrinks to this. */
-const CF_MIN_Z = 0.9;
-const CF_MAX_Z = 1.4;
+/* Zoom sits *above* the fit rather than being the way things fit: the six
+   stages already flex to the frame at 100%, so zooming in is for reading a
+   crowded stage closely, and panning only matters once you have. */
+const CF_MIN_Z = 0.8;
+const CF_MAX_Z = 1.6;
+/* The drawing is laid out at its own comfortable width (--cf-world min-width in
+   processmap.css). When the frame is narrower — the inspector docking open —
+   the whole thing scales down rather than the columns narrowing, so a stage
+   never loses text to a squeeze. Past this floor it stops shrinking and pans
+   instead, because unreadable is not the same as fitted. */
+const CF_MIN_FIT = 0.8;
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
-/* Short labels for the in-strip handoff chips (full labels stay in the
-   legend and the handoff drawer). */
+/* Evidence state as the map words it. "No evidence yet" is deliberately
+   blunter than the client sheet's "Not explored" — this is the working view. */
+const evidenceLabel: Record<SnapshotStatus, string> = {
+  confirmed: "Confirmed",
+  inferred: "Inferred",
+  "not-explored": "No evidence yet",
+};
+
+/* Short connector labels — set above the line, so they must stay to one
+   word where possible. The full wording lives in the legend and inspector. */
 const handoffChipLabel: Record<HandoffState, string> = {
   confirmed: "Confirmed",
   inferred: "Inferred",
   broken: "Delayed",
-  unexplored: "Unexplored",
+  unexplored: "Not explored",
 };
 
 /* ---- Detailed Process (Level-0) geometry ---- */
@@ -184,7 +196,6 @@ export function ProcessMapPage() {
   const [view, setView] = useState<View>("current");
   const [drillId, setDrillId] = useState<string | null>(null);
   const [openNode, setOpenNode] = useState<NodeLike | null>(null);
-  const [openHandoff, setOpenHandoff] = useState<Handoff | null>(null);
   const [openEntity, setOpenEntity] = useState<Entity | null>(null);
   const [investigateOpen, setInvestigateOpen] = useState(false);
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
@@ -259,17 +270,76 @@ export function ProcessMapPage() {
     stage === "intro"
       ? {
           lead: "Preliminary",
-          body: `It reflects public research only — present it as a starting hypothesis. It becomes reliable as calls confirm each stage (${confirmedStages} of ${FLOW.length} confirmed so far).`,
+          body: `public research only. It becomes reliable as calls confirm each stage — ${confirmedStages} of ${FLOW.length} so far.`,
         }
       : stage === "discovery"
         ? {
             lead: "Working draft",
-            body: `Updated from calls and documents — ${confirmedStages} of ${FLOW.length} stages are client-confirmed. It becomes fully reliable once the remaining stages are validated.`,
+            body: `${confirmedStages} of ${FLOW.length} stages are client-confirmed. It becomes fully reliable once the rest are validated.`,
           }
         : {
             lead: "Validated",
-            body: "The mapped stages are confirmed with the client and ready to present; inferred or unexplored areas stay clearly marked.",
+            body: "every mapped stage is confirmed with the client; inferred and unexplored areas stay marked.",
           };
+
+  /* One slim line of context instead of a bank of stat cards — the map is
+     what deserves the vertical space. */
+  const kpis: { v: React.ReactNode; l: string; tone?: "brand" | "amber" | "red" }[] =
+    isIntro
+      ? [
+          { v: FLOW.length, l: "stages" },
+          {
+            v: clioProcessAreas.filter(
+              (a) => a.id !== "data" && a.coverage !== "not-explored"
+            ).length,
+            l: "known or partial",
+            tone: "brand",
+          },
+          {
+            v: clioProcessAreas.filter(
+              (a) => a.id !== "data" && a.coverage === "not-explored"
+            ).length,
+            l: "not yet explored",
+            tone: "amber",
+          },
+          {
+            v: clioHandoffs.filter(
+              (h) => h.state === "broken" || h.state === "unexplored"
+            ).length,
+            l: "handoffs to open up",
+            tone: "amber",
+          },
+        ]
+      : isExpansion
+        ? [
+            { v: confirmedGaps().length, l: "confirmed gaps", tone: "red" },
+            {
+              v: new Set(
+                confirmedGaps().flatMap((a) => a.opportunities.map((o) => o.id))
+              ).size,
+              l: "opportunity overlays",
+              tone: "brand",
+            },
+            { v: confirmedGaps().length, l: "potential next modules" },
+            {
+              v: safeDeliveredWork(2).length,
+              l: "delivered proof points",
+              tone: "brand",
+            },
+          ]
+        : [
+            { v: pmapSummary.stages, l: "stages" },
+            { v: pmapSummary.enabling, l: "enabling layer" },
+            { v: pmapSummary.explored, l: "explored", tone: "brand" },
+            { v: pmapSummary.critical, l: "critical issues", tone: "red" },
+            { v: pmapSummary.openQuestions, l: "open questions", tone: "amber" },
+            { v: pmapSummary.refreshed, l: "map refreshed" },
+            {
+              v: pmapSummary.pendingSources,
+              l: "sources awaiting inclusion",
+              tone: "amber",
+            },
+          ];
 
   return (
     <div className="page pmap-page">
@@ -309,88 +379,25 @@ export function ProcessMapPage() {
         }
       />
 
-      {/* When the client snapshot can be trusted — advances with the stage. */}
-      <section
-        className="pmap-snapready"
-        role="note"
-        aria-label="Client snapshot readiness"
-      >
-        <Presentation className="pmap-snapready__ic" aria-hidden />
-        <p className="pmap-snapready__text">
-          <b>Client snapshot — {snapReady.lead}.</b> {snapReady.body}
+      {/* Context readiness + the numbers, on one line. */}
+      <section className="pmap-statusbar">
+        <p
+          className="pmap-statusbar__ready"
+          role="note"
+          aria-label="Client snapshot readiness"
+        >
+          <Presentation aria-hidden />
+          <span>
+            <b>Snapshot — {snapReady.lead}:</b> {snapReady.body}
+          </span>
         </p>
-      </section>
-
-      {/* Summary strip */}
-      <section className="card card-pad pmap-summary">
-        <div className="pmap-sum-grid">
-          {isIntro ? (
-            <>
-              <PmapStat icon={<Layers3 aria-hidden />} value={FLOW.length} label="Process stages" />
-              <PmapStat
-                icon={<CheckCircle2 aria-hidden />}
-                value={clioProcessAreas.filter((a) => a.id !== "data" && a.coverage !== "not-explored").length}
-                label="Known or partial"
-                tone="brand"
-              />
-              <PmapStat
-                icon={<Circle aria-hidden />}
-                value={clioProcessAreas.filter((a) => a.id !== "data" && a.coverage === "not-explored").length}
-                label="Not yet explored"
-                tone="amber"
-              />
-              <PmapStat
-                icon={<AlertTriangle aria-hidden />}
-                value={clioHandoffs.filter((h) => h.state === "broken" || h.state === "unexplored").length}
-                label="Handoffs to open up"
-                tone="amber"
-              />
-            </>
-          ) : isExpansion ? (
-            <>
-              <PmapStat
-                icon={<AlertTriangle aria-hidden />}
-                value={confirmedGaps().length}
-                label="Confirmed gaps"
-                tone="red"
-              />
-              <PmapStat
-                icon={<Target aria-hidden />}
-                value={new Set(confirmedGaps().flatMap((a) => a.opportunities.map((o) => o.id))).size}
-                label="Opportunity overlays"
-                tone="brand"
-              />
-              <PmapStat icon={<Wrench aria-hidden />} value={confirmedGaps().length} label="Potential next modules" />
-              <PmapStat icon={<Sparkles aria-hidden />} value={safeDeliveredWork(2).length} label="Delivered proof points" tone="brand" />
-            </>
-          ) : (
-            <>
-              <div className="pmap-stat">
-                <span className="pmap-stat__icon">
-                  <Layers3 aria-hidden />
-                </span>
-                <div className="pmap-stat__body">
-                  <span className="pmap-stat__value">{pmapSummary.stages}</span>
-                  <span className="pmap-stat__label">Process stages</span>
-                  <span className="pmap-stat__sub">· {pmapSummary.enabling} enabling layer</span>
-                </div>
-              </div>
-              <PmapStat icon={<CheckCircle2 aria-hidden />} value={pmapSummary.explored} label="Explored" tone="brand" />
-              <PmapStat icon={<AlertTriangle aria-hidden />} value={pmapSummary.critical} label="Critical issues" tone="red" />
-              <PmapStat icon={<HelpCircle aria-hidden />} value={pmapSummary.openQuestions} label="Unique open questions" tone="amber" />
-              <div className="pmap-updated">
-                <span className="pmap-updated__label">
-                  <Clock3 aria-hidden /> Map refreshed
-                </span>
-                <span className="pmap-updated__value">{pmapSummary.refreshed}</span>
-                <span className="pmap-updated__pending">
-                  <AlertTriangle aria-hidden /> {pmapSummary.pendingSources} newer sources
-                  awaiting inclusion
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+        <ul className="pmap-kpis">
+          {kpis.map((k) => (
+            <li className="pmap-kpi" key={k.l}>
+              <b className={k.tone ? `is-${k.tone}` : undefined}>{k.v}</b> {k.l}
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* AI-suggested hypotheses (unvalidated) */}
@@ -459,8 +466,13 @@ export function ProcessMapPage() {
 
       {view === "current" && (
         <CurrentProcessView
-          onOpenStage={setOpenNode}
-          onOpenHandoff={setOpenHandoff}
+          stage={stage}
+          projectId={projectId!}
+          onAction={proto}
+          onDrill={(id) => {
+            setView("detailed");
+            setDrillId(id);
+          }}
         />
       )}
       {view === "detailed" && (
@@ -496,12 +508,6 @@ export function ProcessMapPage() {
         }
       />
 
-      <HandoffDetail
-        handoff={openHandoff}
-        projectId={projectId!}
-        onClose={() => setOpenHandoff(null)}
-      />
-
       <EntityDetail
         entity={openEntity}
         projectId={projectId!}
@@ -525,31 +531,6 @@ function confirmedGaps(): ProcessArea[] {
       (a.health === "critical" || a.health === "friction") &&
       hasClientEvidence(a) &&
       a.opportunities.length > 0
-  );
-}
-
-/* ---------- Summary stat ---------- */
-function PmapStat({
-  icon,
-  value,
-  label,
-  tone,
-}: {
-  icon: React.ReactNode;
-  value: React.ReactNode;
-  label: string;
-  tone?: "brand" | "red" | "amber";
-}) {
-  return (
-    <div className="pmap-stat">
-      <span className={`pmap-stat__icon${tone ? ` pmap-stat__icon--${tone}` : ""}`}>
-        {icon}
-      </span>
-      <div className="pmap-stat__body">
-        <span className="pmap-stat__value">{value}</span>
-        <span className="pmap-stat__label">{label}</span>
-      </div>
-    </div>
   );
 }
 
@@ -597,275 +578,525 @@ function PmapLegend() {
 }
 
 /* ================================================================
-   Current Process — As Is (executive left-to-right flow)
+   Current Process — the operational map
 
-   A native, horizontally-scrolling strip of readable auto-height cards.
-   Text is never shrunk to fit: when all six stages can't fit at a
-   readable size the strip scrolls (with left/right fade cues) rather
-   than zooming down. Sticky zoom controls (top-right) enlarge to 140%
-   and shrink no further than 90%; "Fit" frames the whole flow at the
-   highest readable scale after the sidebar is accounted for.
+   Six stages read left to right along a single datum line, the way a
+   process is drawn on a survey sheet: connectors are segments of that
+   line and their labels sit above it like dimension annotations. Cards
+   flex to the frame, so all six are always framed without clipping and
+   zoom is an enhancement above that fit rather than the thing that makes
+   it fit. Cross-cutting capabilities get their own lane below the datum
+   so they never read as another step in the sequence. Selecting anything
+   lights it plus the connectors that touch it and opens the inspector on
+   the right, in the page.
    ================================================================ */
+type Sel = { kind: "stage"; id: string } | { kind: "handoff"; id: string };
+
 function CurrentProcessView({
-  onOpenStage,
-  onOpenHandoff,
+  stage,
+  projectId,
+  onAction,
+  onDrill,
 }: {
-  onOpenStage: (n: NodeLike) => void;
-  onOpenHandoff: (h: Handoff) => void;
+  stage: Stage;
+  projectId: string;
+  onAction: (l: string) => void;
+  onDrill: (areaId: string) => void;
 }) {
   const stages = FLOW.map((id) => clioProcessAreas.find((a) => a.id === id)!);
+  const lanes = clioProcessAreas.filter((a) => a.crossCutting);
   const linkFor = (fromId: string, toId: string) =>
     clioHandoffs.find((h) => h.from === fromId && h.to === toId) ?? null;
 
-  const vpRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const didFit = useRef(false);
-  // Natural (unscaled) size of the flow — offsetWidth/Height ignore the
-  // CSS transform, so this stays the true content size at any zoom.
-  const [nat, setNat] = useState({ w: 1, h: 1 });
+  const [sel, setSel] = useState<Sel | null>(null);
   const [z, setZ] = useState(1);
-  const [fade, setFade] = useState({ left: false, right: false });
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  /* How much the drawing is shrunk to meet the frame (1 = drawn full size). */
+  const [fitScale, setFitScale] = useState(1);
+  const vpRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
+  const inspRef = useRef<HTMLDivElement>(null);
+  const grab = useRef<null | { px: number; py: number; ox: number; oy: number }>(null);
+  // Where the selection came from, so closing hands focus back to it.
+  const trigger = useRef<HTMLElement | null>(null);
 
-  // The highest readable scale that frames the whole flow — the viewport
-  // width already excludes the sidebar. Never below 90%, never above 100%.
-  const fitZoom = useCallback(() => {
-    const el = vpRef.current;
-    if (!el || nat.w < 2) return 1;
-    return +clamp(el.clientWidth / nat.w, CF_MIN_Z, 1).toFixed(2);
-  }, [nat.w]);
+  const selNode =
+    sel?.kind === "stage"
+      ? clioProcessAreas.find((a) => a.id === sel.id) ?? null
+      : null;
+  const selHandoff =
+    sel?.kind === "handoff"
+      ? clioHandoffs.find((h) => h.id === sel.id) ?? null
+      : null;
 
-  const syncFades = useCallback(() => {
-    const el = vpRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setFade({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 });
+  /* A selection lights the thing itself and the connectors touching it —
+     no further, so attention lands on one link of the chain at a time. */
+  const litStages = new Set<string>();
+  const litLinks = new Set<string>();
+  if (selNode) {
+    litStages.add(selNode.id);
+    clioHandoffs.forEach((h) => {
+      if (h.from === selNode.id || h.to === selNode.id) litLinks.add(h.id);
+    });
+  }
+  if (selHandoff) {
+    litLinks.add(selHandoff.id);
+    litStages.add(selHandoff.from);
+    litStages.add(selHandoff.to);
+  }
+
+  const pick = (next: Sel, el: HTMLElement | null) => {
+    trigger.current = el;
+    setSel(next);
+  };
+  const clearSel = useCallback(() => {
+    setSel(null);
+    trigger.current?.focus();
   }, []);
 
-  // Measure the natural content size and keep it current.
-  useLayoutEffect(() => {
-    const tr = trackRef.current;
-    if (!tr) return;
-    const measure = () => setNat({ w: tr.offsetWidth, h: tr.offsetHeight });
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(tr);
-    return () => ro.disconnect();
+  /* The frame's content box — what the drawing actually gets to occupy. */
+  const frame = useCallback(() => {
+    const vp = vpRef.current;
+    if (!vp) return null;
+    const cs = getComputedStyle(vp);
+    const n = (v: string) => parseFloat(v || "0");
+    return {
+      w: vp.clientWidth - n(cs.paddingLeft) - n(cs.paddingRight),
+      h: vp.clientHeight - n(cs.paddingTop) - n(cs.paddingBottom),
+    };
   }, []);
 
-  // Re-evaluate fade cues whenever the frame or zoom changes.
-  useEffect(() => {
-    syncFades();
-    const el = vpRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(syncFades);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [syncFades, z, nat.w]);
+  /* Panning only means anything once the drawing outgrows the frame: at the
+     fit it is framed exactly, so the clamp collapses and dragging is a no-op. */
+  const clampPan = useCallback(
+    (next: { x: number; y: number }, scale: number) => {
+      const f = frame();
+      const world = worldRef.current;
+      if (!f || !world) return { x: 0, y: 0 };
+      const minX = Math.min(0, f.w - world.offsetWidth * scale);
+      const minY = Math.min(0, f.h - world.offsetHeight * scale);
+      return { x: clamp(next.x, minX, 0), y: clamp(next.y, minY, 0) };
+    },
+    [frame]
+  );
 
-  // On first measure, frame the whole flow at the highest readable fit so
-  // wide screens show all six stages and narrower ones settle at the 90%
-  // floor (then scroll) — never the old, unreadable 70% default.
-  useEffect(() => {
-    if (didFit.current || nat.w < 2) return;
-    didFit.current = true;
-    setZ(fitZoom());
-  }, [nat.w, fitZoom]);
-
-  const zoomBy = (d: number) =>
-    setZ((v) => clamp(+(v + d).toFixed(2), CF_MIN_Z, CF_MAX_Z));
-
-  // Fit frames the whole flow at the highest readable scale, scrolled to
-  // the start (the same framing used as the default on load).
+  const zoomTo = (next: number) => {
+    const nz = clamp(next, CF_MIN_Z, CF_MAX_Z);
+    setZ(nz);
+    setPan((p) => clampPan(p, fitScale * nz));
+  };
   const fit = () => {
-    setZ(fitZoom());
-    vpRef.current?.scrollTo({ left: 0, behavior: "smooth" });
-  };
-  // Reset returns to actual 100% size, scrolled to the start.
-  const reset = () => {
     setZ(1);
-    vpRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+    setPan({ x: 0, y: 0 });
+  };
+  const resetView = () => {
+    fit();
+    setSel(null);
   };
 
-  const pct = Math.round(z * 100);
+  // Re-fit whenever the frame changes width — opening the inspector does this.
+  useEffect(() => {
+    const vp = vpRef.current;
+    const world = worldRef.current;
+    if (!vp || !world) return;
+    const sync = () => {
+      const f = frame();
+      if (!f || f.w <= 0) return;
+      const next = clamp(f.w / world.offsetWidth, CF_MIN_FIT, 1);
+      setFitScale(next);
+      setPan((p) => clampPan(p, next * z));
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(vp);
+    return () => ro.disconnect();
+  }, [clampPan, frame, z]);
+
+  /* If the narrowed frame pushed the selected stage out of sight, bring it
+     back — selecting something should never hide it. */
+  useEffect(() => {
+    const vp = vpRef.current;
+    if (!sel || !vp) return;
+    const el = vp.querySelector<HTMLElement>(
+      ".pmap-cf-card.is-selected, .pmap-cf-link.is-selected"
+    );
+    const f = frame();
+    if (!el || !f) return;
+    const vpBox = vp.getBoundingClientRect();
+    const cs = getComputedStyle(vp);
+    const left = vpBox.left + parseFloat(cs.paddingLeft || "0");
+    const r = el.getBoundingClientRect();
+    let dx = 0;
+    if (r.right > left + f.w) dx = left + f.w - r.right - 14;
+    else if (r.left < left) dx = left - r.left + 14;
+    if (dx) setPan((p) => clampPan({ x: p.x + dx, y: p.y }, fitScale * z));
+  }, [sel, fitScale, z, clampPan, frame]);
+
+  // Move focus into the inspector when it opens, so keyboard users land there.
+  useEffect(() => {
+    if (sel) inspRef.current?.focus();
+  }, [sel]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (z <= 1) return;
+    if ((e.target as HTMLElement).closest("[data-node],button,a")) return;
+    grab.current = { px: e.clientX, py: e.clientY, ox: pan.x, oy: pan.y };
+    vpRef.current?.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const g = grab.current;
+    if (!g) return;
+    setPan(
+      clampPan({ x: g.ox + (e.clientX - g.px), y: g.oy + (e.clientY - g.py) }, z)
+    );
+  };
+  const endPan = (e: React.PointerEvent) => {
+    grab.current = null;
+    try {
+      vpRef.current?.releasePointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const scale = fitScale * z;
+  const pct = Math.round(scale * 100);
+  const drillable =
+    selNode && isArea(selNode) && selNode.subprocesses.length > 0
+      ? () => onDrill(selNode.id)
+      : undefined;
 
   return (
-    <div className="pmap-cf">
+    <div
+      className={`pmap-cf${sel ? " is-inspecting" : ""}`}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && sel) {
+          e.stopPropagation();
+          clearSel();
+        }
+      }}
+    >
       <div
-        className={`pmap-cf__scroll${fade.left ? " has-left" : ""}${
-          fade.right ? " has-right" : ""
-        }`}
+        className="pmap-cf__vp"
+        ref={vpRef}
+        data-pannable={z > 1 ? "on" : undefined}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endPan}
+        onPointerCancel={endPan}
       >
-        <div className="pmap-cf__vp" ref={vpRef} onScroll={syncFades}>
+        <div
+          className="pmap-cf__world"
+          ref={worldRef}
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+          }}
+        >
           <div
-            className="pmap-cf__sizer"
-            style={{ width: nat.w * z, height: nat.h * z }}
+            className="pmap-cf__row"
+            role="group"
+            aria-label="Operational process, six stages left to right"
           >
-            <div
-              className="pmap-cf__track"
-              ref={trackRef}
-              style={{ transform: `scale(${z})` }}
-            >
-              {stages.map((a, i) => {
-                const next = stages[i + 1];
-                const h = next ? linkFor(a.id, next.id) : null;
-                return (
-                  <Fragment key={a.id}>
-                    <FlowStageCard
-                      area={a}
-                      index={i}
-                      onOpen={() => onOpenStage(a)}
+            {stages.map((a, i) => {
+              const next = stages[i + 1];
+              const link = next ? linkFor(a.id, next.id) : null;
+              return (
+                <Fragment key={a.id}>
+                  <FlowStage
+                    area={a}
+                    index={i}
+                    total={stages.length}
+                    stage={stage}
+                    selected={sel?.kind === "stage" && sel.id === a.id}
+                    dim={Boolean(sel) && !litStages.has(a.id)}
+                    onSelect={(el) => pick({ kind: "stage", id: a.id }, el)}
+                  />
+                  {link && (
+                    <FlowLink
+                      handoff={link}
+                      selected={sel?.kind === "handoff" && sel.id === link.id}
+                      lit={litLinks.has(link.id)}
+                      dim={Boolean(sel) && !litLinks.has(link.id)}
+                      onSelect={(el) => pick({ kind: "handoff", id: link.id }, el)}
                     />
-                    {h && (
-                      <FlowConnector handoff={h} onOpen={() => onOpenHandoff(h)} />
-                    )}
-                  </Fragment>
-                );
-              })}
-            </div>
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
+
+          {lanes.length > 0 && (
+            <div className="pmap-cf__lane">
+              <span className="pmap-cf__lane-label">Runs under every stage</span>
+              <div className="pmap-cf__lane-row">
+                {lanes.map((a) => (
+                  <LaneCard
+                    key={a.id}
+                    area={a}
+                    stage={stage}
+                    selected={sel?.kind === "stage" && sel.id === a.id}
+                    dim={Boolean(sel) && !litStages.has(a.id)}
+                    onSelect={(el) => pick({ kind: "stage", id: a.id }, el)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <span className="pmap-cf__fade pmap-cf__fade--left" aria-hidden />
-        <span className="pmap-cf__fade pmap-cf__fade--right" aria-hidden />
+        <div className="pmap-cf__tools" role="toolbar" aria-label="Map controls">
+          <button
+            className="pmap-ctrl"
+            onClick={() => zoomTo(z - 0.1)}
+            disabled={z <= CF_MIN_Z + 0.001}
+            aria-label="Zoom out"
+            title="Zoom out"
+          >
+            <Minus />
+          </button>
+          <span className="pmap-zoom" aria-live="polite" title="Current zoom">
+            {pct}%
+          </span>
+          <button
+            className="pmap-ctrl"
+            onClick={() => zoomTo(z + 0.1)}
+            disabled={z >= CF_MAX_Z - 0.001}
+            aria-label="Zoom in"
+            title="Zoom in"
+          >
+            <Plus />
+          </button>
+          <span className="pmap-toolbar-sep" aria-hidden />
+          <button
+            className="pmap-ctrl"
+            onClick={fit}
+            aria-label="Fit all stages"
+            title="Fit all stages"
+          >
+            <Maximize2 />
+          </button>
+          <button
+            className="pmap-ctrl"
+            onClick={resetView}
+            aria-label="Reset view and clear selection"
+            title="Reset view and clear selection"
+          >
+            <RotateCcw />
+          </button>
+          {z > 1 && (
+            <span className="pmap-cf__grabhint">
+              <Move aria-hidden /> Drag to move
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Sticky controls (top-right): zoom out · % · zoom in · fit · reset */}
-      <div className="pmap-toolbar-map" role="toolbar" aria-label="Flow controls">
-        <button
-          className="pmap-ctrl"
-          onClick={() => zoomBy(-0.1)}
-          aria-label="Zoom out"
-          title="Zoom out"
-          disabled={pct <= CF_MIN_Z * 100 + 0.5}
+      {sel && (selNode || selHandoff) && (
+        <aside
+          className="pmap-insp"
+          id="pmap-inspector"
+          ref={inspRef}
+          tabIndex={-1}
+          aria-label={
+            selNode ? flowName(selNode) : handoffTitle(selHandoff!)
+          }
         >
-          <Minus />
-        </button>
-        <span className="pmap-zoom" aria-live="polite" title="Current zoom">
-          {pct}%
-        </span>
-        <button
-          className="pmap-ctrl"
-          onClick={() => zoomBy(0.1)}
-          aria-label="Zoom in"
-          title="Zoom in"
-          disabled={pct >= CF_MAX_Z * 100 - 0.5}
-        >
-          <Plus />
-        </button>
-        <span className="pmap-toolbar-sep" aria-hidden />
-        <button
-          className="pmap-ctrl"
-          onClick={fit}
-          aria-label="Fit to screen"
-          title="Fit to screen"
-        >
-          <Maximize2 />
-        </button>
-        <button
-          className="pmap-ctrl"
-          onClick={reset}
-          aria-label="Reset view"
-          title="Reset view"
-        >
-          <RotateCcw />
-        </button>
-      </div>
+          <header className="pmap-insp__head">
+            <div>
+              <span className="pmap-insp__kicker">
+                {selNode
+                  ? selNode.crossCutting
+                    ? "Cross-cutting capability"
+                    : "Process stage"
+                  : "Process handoff"}
+              </span>
+              <h2 className="pmap-insp__title">
+                {selNode ? flowName(selNode) : handoffTitle(selHandoff!)}
+              </h2>
+            </div>
+            <button
+              className="pmap-insp__x"
+              onClick={clearSel}
+              aria-label="Close details"
+            >
+              <X />
+            </button>
+          </header>
+
+          <div className="pmap-insp__body">
+            {selNode ? (
+              <NodeDetailBody
+                node={selNode}
+                stage={stage}
+                projectId={projectId}
+                onClose={clearSel}
+                onDrill={drillable}
+              />
+            ) : (
+              <HandoffDetailBody
+                handoff={selHandoff!}
+                projectId={projectId}
+                onClose={clearSel}
+              />
+            )}
+          </div>
+
+          <footer className="pmap-insp__foot">
+            {selNode
+              ? nodeFooter(selNode, stage, projectId, clearSel, onAction)
+              : handoffFooter(selHandoff!, projectId, clearSel)}
+          </footer>
+        </aside>
+      )}
     </div>
   );
 }
 
-const handoffChipIcon: Record<HandoffState, ReactNode> = {
-  confirmed: <CheckCircle2 aria-hidden />,
-  inferred: <Circle aria-hidden />,
-  broken: <AlertTriangle aria-hidden />,
-  unexplored: <HelpCircle aria-hidden />,
-};
-
-/** A readable, auto-height stage card. Deliberately shows only the
-    essentials — name + status, one "what happens today" line, the system,
-    and one primary owner. Everything else (input, output, evidence,
-    additional owners) lives in the stage detail drawer. */
-function FlowStageCard({
+/** One stage on the datum line. Evidence state is carried by the card's
+    material — tinted when confirmed, plain white when inferred, an unprinted
+    dashed outline when nobody has walked through it yet. */
+function FlowStage({
   area,
   index,
-  onOpen,
+  total,
+  stage,
+  selected,
+  dim,
+  onSelect,
 }: {
   area: ProcessArea;
   index: number;
-  onOpen: () => void;
+  total: number;
+  stage: Stage;
+  selected: boolean;
+  dim: boolean;
+  onSelect: (el: HTMLElement) => void;
 }) {
-  const explored = area.coverage !== "not-explored";
-  const dh = displayHealth(area);
-  const owner = area.owners[0] ?? area.responsible ?? null;
-
+  const status = snapshotStatus(area, stage);
+  const unexplored = status === "not-explored";
   return (
-    <div data-node className={`pmap-cf-card h-${dh.key}${explored ? "" : " is-unexplored"}`}>
+    <div
+      className={`pmap-cf-card is-${status}${selected ? " is-selected" : ""}${
+        dim ? " is-dim" : ""
+      }`}
+      data-node
+    >
       <button
-        className="pmap-cf-card__open"
-        aria-label={`Open ${flowName(area)} stage details`}
-        onClick={onOpen}
+        className="pmap-cf-card__hit"
+        onClick={(e) => onSelect(e.currentTarget)}
+        aria-pressed={selected}
+        aria-controls="pmap-inspector"
+        aria-label={`Stage ${index + 1} of ${total}, ${flowName(area)}. ${
+          evidenceLabel[status]
+        }. Open details`}
       />
-      <div className="pmap-cf-card__body">
-        <div className="pmap-cf-card__head">
-          <span className="pmap-cf-card__step">{index + 1}</span>
-          <span className="pmap-cf-card__name">{flowName(area)}</span>
-        </div>
-
-        <span className={`pmap-node__coverage cov-${area.coverage}`}>
-          {introCoverageLabel[area.coverage]}
+      <span className="pmap-cf-card__no" aria-hidden>
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <h3 className="pmap-cf-card__name">{flowName(area)}</h3>
+      <span className="pmap-cf-card__state">{evidenceLabel[status]}</span>
+      {unexplored ? (
+        <span className="pmap-cf-card__ask">
+          <MessageCircleQuestion aria-hidden /> Ask about this step
         </span>
-
-        {explored ? (
-          <>
-            <p className="pmap-cf-card__today">{area.today}</p>
-            <dl className="pmap-cf-card__facts">
-              <div className="pmap-cf-card__fact">
-                <dt>
-                  <Server aria-hidden /> System
-                </dt>
-                <dd>{area.tool ?? "—"}</dd>
-              </div>
-              <div className="pmap-cf-card__fact">
-                <dt>
-                  <User aria-hidden /> Owner
-                </dt>
-                <dd>{owner ?? "—"}</dd>
-              </div>
-            </dl>
-          </>
-        ) : (
-          <div className="pmap-cf-card__empty">
-            <span className="pmap-cf-card__emptymsg">Not yet explored</span>
-            <span className="pmap-cf-card__ask">
-              <MessageCircleQuestion aria-hidden /> Ask about this step
-            </span>
-          </div>
-        )}
-      </div>
+      ) : (
+        <>
+          {area.today && <p className="pmap-cf-card__today">{area.today}</p>}
+          <dl className="pmap-cf-card__facts">
+            <div>
+              <dt>System</dt>
+              <dd>{area.tool ?? "—"}</dd>
+            </div>
+            <div>
+              <dt>Owner</dt>
+              <dd>{area.responsible ?? "—"}</dd>
+            </div>
+          </dl>
+        </>
+      )}
     </div>
   );
 }
 
-/** The directional connector + handoff chip between two stages. Sits inline
-    in the strip so arrows and labels stay aligned while scrolling. */
-function FlowConnector({
+/** A segment of the datum line, with its label set above it. */
+function FlowLink({
   handoff,
-  onOpen,
+  selected,
+  lit,
+  dim,
+  onSelect,
 }: {
   handoff: Handoff;
-  onOpen: () => void;
+  selected: boolean;
+  lit: boolean;
+  dim: boolean;
+  onSelect: (el: HTMLElement) => void;
 }) {
   return (
-    <div className={`pmap-cf-link state-${handoff.state}`}>
-      <span className="pmap-cf-link__line" aria-hidden />
+    <div
+      className={`pmap-cf-link state-${handoff.state}${
+        selected ? " is-selected" : ""
+      }${lit ? " is-lit" : ""}${dim ? " is-dim" : ""}`}
+    >
       <button
-        className="pmap-cf-link__chip"
-        onClick={onOpen}
-        aria-label={`Handoff ${handoff.from} to ${handoff.to}: ${handoffMeta[handoff.state].label}`}
+        className="pmap-cf-link__label"
+        data-node
+        onClick={(e) => onSelect(e.currentTarget)}
+        aria-pressed={selected}
+        aria-controls="pmap-inspector"
+        aria-label={`Handoff, ${handoffTitle(handoff)}. ${
+          handoffMeta[handoff.state].label
+        }. Open details`}
       >
-        <span className="pmap-cf-link__ic">{handoffChipIcon[handoff.state]}</span>
+        {handoff.state === "broken" && <AlertTriangle aria-hidden />}
         {handoffChipLabel[handoff.state]}
       </button>
+      <span className="pmap-cf-link__line" aria-hidden />
+    </div>
+  );
+}
+
+/** Cross-cutting capability — its own lane, below the datum, never in the
+    sequence. Driven by the data, so a second one needs no layout work. */
+function LaneCard({
+  area,
+  stage,
+  selected,
+  dim,
+  onSelect,
+}: {
+  area: ProcessArea;
+  stage: Stage;
+  selected: boolean;
+  dim: boolean;
+  onSelect: (el: HTMLElement) => void;
+}) {
+  const status = snapshotStatus(area, stage);
+  return (
+    <div
+      className={`pmap-cf-lane-card is-${status}${selected ? " is-selected" : ""}${
+        dim ? " is-dim" : ""
+      }`}
+      data-node
+    >
+      <button
+        className="pmap-cf-card__hit"
+        onClick={(e) => onSelect(e.currentTarget)}
+        aria-pressed={selected}
+        aria-controls="pmap-inspector"
+        aria-label={`Cross-cutting capability, ${area.name}. ${evidenceLabel[status]}. Open details`}
+      />
+      <div className="pmap-cf-lane-card__head">
+        <Cpu aria-hidden />
+        <h3>{area.name}</h3>
+        <span className="pmap-cf-card__state">{evidenceLabel[status]}</span>
+      </div>
+      <p className="pmap-cf-lane-card__text">{area.description}</p>
+      <div className="pmap-cf-lane-card__sys">
+        {area.systems.map((sys) => (
+          <span key={sys}>{sys}</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1317,22 +1548,17 @@ function MoreList<T>({
 }
 
 /* ================================================================
-   Handoff detail drawer
+   Handoff detail — the same body serves the in-page map inspector and
+   any drawer, so a handoff always reads identically wherever it opens.
    ================================================================ */
-function HandoffDetail({
-  handoff,
-  projectId,
-  onClose,
-}: {
-  handoff: Handoff | null;
-  projectId: string;
-  onClose: () => void;
-}) {
-  const from = handoff ? clioProcessAreas.find((a) => a.id === handoff.from) : null;
-  const to = handoff ? clioProcessAreas.find((a) => a.id === handoff.to) : null;
-  const title = from && to ? `${flowName(from)} → ${flowName(to)}` : "Handoff";
+function handoffTitle(handoff: Handoff) {
+  const from = clioProcessAreas.find((a) => a.id === handoff.from);
+  const to = clioProcessAreas.find((a) => a.id === handoff.to);
+  return from && to ? `${flowName(from)} → ${flowName(to)}` : "Handoff";
+}
 
-  const footer = handoff ? (
+function handoffFooter(handoff: Handoff, projectId: string, onClose: () => void) {
+  return (
     <div className="pmap-d__foot-next">
       <span className="pmap-d__foot-label">
         <MessageCircleQuestion aria-hidden /> Suggested introductory question
@@ -1347,17 +1573,19 @@ function HandoffDetail({
         <HelpCircle /> Add to discovery questions
       </Link>
     </div>
-  ) : undefined;
+  );
+}
 
+function HandoffDetailBody({
+  handoff,
+  projectId,
+  onClose,
+}: {
+  handoff: Handoff;
+  projectId: string;
+  onClose: () => void;
+}) {
   return (
-    <SidePanel
-      open={Boolean(handoff)}
-      onClose={onClose}
-      title={title}
-      subtitle="Process handoff"
-      footer={footer}
-    >
-      {handoff && (
         <div className="pmap-d" key={handoff.id}>
           <div className="pmap-d__badges">
             <Badge tone={handoffBadgeTone[handoff.state]} dot>
@@ -1422,13 +1650,12 @@ function HandoffDetail({
             </section>
           )}
         </div>
-      )}
-    </SidePanel>
   );
 }
 
 /* ================================================================
-   Stage / node detail drawer (stage-aware)
+   Stage / node detail (stage-aware) — body + footer are extracted so the
+   map's in-page inspector and the drawer render the identical content.
    ================================================================ */
 function NodeDetail({
   node,
@@ -1445,25 +1672,36 @@ function NodeDetail({
   onAction: (l: string) => void;
   onDrill?: () => void;
 }) {
-  const unexplored = node?.coverage === "not-explored";
-  const dh = node ? displayHealth(node) : null;
-  const isIntro = stage === "intro";
-  const showExpansion = stage === "expansion";
-  const hasFlowFields = Boolean(node && isArea(node) && node.today);
-  // On a first call, only show health where a client source backs it.
-  const showHealth = node
-    ? isIntro
-      ? hasClientEvidence(node) && dh!.key !== "unknown" && !dh!.inferred
-      : true
-    : false;
-  const healthSource =
-    node && dh && (dh.key === "friction" || dh.key === "critical")
-      ? clientEvidenceSource(node) ??
-        (node.evidence[0] ? node.evidence[0].source : null)
-      : null;
+  return (
+    <SidePanel
+      open={Boolean(node)}
+      onClose={onClose}
+      title={node ? (isArea(node) ? flowName(node) : node.name) : "Process"}
+      subtitle={node && !isArea(node) ? "Subprocess" : "Process stage"}
+      footer={node ? nodeFooter(node, stage, projectId, onClose, onAction) : undefined}
+    >
+      {node && (
+        <NodeDetailBody
+          node={node}
+          stage={stage}
+          projectId={projectId}
+          onClose={onClose}
+          onDrill={onDrill}
+        />
+      )}
+    </SidePanel>
+  );
+}
 
-  const footer = node ? (
-    unexplored ? (
+function nodeFooter(
+  node: NodeLike,
+  stage: Stage,
+  projectId: string,
+  onClose: () => void,
+  onAction: (l: string) => void
+) {
+  if (node.coverage === "not-explored") {
+    return (
       <div className="pmap-d__footactions">
         <Link
           to={`/projects/${projectId}/discovery`}
@@ -1476,8 +1714,11 @@ function NodeDetail({
           <Plus /> Add source
         </button>
       </div>
-    ) : isIntro ? (
-      // Introductory Call stays exploratory — no solution/next-action here.
+    );
+  }
+  // The introductory call stays exploratory — no solution or next action yet.
+  if (stage === "intro") {
+    return (
       <div className="pmap-d__footactions">
         <Link
           to={`/projects/${projectId}/discovery`}
@@ -1487,26 +1728,48 @@ function NodeDetail({
           <HelpCircle /> Add a question about this stage
         </Link>
       </div>
-    ) : (
-      <div className="pmap-d__foot-next">
-        <span className="pmap-d__foot-label">
-          <Lightbulb aria-hidden /> Recommended next action
-        </span>
-        <p>{node.nextAction}</p>
-      </div>
-    )
-  ) : undefined;
+    );
+  }
+  return (
+    <div className="pmap-d__foot-next">
+      <span className="pmap-d__foot-label">
+        <Lightbulb aria-hidden /> Recommended next action
+      </span>
+      <p>{node.nextAction}</p>
+    </div>
+  );
+}
+
+function NodeDetailBody({
+  node,
+  stage,
+  projectId,
+  onClose,
+  onDrill,
+}: {
+  node: NodeLike;
+  stage: Stage;
+  projectId: string;
+  onClose: () => void;
+  onDrill?: () => void;
+}) {
+  const unexplored = node.coverage === "not-explored";
+  const dh = displayHealth(node);
+  const isIntro = stage === "intro";
+  const showExpansion = stage === "expansion";
+  const hasFlowFields = Boolean(isArea(node) && node.today);
+  // On a first call, only show health where a client source backs it.
+  const showHealth = isIntro
+    ? hasClientEvidence(node) && dh.key !== "unknown" && !dh.inferred
+    : true;
+  const healthSource =
+    dh.key === "friction" || dh.key === "critical"
+      ? clientEvidenceSource(node) ??
+        (node.evidence[0] ? node.evidence[0].source : null)
+      : null;
 
   return (
-    <SidePanel
-      open={Boolean(node)}
-      onClose={onClose}
-      title={node ? (isArea(node) ? flowName(node) : node.name) : "Process"}
-      subtitle={isArea(node ?? ({} as NodeLike)) ? "Process stage" : "Subprocess"}
-      footer={footer}
-    >
-      {node && dh && (
-        <div className="pmap-d" key={node.id}>
+    <div className="pmap-d" key={node.id}>
           <div className="pmap-d__badges">
             <Badge tone="neutral">
               {isIntro ? introCoverageLabel[node.coverage] : coverageMeta[node.coverage].label}
@@ -1756,9 +2019,7 @@ function NodeDetail({
               )}
             </>
           )}
-        </div>
-      )}
-    </SidePanel>
+    </div>
   );
 }
 
