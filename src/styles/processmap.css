@@ -1659,3 +1659,331 @@
   border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
   background: var(--warning-subtle);
 }
+
+/* ================================================================
+   Client snapshot — readiness note on the map + presentation view
+   ================================================================ */
+
+/* When the snapshot can be trusted — quiet note under the page header. */
+.pmap-snapready {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 13px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--r-md);
+  background: var(--color-surface-subtle);
+}
+.pmap-snapready__ic {
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  flex: none;
+}
+.pmap-snapready__text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+.pmap-snapready__text b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* ---- Presentation chrome (kept out of the PNG) ---- */
+.snapview {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+}
+.snapview__bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+  padding: 10px 18px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.snapview__bar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.snapview__stage {
+  flex: 1;
+  padding: 26px 18px 44px;
+  background: var(--color-bg);
+}
+
+/* ---- The sheet itself — exactly what "Download PNG" exports ---- */
+.snapsheet {
+  max-width: 1240px;
+  margin: 0 auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-lg);
+  padding: 26px 28px 20px;
+}
+.snapsheet__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.snapsheet__brand {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.snapsheet__title {
+  margin: 5px 0 0;
+  font-size: 21px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+.snapsheet__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+.snapsheet__prepared {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.snapsheet__ctx {
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.4;
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  border: 1px solid;
+}
+.snapsheet__ctx--intro {
+  color: color-mix(in srgb, var(--warning) 62%, var(--color-text));
+  border-color: color-mix(in srgb, var(--warning) 38%, transparent);
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+}
+.snapsheet__ctx--discovery {
+  color: color-mix(in srgb, var(--info) 62%, var(--color-text));
+  border-color: color-mix(in srgb, var(--info) 38%, transparent);
+  background: color-mix(in srgb, var(--info) 10%, transparent);
+}
+.snapsheet__ctx--expansion {
+  color: color-mix(in srgb, var(--success) 62%, var(--color-text));
+  border-color: color-mix(in srgb, var(--success) 38%, transparent);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+/* ---- Six stages on one row; wraps only on smaller screens ---- */
+.snapflow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.snapcard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 12px 13px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-top: 2px solid var(--color-border);
+  border-radius: var(--r-md);
+}
+.snapcard.st-confirmed {
+  border-top-color: color-mix(in srgb, var(--success) 65%, transparent);
+}
+.snapcard.st-inferred {
+  border-top-color: color-mix(in srgb, var(--color-text-muted) 55%, transparent);
+}
+.snapcard.st-not-explored {
+  border-style: dashed;
+  border-top-width: 1px;
+  background: var(--color-surface-subtle);
+}
+.snapcard__head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.snapcard__step {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.snapcard__name {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  color: var(--color-text);
+}
+.snapmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+.snapmark::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+.snapmark.st-confirmed::before {
+  background: var(--success);
+}
+.snapmark.st-inferred::before {
+  background: var(--color-text-muted);
+}
+.snapmark.st-not-explored::before {
+  background: transparent;
+  border: 1.5px solid var(--color-text-muted);
+}
+.snapcard__today {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+.snapcard.st-not-explored .snapcard__today {
+  color: var(--color-text-secondary);
+}
+.snapcard__facts {
+  margin: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 9px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.snapcard__facts > div {
+  min-width: 0;
+}
+.snapcard__facts dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.snapcard__facts dt svg {
+  width: 11px;
+  height: 11px;
+}
+.snapcard__facts dd {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+.snapcard__facts .is-warn dt {
+  color: color-mix(in srgb, var(--warning) 70%, var(--color-text));
+}
+
+/* ---- Legend + questions to validate ---- */
+.snapsheet__foot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 22px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.snaplegend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.snaplegend .snapmark {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.snapquestions {
+  max-width: 560px;
+}
+.snapquestions__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.snapquestions__title svg {
+  width: 12px;
+  height: 12px;
+}
+.snapquestions ul {
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.snapquestions li {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+.snapquestions li b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+@media (max-width: 1180px) {
+  .snapflow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .snapsheet {
+    padding: 20px 16px;
+  }
+  .snapsheet__meta {
+    align-items: flex-start;
+  }
+  .snapflow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 500px) {
+  .snapflow {
+    grid-template-columns: 1fr;
+  }
+}

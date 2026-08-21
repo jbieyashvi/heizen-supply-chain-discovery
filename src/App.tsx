@@ -13,6 +13,7 @@ import { DiscoveryPage } from "./pages/DiscoveryPage";
 import { CallModePage } from "./pages/CallModePage";
 import { OpportunitiesPage } from "./pages/OpportunitiesPage";
 import { ProcessMapPage } from "./pages/ProcessMapPage";
+import { ProcessSnapshotPage } from "./pages/ProcessSnapshotPage";
 import { SourcesPage } from "./pages/SourcesPage";
 import { TeamPage } from "./pages/TeamPage";
 
@@ -32,6 +33,16 @@ export default function App() {
               element={
                 <RequireAuth>
                   <CallModePage />
+                </RequireAuth>
+              }
+            />
+
+            {/* Client snapshot — clean presentation view, outside the app shell */}
+            <Route
+              path="projects/:projectId/process-map/snapshot"
+              element={
+                <RequireAuth>
+                  <ProcessSnapshotPage />
                 </RequireAuth>
               }
             />

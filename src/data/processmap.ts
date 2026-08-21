@@ -1,5 +1,6 @@
 import type { EvidenceLevel } from "./types";
 import type { FocusDomain } from "./focus";
+import type { Stage } from "../lib/stage";
 
 /* ================================================================
    Clio Snacks — Process Map
@@ -1008,3 +1009,42 @@ export function clientEvidenceSource(n: { evidence: NodeEvidence[] }): string | 
   );
   return e ? e.source : null;
 }
+
+/* ---------------- Client snapshot (presentation view) ----------------
+   The client-facing one-pager derives everything below; nothing is
+   authored per stage, so the sheet can never drift from the map. */
+
+/** Left-to-right order of the six value-chain stages in the flow views. */
+export const FLOW_ORDER: readonly string[] = [
+  "plan",
+  "source",
+  "make",
+  "quality",
+  "store",
+  "deliver",
+];
+
+export type SnapshotStatus = "confirmed" | "inferred" | "not-explored";
+
+export const snapshotStatusMeta: Record<SnapshotStatus, { label: string }> = {
+  confirmed: { label: "Confirmed" },
+  inferred: { label: "Inferred" },
+  "not-explored": { label: "Not explored" },
+};
+
+/** Consultant-safe status for a stage on the client snapshot. Confirmed
+   requires a validated workflow backed by client evidence — and never on
+   an introductory call, where the whole view rests on public research. */
+export function snapshotStatus(a: ProcessArea, stage: Stage): SnapshotStatus {
+  if (a.coverage === "not-explored") return "not-explored";
+  if (stage !== "intro" && a.coverage === "validated" && hasClientEvidence(a))
+    return "confirmed";
+  return "inferred";
+}
+
+/** Stage-aware context-status label shown on the snapshot sheet. */
+export const snapshotReadiness: Record<Stage, string> = {
+  intro: "Preliminary — based on public research; validate with client",
+  discovery: "Draft — updated from calls and documents",
+  expansion: "Validated process view",
+};

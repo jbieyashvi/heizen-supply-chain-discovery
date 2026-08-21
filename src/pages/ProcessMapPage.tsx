@@ -42,6 +42,7 @@ import {
   Minus,
   Maximize2,
   RotateCcw,
+  Presentation,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { EmptyState } from "../components/EmptyState";
@@ -69,6 +70,8 @@ import {
   introCoverageLabel,
   hasClientEvidence,
   clientEvidenceSource,
+  FLOW_ORDER,
+  snapshotStatus,
   type ProcessArea,
   type SubProcess,
   type Handoff,
@@ -116,7 +119,7 @@ const handoffBadgeTone: Record<HandoffState, "neutral" | "accent" | "amber" | "r
 /* Rendered as a native, readable horizontal strip — never zoom-to-shrink.
    Cards keep their natural, readable size and the strip scrolls when all
    six can't fit at once. */
-const FLOW = ["plan", "source", "make", "quality", "store", "deliver"];
+const FLOW = FLOW_ORDER;
 
 /* Readable-zoom bounds for the Current Process strip. The floor is 90% so
    text never drops below a readable size; "Fit" only ever shrinks to this. */
@@ -246,6 +249,28 @@ export function ProcessMapPage() {
     });
   };
 
+  // How reliable the client snapshot is right now — advances with the stage.
+  const confirmedStages = FLOW.filter(
+    (id) =>
+      snapshotStatus(clioProcessAreas.find((a) => a.id === id)!, stage) ===
+      "confirmed"
+  ).length;
+  const snapReady =
+    stage === "intro"
+      ? {
+          lead: "Preliminary",
+          body: `It reflects public research only — present it as a starting hypothesis. It becomes reliable as calls confirm each stage (${confirmedStages} of ${FLOW.length} confirmed so far).`,
+        }
+      : stage === "discovery"
+        ? {
+            lead: "Working draft",
+            body: `Updated from calls and documents — ${confirmedStages} of ${FLOW.length} stages are client-confirmed. It becomes fully reliable once the remaining stages are validated.`,
+          }
+        : {
+            lead: "Validated",
+            body: "The mapped stages are confirmed with the client and ready to present; inferred or unexplored areas stay clearly marked.",
+          };
+
   return (
     <div className="page pmap-page">
       <PageHeader
@@ -263,6 +288,12 @@ export function ProcessMapPage() {
         subtitle={subtitle}
         actions={
           <div className="row" style={{ gap: 8 }}>
+            <Link
+              to={`/projects/${projectId}/process-map/snapshot`}
+              className="btn btn-sm"
+            >
+              <Presentation /> Client snapshot
+            </Link>
             <button className="btn btn-sm" onClick={() => setInvestigateOpen(true)}>
               <Search /> Investigate a domain
             </button>
@@ -277,6 +308,18 @@ export function ProcessMapPage() {
           </div>
         }
       />
+
+      {/* When the client snapshot can be trusted — advances with the stage. */}
+      <section
+        className="pmap-snapready"
+        role="note"
+        aria-label="Client snapshot readiness"
+      >
+        <Presentation className="pmap-snapready__ic" aria-hidden />
+        <p className="pmap-snapready__text">
+          <b>Client snapshot — {snapReady.lead}.</b> {snapReady.body}
+        </p>
+      </section>
 
       {/* Summary strip */}
       <section className="card card-pad pmap-summary">
